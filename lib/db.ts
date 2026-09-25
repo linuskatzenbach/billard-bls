@@ -33,7 +33,7 @@ async function ensureSchema(): Promise<void> {
   await sql`
     CREATE TABLE IF NOT EXISTS player_elo (
       id TEXT PRIMARY KEY,
-      elo INTEGER NOT NULL DEFAULT ${START_ELO}
+      elo INTEGER NOT NULL DEFAULT 1500
     );
   `;
 
