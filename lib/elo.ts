@@ -1,7 +1,7 @@
 // Standard-Elo-System wie im Schach.
 // K-Faktor bestimmt, wie stark sich ein einzelnes Ergebnis auswirkt.
 // 32 ist ein gängiger Wert für "Hobby"-Ligen mit wenigen Spielen.
-export const K_FACTOR = 32;
+export const K_FACTOR = 40;
 export const START_ELO = 1500;
 
 function expectedScore(eloA: number, eloB: number): number {
