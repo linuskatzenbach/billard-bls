@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Billard Elo",
-  description: "Elo-Rangliste für unsere Billard-Runde",
+  title: "Billard-Rangliste",
+  description: "Jetzt wird gezockt!",
 };
 
 export default function RootLayout({
