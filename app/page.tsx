@@ -16,20 +16,24 @@ export default async function HomePage() {
   return (
     <>
       <h1>Billard-Rangliste</h1>
-      <p className="subtitle">Jetzt wird gezockt!</p>
+      <p className="subtitle">Elo-Wertung unserer Runde</p>
 
       {leaderboard.length === 0 ? (
         <p className="empty">Noch keine Spieler eingetragen.</p>
       ) : (
         <div className="leaderboard">
           {leaderboard.map((entry, index) => (
-            <div className="row" key={entry.id}>
+            <Link
+              href={`/spieler/${entry.id}`}
+              className="row"
+              key={entry.id}
+            >
               <span className={`rank ${index === 0 ? "gold" : ""}`}>
                 {index + 1}
               </span>
               <span className="name">{getPlayerName(entry.id)}</span>
               <span className="elo">{entry.elo}</span>
-            </div>
+            </Link>
           ))}
         </div>
       )}
