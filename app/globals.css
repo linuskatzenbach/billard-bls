@@ -1,76 +1,278 @@
-import Link from "next/link";
-import { getLeaderboard, getRecentMatches } from "@/lib/db";
-import { getPlayerName } from "@/lib/players";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap");
 
-export const dynamic = "force-dynamic";
-
-function formatMatchDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("de-DE", {
-    day: "numeric",
-    month: "long",
-  });
+:root {
+  --felt-dark: #123028;
+  --felt: #1f4a3d;
+  --felt-light: #2b5f4e;
+  --cream: #f1e9d8;
+  --brass: #c9a227;
+  --brass-bright: #e0bc4a;
+  --red: #c1543c;
+  --line: rgba(241, 233, 216, 0.16);
 }
 
-export default async function HomePage() {
-  const leaderboard = await getLeaderboard();
-  const matches = await getRecentMatches(10);
+* {
+  box-sizing: border-box;
+}
 
-  return (
-    <>
-      <h1>Billard-Rangliste</h1>
-      <p className="subtitle">Elo-Wertung unserer Runde</p>
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
 
-      {leaderboard.length === 0 ? (
-        <p className="empty">Noch keine Spieler eingetragen.</p>
-      ) : (
-        <div className="leaderboard">
-          {leaderboard.map((entry, index) => (
-            <div className="row" key={entry.id}>
-              <span className={`rank ${index === 0 ? "gold" : ""}`}>
-                {index + 1}
-              </span>
-              <span className="name">{getPlayerName(entry.id)}</span>
-              <span className="elo">{entry.elo}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <Link href="/eintragen" className="nav-link">
-        Ergebnis eintragen →
-      </Link>
-
-      {matches.length > 0 && (
-        <div className="history">
-          <h2>Letzte Spiele</h2>
-          {matches.map((m, i) => {
-            const winnerGain = m.winner_elo_after - m.winner_elo_before;
-            const loserLoss = m.loser_elo_after - m.loser_elo_before;
-            return (
-              <div className="history-row" key={i}>
-                <div className="match-players">
-                  <div className="player-block winner">
-                    <span className="player-name">{getPlayerName(m.winner_id)}</span>
-                    <span className="player-meta">
-                      <span className="elo-before">{m.winner_elo_before}</span>
-                      <span className="delta win">▲{Math.abs(winnerGain)}</span>
-                    </span>
-                  </div>
-                  <span className="vs">vs</span>
-                  <div className="player-block loser">
-                    <span className="player-name">{getPlayerName(m.loser_id)}</span>
-                    <span className="player-meta">
-                      <span className="delta loss">▼{Math.abs(loserLoss)}</span>
-                      <span className="elo-before">{m.loser_elo_before}</span>
-                    </span>
-                  </div>
-                </div>
-                <span className="match-date">{formatMatchDate(m.created_at)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </>
+body {
+  background: var(--felt-dark);
+  background-image: radial-gradient(
+    circle at 50% -10%,
+    var(--felt) 0%,
+    var(--felt-dark) 60%
   );
+  color: var(--cream);
+  font-family: "Inter", system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+h1,
+h2 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h1 {
+  font-size: 2.1rem;
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--cream);
+  opacity: 0.65;
+  font-size: 0.95rem;
+  margin: 0.4rem 0 2.5rem;
+}
+
+.leaderboard {
+  border-top: 1px solid var(--line);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr auto;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.9rem 0.1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.rank {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.15rem;
+  color: var(--brass-bright);
+}
+
+.rank.gold {
+  color: var(--brass-bright);
+  font-size: 1.35rem;
+}
+
+.name {
+  font-size: 1.05rem;
+}
+
+.elo {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--cream);
+}
+
+.empty {
+  text-align: center;
+  opacity: 0.6;
+  padding: 2rem 0;
+}
+
+.nav-link {
+  display: block;
+  text-align: center;
+  margin-top: 2.5rem;
+  color: var(--brass-bright);
+  text-decoration: none;
+  font-size: 0.95rem;
+  border-bottom: 1px solid transparent;
+}
+
+.nav-link:hover {
+  border-bottom-color: var(--brass-bright);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-top: 2rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--cream);
+  opacity: 0.85;
+}
+
+select,
+input[type="password"] {
+  background: var(--felt);
+  border: 1px solid var(--line);
+  color: var(--cream);
+  padding: 0.65rem 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+select:focus,
+input:focus {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+button {
+  margin-top: 0.5rem;
+  background: var(--brass);
+  color: var(--felt-dark);
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+button:hover {
+  background: var(--brass-bright);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.message {
+  padding: 0.75rem 0.9rem;
+  border-radius: 4px;
+  font-size: 0.92rem;
+  margin-top: 0.5rem;
+}
+
+.message.error {
+  background: rgba(193, 84, 60, 0.18);
+  color: #f2b7a8;
+  border: 1px solid rgba(193, 84, 60, 0.4);
+}
+
+.message.success {
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--brass-bright);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+}
+
+.history {
+  margin-top: 3rem;
+}
+
+.history h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.85;
+}
+
+.history-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.match-players {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.player-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.player-block.loser {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.player-name {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.player-block.loser .player-meta {
+  flex-direction: row-reverse;
+}
+
+.elo-before {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.5;
+}
+
+.vs {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.4;
+  padding: 0 0.25rem;
+}
+
+.match-date {
+  align-self: flex-end;
+  font-size: 0.75rem;
+  opacity: 0.45;
+}
+
+.delta {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.delta.win {
+  color: #9ed6a3;
+}
+
+.delta.loss {
+  color: #e3a89a;
 }
