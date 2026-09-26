@@ -30,6 +30,10 @@ let schemaReady: Promise<void> | null = null;
 async function ensureSchema(): Promise<void> {
   const sql = getSql();
 
+  // Hinweis: Bei CREATE TABLE darf der DEFAULT-Wert keine gebundene
+  // Query-Variable sein (Postgres/Neon lehnt das mit "bind message
+  // supplies ... parameters, but prepared statement requires 0" ab).
+  // Deshalb hier als fester Literal-Wert statt über ${START_ELO}.
   await sql`
     CREATE TABLE IF NOT EXISTS player_elo (
       id TEXT PRIMARY KEY,
@@ -76,8 +80,11 @@ export type LeaderboardEntry = {
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   await ready();
   const sql = getSql();
+  const currentIds = PLAYERS.map((p) => p.id);
   const rows = await sql`
-    SELECT id, elo FROM player_elo ORDER BY elo DESC;
+    SELECT id, elo FROM player_elo
+    WHERE id = ANY(${currentIds})
+    ORDER BY elo DESC;
   `;
   return rows as LeaderboardEntry[];
 }
