@@ -5,10 +5,8 @@ import { getPlayerName } from "@/lib/players";
 export const dynamic = "force-dynamic";
 
 function formatMatchDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("de-DE", {
-    day: "numeric",
-    month: "long",
-  });
+  const d = new Date(iso);
+  return `${d.getDate()}.${d.getMonth() + 1}.`;
 }
 
 export default async function HomePage() {
@@ -48,24 +46,19 @@ export default async function HomePage() {
             const loserLoss = m.loser_elo_after - m.loser_elo_before;
             return (
               <div className="history-row" key={i}>
-                <div className="match-players">
-                  <div className="player-block winner">
-                    <span className="player-name">{getPlayerName(m.winner_id)}</span>
-                    <span className="player-meta">
-                      <span className="elo-before">{m.winner_elo_before}</span>
-                      <span className="delta win">▲{Math.abs(winnerGain)}</span>
-                    </span>
-                  </div>
-                  <span className="vs">vs</span>
-                  <div className="player-block loser">
-                    <span className="player-name">{getPlayerName(m.loser_id)}</span>
-                    <span className="player-meta">
-                      <span className="delta loss">▼{Math.abs(loserLoss)}</span>
-                      <span className="elo-before">{m.loser_elo_before}</span>
-                    </span>
-                  </div>
-                </div>
+                <span className="player-name winner">{getPlayerName(m.winner_id)}</span>
+                <span className="vs">vs</span>
+                <span className="player-name loser">{getPlayerName(m.loser_id)}</span>
+
+                <span className="player-meta winner">
+                  <span className="elo-before">{m.winner_elo_before}</span>
+                  <span className="delta win">▲{Math.abs(winnerGain)}</span>
+                </span>
                 <span className="match-date">{formatMatchDate(m.created_at)}</span>
+                <span className="player-meta loser">
+                  <span className="delta loss">▼{Math.abs(loserLoss)}</span>
+                  <span className="elo-before">{m.loser_elo_before}</span>
+                </span>
               </div>
             );
           })}
