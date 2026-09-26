@@ -19,6 +19,7 @@ export const PLAYERS: Player[] = [
   { id: "jannik", name: "Jannik" },
   { id: "benedikt", name: "Benedikt" },
   { id: "philip", name: "Philip" },
+  { id: "tobias", name: "Tobias" },
 ];
 
 export function getPlayerName(id: string): string {
