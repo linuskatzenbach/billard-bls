@@ -112,6 +112,39 @@ export async function getRecentMatches(limit = 20): Promise<MatchRecord[]> {
   return rows as MatchRecord[];
 }
 
+export type PlayerMatch = {
+  opponent_id: string;
+  won: boolean;
+  elo_before: number;
+  elo_after: number;
+  created_at: string;
+};
+
+export async function getMatchesForPlayer(
+  playerId: string
+): Promise<PlayerMatch[]> {
+  await ready();
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT winner_id, loser_id, winner_elo_before, loser_elo_before,
+           winner_elo_after, loser_elo_after, created_at
+    FROM matches
+    WHERE winner_id = ${playerId} OR loser_id = ${playerId}
+    ORDER BY created_at ASC;
+  `) as MatchRecord[];
+
+  return rows.map((m) => {
+    const won = m.winner_id === playerId;
+    return {
+      opponent_id: won ? m.loser_id : m.winner_id,
+      won,
+      elo_before: won ? m.winner_elo_before : m.loser_elo_before,
+      elo_after: won ? m.winner_elo_after : m.loser_elo_after,
+      created_at: m.created_at,
+    };
+  });
+}
+
 export async function getElo(playerId: string): Promise<number> {
   await ready();
   const sql = getSql();
