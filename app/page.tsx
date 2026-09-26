@@ -49,12 +49,12 @@ export default async function HomePage() {
             return (
               <div className="history-row" key={i}>
                 <span className="match-players">
-                  <span className="player-name">{getPlayerName(m.winner_id)}</span>
-                  <span className="elo-before">{m.winner_elo_before}</span>
-                  <span className="delta win">▲{Math.abs(winnerGain)}</span>
-                  <span className="vs">schlägt</span>
-                  <span className="player-name">{getPlayerName(m.loser_id)}</span>
-                  <span className="elo-before">{m.loser_elo_before}</span>
+                  <span className="player-name">{getPlayerName(m.winner_id)}</span>{" "}
+                  <span className="elo-before">({m.winner_elo_before})</span>{" "}
+                  <span className="delta win">▲{Math.abs(winnerGain)}</span>{" "}
+                  <span className="vs">siegt gegen</span>{" "}
+                  <span className="player-name">{getPlayerName(m.loser_id)}</span>{" "}
+                  <span className="elo-before">({m.loser_elo_before})</span>{" "}
                   <span className="delta loss">▼{Math.abs(loserLoss)}</span>
                 </span>
                 <span className="match-date">{formatMatchDate(m.created_at)}</span>
