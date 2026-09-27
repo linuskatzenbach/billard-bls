@@ -16,7 +16,7 @@ export default async function HomePage() {
   return (
     <>
       <h1>Billard-Rangliste</h1>
-      <p className="subtitle">Elo-Wertung unserer Runde</p>
+      <p className="subtitle">Jetzt wird gezockt!</p>
 
       {leaderboard.length === 0 ? (
         <p className="empty">Noch keine Spieler eingetragen.</p>
