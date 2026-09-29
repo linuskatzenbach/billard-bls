@@ -11,11 +11,12 @@
 export type Player = {
   id: string;
   name: string;
+  hidden?: boolean;
 };
 
 export const PLAYERS: Player[] = [
   { id: "linus", name: "Linus" },
-  { id: "julian", name: "Julian" },
+  { id: "julian", name: "Julian", hidden: true },
   { id: "jannik", name: "Jannik" },
   { id: "benedikt", name: "Benedikt" },
   { id: "philip", name: "Philip" },
