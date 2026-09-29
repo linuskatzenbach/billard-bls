@@ -80,7 +80,7 @@ export type LeaderboardEntry = {
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   await ready();
   const sql = getSql();
-  const currentIds = PLAYERS.map((p) => p.id);
+  const currentIds = PLAYERS.filter((p) => !p.hidden).map((p) => p.id);
   const rows = await sql`
     SELECT id, elo FROM player_elo
     WHERE id = ANY(${currentIds})
