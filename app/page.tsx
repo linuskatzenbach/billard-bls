@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLeaderboard, getRecentMatches } from "@/lib/db";
+import { getLeaderboard, getRecentMatches, getCurrentStreaks } from "@/lib/db";
 import { getPlayerName } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
@@ -10,31 +10,40 @@ function formatMatchDate(iso: string): string {
 }
 
 export default async function HomePage() {
-  const leaderboard = await getLeaderboard();
-  const matches = await getRecentMatches(10);
+  const [leaderboard, matches, streaks] = await Promise.all([
+    getLeaderboard(),
+    getRecentMatches(10),
+    getCurrentStreaks(),
+  ]);
 
   return (
     <>
       <h1>Billard-Rangliste</h1>
-      <p className="subtitle">Jetzt wird gezockt!</p>
+      <p className="subtitle">Elo-Wertung unserer Runde</p>
 
       {leaderboard.length === 0 ? (
         <p className="empty">Noch keine Spieler eingetragen.</p>
       ) : (
         <div className="leaderboard">
-          {leaderboard.map((entry, index) => (
-            <Link
-              href={`/spieler/${entry.id}`}
-              className="row"
-              key={entry.id}
-            >
-              <span className={`rank ${index === 0 ? "gold" : ""}`}>
-                {index + 1}
-              </span>
-              <span className="name">{getPlayerName(entry.id)}</span>
-              <span className="elo">{entry.elo}</span>
-            </Link>
-          ))}
+          {leaderboard.map((entry, index) => {
+            const streak = streaks[entry.id] ?? 0;
+            return (
+              <Link
+                href={`/spieler/${entry.id}`}
+                className="row"
+                key={entry.id}
+              >
+                <span className={`rank ${index === 0 ? "gold" : ""}`}>
+                  {index + 1}
+                </span>
+                <span className="name">
+                  {getPlayerName(entry.id)}
+                  {streak >= 3 && <span className="streak">🔥{streak}</span>}
+                </span>
+                <span className="elo">{entry.elo}</span>
+              </Link>
+            );
+          })}
         </div>
       )}
 
