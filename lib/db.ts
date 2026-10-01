@@ -194,3 +194,20 @@ export async function recordMatch(params: {
     );
   `;
 }
+
+// Aktuelle Siegesserie je Spieler: Anzahl Siege in Folge seit der letzten Niederlage.
+export async function getCurrentStreaks(): Promise<Record<string, number>> {
+  await ready();
+  const sql = getSql();
+  const rows = (await sql`
+    SELECT winner_id, loser_id FROM matches
+    ORDER BY created_at ASC, id ASC;
+  `) as { winner_id: string; loser_id: string }[];
+
+  const streaks: Record<string, number> = {};
+  for (const m of rows) {
+    streaks[m.winner_id] = (streaks[m.winner_id] ?? 0) + 1;
+    streaks[m.loser_id] = 0;
+  }
+  return streaks;
+}
