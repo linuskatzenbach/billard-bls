@@ -38,7 +38,7 @@ export default async function HomePage() {
                 </span>
                 <span className="name">
                   {getPlayerName(entry.id)}
-                  {streak >= 3 && <span className="streak">🔥{streak}</span>}
+                  {streak >= 3 && <span className="streak"> 🔥{streak}</span>}
                 </span>
                 <span className="elo">{entry.elo}</span>
               </Link>
