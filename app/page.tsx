@@ -66,17 +66,25 @@ export default async function HomePage() {
                 <span className="player-name loser">{getPlayerName(m.loser_id)}</span>
 
                 <span className="player-meta winner">
-                  <span className="elo-before">
-                    {winnerHidden ? "???" : m.winner_elo_before}
-                  </span>
-                  <span className="delta win">▲{Math.abs(winnerGain)}</span>
+                  {winnerHidden ? (
+                    <span className="elo-before">???</span>
+                  ) : (
+                    <>
+                      <span className="elo-before">{m.winner_elo_before}</span>
+                      <span className="delta win">▲{Math.abs(winnerGain)}</span>
+                    </>
+                  )}
                 </span>
                 <span className="match-date">{formatMatchDate(m.created_at)}</span>
                 <span className="player-meta loser">
-                  <span className="delta loss">▼{Math.abs(loserLoss)}</span>
-                  <span className="elo-before">
-                    {loserHidden ? "???" : m.loser_elo_before}
-                  </span>
+                  {loserHidden ? (
+                    <span className="elo-before">???</span>
+                  ) : (
+                    <>
+                      <span className="delta loss">▼{Math.abs(loserLoss)}</span>
+                      <span className="elo-before">{m.loser_elo_before}</span>
+                    </>
+                  )}
                 </span>
               </div>
             );
