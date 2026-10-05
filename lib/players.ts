@@ -26,3 +26,7 @@ export const PLAYERS: Player[] = [
 export function getPlayerName(id: string): string {
   return PLAYERS.find((p) => p.id === id)?.name ?? id;
 }
+
+export function isPlayerHidden(id: string): boolean {
+  return PLAYERS.find((p) => p.id === id)?.hidden ?? false;
+}
