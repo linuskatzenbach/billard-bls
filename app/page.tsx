@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLeaderboard, getRecentMatches, getCurrentStreaks } from "@/lib/db";
-import { getPlayerName } from "@/lib/players";
+import { getPlayerName, isPlayerHidden } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export default async function HomePage() {
   return (
     <>
       <h1>Billard-Rangliste</h1>
-      <p className="subtitle">Jetzt wird gezockt!</p>
+      <p className="subtitle">Elo-Wertung unserer Runde</p>
 
       {leaderboard.length === 0 ? (
         <p className="empty">Noch keine Spieler eingetragen.</p>
@@ -38,7 +38,7 @@ export default async function HomePage() {
                 </span>
                 <span className="name">
                   {getPlayerName(entry.id)}
-                  {streak >= 3 && <span className="streak"> 🔥{streak}</span>}
+                  {streak >= 3 && <span className="streak">🔥{streak}</span>}
                 </span>
                 <span className="elo">{entry.elo}</span>
               </Link>
@@ -57,6 +57,8 @@ export default async function HomePage() {
           {matches.map((m, i) => {
             const winnerGain = m.winner_elo_after - m.winner_elo_before;
             const loserLoss = m.loser_elo_after - m.loser_elo_before;
+            const winnerHidden = isPlayerHidden(m.winner_id);
+            const loserHidden = isPlayerHidden(m.loser_id);
             return (
               <div className="history-row" key={i}>
                 <span className="player-name winner">{getPlayerName(m.winner_id)}</span>
@@ -64,13 +66,17 @@ export default async function HomePage() {
                 <span className="player-name loser">{getPlayerName(m.loser_id)}</span>
 
                 <span className="player-meta winner">
-                  <span className="elo-before">{m.winner_elo_before}</span>
+                  <span className="elo-before">
+                    {winnerHidden ? "???" : m.winner_elo_before}
+                  </span>
                   <span className="delta win">▲{Math.abs(winnerGain)}</span>
                 </span>
                 <span className="match-date">{formatMatchDate(m.created_at)}</span>
                 <span className="player-meta loser">
                   <span className="delta loss">▼{Math.abs(loserLoss)}</span>
-                  <span className="elo-before">{m.loser_elo_before}</span>
+                  <span className="elo-before">
+                    {loserHidden ? "???" : m.loser_elo_before}
+                  </span>
                 </span>
               </div>
             );
