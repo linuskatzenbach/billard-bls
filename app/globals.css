@@ -420,7 +420,12 @@ button:disabled {
   color: #e3a89a;
 }
 
-/* Statistik-Box unter "Letzte Spiele" */
+/* Statistik-Box auf der Startseite. Alles unter .stats verschachtelt,
+   damit die gleichnamigen Kacheln auf der Spielerseite unberührt bleiben. */
+h2.centered {
+  text-align: center;
+}
+
 .stats {
   margin-top: 3rem;
 }
@@ -431,44 +436,54 @@ button:disabled {
   opacity: 0.85;
 }
 
-.stat-grid {
+.stats .stat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.75rem;
+  margin-top: 0;
 }
 
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+/* Jede Kachel nutzt die Zeilen des äußeren Grids (subgrid): so stehen
+   Kategorie, Name und Wert in jeder Reihe auf exakt derselben Höhe,
+   auch wenn eine Kategorie zweizeilig umbricht. */
+.stats .stat {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0.3rem;
+  justify-items: center;
+  text-align: center;
   padding: 1rem 0.9rem;
   background: rgba(241, 233, 216, 0.04);
   border: 1px solid var(--line);
   border-radius: 6px;
 }
 
-.stat-label {
+.stats .stat-label {
+  align-self: center;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   opacity: 0.6;
 }
 
-.stat-name {
+.stats .stat-name {
   font-family: "Fraunces", Georgia, serif;
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--brass-bright);
 }
 
-.stat-value {
+.stats .stat-value {
+  font-family: inherit;
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
+  color: var(--cream);
   opacity: 0.85;
 }
 
 @media (max-width: 520px) {
-  .stat-grid {
+  .stats .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }

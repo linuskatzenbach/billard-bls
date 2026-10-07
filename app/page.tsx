@@ -29,7 +29,7 @@ function StatTile({
   label,
   entry,
   format,
-  empty = "–",
+  empty = "",
 }: {
   label: string;
   entry: StatEntry | null;
@@ -45,7 +45,10 @@ function StatTile({
           <span className="stat-value">{format(entry.value)}</span>
         </>
       ) : (
-        <span className="stat-value">{empty}</span>
+        <>
+          <span className="stat-name">–</span>
+          <span className="stat-value">{empty}</span>
+        </>
       )}
     </div>
   );
@@ -97,7 +100,7 @@ export default async function HomePage() {
 
       {matches.length > 0 && (
         <div className="history">
-          <h2>Letzte Spiele</h2>
+          <h2 className="centered">Letzte Spiele</h2>
           {matches.map((m, i) => {
             const winnerGain = m.winner_elo_after - m.winner_elo_before;
             const loserLoss = m.loser_elo_after - m.loser_elo_before;
@@ -138,7 +141,7 @@ export default async function HomePage() {
 
       {allMatches.length > 0 && (
         <div className="stats">
-          <h2>Statistiken</h2>
+          <h2 className="centered">Statistiken</h2>
           <div className="stat-grid">
             <StatTile
               label="Meiste Spiele"
@@ -178,7 +181,10 @@ export default async function HomePage() {
                   </span>
                 </>
               ) : (
-                <span className="stat-value">–</span>
+                <>
+                  <span className="stat-name">–</span>
+                  <span className="stat-value" />
+                </>
               )}
             </div>
           </div>
