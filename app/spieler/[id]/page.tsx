@@ -83,10 +83,6 @@ export default async function PlayerPage({
 
       <div className="stat-grid">
         <div className="stat">
-          <span className="stat-value">{matches.length}</span>
-          <span className="stat-label">Spiele</span>
-        </div>
-        <div className="stat">
           <span className="stat-value">{wins}</span>
           <span className="stat-label">Siege</span>
         </div>
