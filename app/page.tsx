@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { getLeaderboard, getRecentMatches, getCurrentStreaks } from "@/lib/db";
+import {
+  getLeaderboard,
+  getRecentMatches,
+  getCurrentStreaks,
+  getAllMatches,
+} from "@/lib/db";
+import { computeStats, MIN_GAMES_FOR_WIN_RATE, type StatEntry } from "@/lib/stats";
 import { getPlayerName, isPlayerHidden } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
@@ -9,12 +15,24 @@ function formatMatchDate(iso: string): string {
   return `${d.getDate()}.${d.getMonth() + 1}.`;
 }
 
+function names(entry: StatEntry): string {
+  return entry.playerIds.map(getPlayerName).join(" & ");
+}
+
+function formatDays(days: number): string {
+  if (days < 1) return "unter 1 Tag";
+  const rounded = Math.round(days);
+  return rounded === 1 ? "1 Tag" : `${rounded} Tage`;
+}
+
 export default async function HomePage() {
-  const [leaderboard, matches, streaks] = await Promise.all([
+  const [leaderboard, matches, streaks, allMatches] = await Promise.all([
     getLeaderboard(),
     getRecentMatches(10),
     getCurrentStreaks(),
+    getAllMatches(),
   ]);
+  const stats = computeStats(allMatches);
 
   return (
     <>
@@ -89,6 +107,55 @@ export default async function HomePage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {allMatches.length > 0 && (
+        <div className="stats">
+          <h2>Statistiken</h2>
+          <div className="stat-grid">
+            <div className="stat">
+              <span className="stat-label">Meiste Spiele</span>
+              {stats.mostGames ? (
+                <>
+                  <span className="stat-name">{names(stats.mostGames)}</span>
+                  <span className="stat-value">
+                    {stats.mostGames.value} Spiele
+                  </span>
+                </>
+              ) : (
+                <span className="stat-value">–</span>
+              )}
+            </div>
+            <div className="stat">
+              <span className="stat-label">Höchste Siegesquote</span>
+              {stats.bestWinRate ? (
+                <>
+                  <span className="stat-name">{names(stats.bestWinRate)}</span>
+                  <span className="stat-value">
+                    {stats.bestWinRate.value}% Siege
+                  </span>
+                </>
+              ) : (
+                <span className="stat-value">
+                  ab {MIN_GAMES_FOR_WIN_RATE} Spielen
+                </span>
+              )}
+            </div>
+            <div className="stat">
+              <span className="stat-label">Längste Zeit auf Platz 1</span>
+              {stats.longestAtTop ? (
+                <>
+                  <span className="stat-name">{names(stats.longestAtTop)}</span>
+                  <span className="stat-value">
+                    {formatDays(stats.longestAtTop.value)}
+                  </span>
+                </>
+              ) : (
+                <span className="stat-value">–</span>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>

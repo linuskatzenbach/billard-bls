@@ -211,3 +211,16 @@ export async function getCurrentStreaks(): Promise<Record<string, number>> {
   }
   return streaks;
 }
+
+// Alle Spiele chronologisch (älteste zuerst) – Grundlage für die Statistiken.
+export async function getAllMatches(): Promise<MatchRecord[]> {
+  await ready();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT winner_id, loser_id, winner_elo_before, loser_elo_before,
+           winner_elo_after, loser_elo_after, created_at
+    FROM matches
+    ORDER BY created_at ASC, id ASC;
+  `;
+  return rows as MatchRecord[];
+}
