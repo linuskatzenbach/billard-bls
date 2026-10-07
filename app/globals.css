@@ -469,6 +469,6 @@ button:disabled {
 
 @media (max-width: 520px) {
   .stat-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }

@@ -6,15 +6,27 @@ import { START_ELO } from "./elo";
 // sonst führt jemand mit 1 Spiel und 1 Sieg dauerhaft mit 100 %.
 export const MIN_GAMES_FOR_WIN_RATE = 5;
 
+// Spieltage werden nach deutscher Zeit gezählt (ein Abend nach Mitternacht
+// zählt also zum nächsten Tag).
+const TIME_ZONE = "Europe/Berlin";
+
 export type StatEntry = {
   playerIds: string[]; // mehrere bei Gleichstand
   value: number;
+};
+
+export type MatchDayRecord = {
+  date: string; // z.B. "7.10.2026"
+  count: number;
 };
 
 export type Stats = {
   mostGames: StatEntry | null;
   bestWinRate: StatEntry | null; // value in Prozent (gerundet)
   longestAtTop: StatEntry | null; // value in Tagen (mit Nachkommastellen)
+  longestStreak: StatEntry | null; // value = Siege in Folge
+  highestElo: StatEntry | null; // value = Elo-Höchststand
+  matchDayRecord: MatchDayRecord | null;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -35,6 +47,13 @@ function best(values: Record<string, number>): StatEntry | null {
   return { playerIds: ids, value: top };
 }
 
+const dayFormatter = new Intl.DateTimeFormat("de-DE", {
+  timeZone: TIME_ZONE,
+  day: "numeric",
+  month: "numeric",
+  year: "numeric",
+});
+
 // Erwartet die Spiele chronologisch sortiert (älteste zuerst).
 export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
   const visible = PLAYERS.filter((p) => !p.hidden).map((p) => p.id);
@@ -44,38 +63,38 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
   const wins: Record<string, number> = {};
   const elo: Record<string, number> = {};
   const msAtTop: Record<string, number> = {};
+  const streak: Record<string, number> = {};
+  const maxStreak: Record<string, number> = {};
+  const peakElo: Record<string, number> = {};
   for (const id of visible) {
     games[id] = 0;
     wins[id] = 0;
     elo[id] = START_ELO;
     msAtTop[id] = 0;
+    streak[id] = 0;
+    maxStreak[id] = 0;
   }
 
-  // Platz 1 = alleiniger Höchstwert unter den sichtbaren Spielern.
-  // Bei Gleichstand an der Spitze hat niemand Platz 1.
-  const currentLeader = (): string | null => {
-    let leader: string | null = null;
-    let top = -Infinity;
-    let tie = false;
-    for (const id of visible) {
-      if (elo[id] > top) {
-        top = elo[id];
-        leader = id;
-        tie = false;
-      } else if (elo[id] === top) {
-        tie = true;
-      }
-    }
-    return tie ? null : leader;
+  // Platz 1 = alle sichtbaren Spieler mit der aktuell höchsten Elo.
+  // Bei Gleichstand an der Spitze teilen sich mehrere Spieler Platz 1
+  // und bekommen die Zeit alle gutgeschrieben.
+  const currentLeaders = (): string[] => {
+    const top = Math.max(...visible.map((id) => elo[id]));
+    return visible.filter((id) => elo[id] === top);
   };
 
-  let leader: string | null = null;
-  let leaderSince = 0;
+  let leaders: string[] = [];
+  let leadersSince = 0;
+  const perDay = new Map<string, number>();
 
   for (const m of matches) {
     const t = new Date(m.created_at).getTime();
 
-    if (leader) msAtTop[leader] += t - leaderSince;
+    for (const id of leaders) msAtTop[id] += t - leadersSince;
+
+    // Spieltag-Rekord zählt alle Spiele, auch die ausgeblendeter Spieler.
+    const day = dayFormatter.format(new Date(m.created_at));
+    perDay.set(day, (perDay.get(day) ?? 0) + 1);
 
     for (const [id, after, won] of [
       [m.winner_id, m.winner_elo_after, true],
@@ -83,15 +102,22 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     ] as const) {
       if (!visibleSet.has(id)) continue;
       games[id] += 1;
-      if (won) wins[id] += 1;
       elo[id] = after;
+      peakElo[id] = Math.max(peakElo[id] ?? -Infinity, after);
+      if (won) {
+        wins[id] += 1;
+        streak[id] += 1;
+        maxStreak[id] = Math.max(maxStreak[id], streak[id]);
+      } else {
+        streak[id] = 0;
+      }
     }
 
-    leader = currentLeader();
-    leaderSince = t;
+    leaders = currentLeaders();
+    leadersSince = t;
   }
 
-  if (leader) msAtTop[leader] += now.getTime() - leaderSince;
+  for (const id of leaders) msAtTop[id] += now.getTime() - leadersSince;
 
   const winRates: Record<string, number> = {};
   for (const id of visible) {
@@ -105,9 +131,21 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     daysAtTop[id] = msAtTop[id] / DAY_MS;
   }
 
+  // Bei gleich vielen Spielen an mehreren Tagen gewinnt der jüngste Tag
+  // (Map behält die chronologische Reihenfolge, daher ">=").
+  let matchDayRecord: MatchDayRecord | null = null;
+  for (const [date, count] of perDay) {
+    if (!matchDayRecord || count >= matchDayRecord.count) {
+      matchDayRecord = { date, count };
+    }
+  }
+
   return {
     mostGames: best(games),
     bestWinRate: best(winRates),
     longestAtTop: best(daysAtTop),
+    longestStreak: best(maxStreak),
+    highestElo: best(peakElo),
+    matchDayRecord,
   };
 }

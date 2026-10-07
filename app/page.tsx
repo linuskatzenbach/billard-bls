@@ -25,6 +25,32 @@ function formatDays(days: number): string {
   return rounded === 1 ? "1 Tag" : `${rounded} Tage`;
 }
 
+function StatTile({
+  label,
+  entry,
+  format,
+  empty = "–",
+}: {
+  label: string;
+  entry: StatEntry | null;
+  format: (value: number) => string;
+  empty?: string;
+}) {
+  return (
+    <div className="stat">
+      <span className="stat-label">{label}</span>
+      {entry ? (
+        <>
+          <span className="stat-name">{names(entry)}</span>
+          <span className="stat-value">{format(entry.value)}</span>
+        </>
+      ) : (
+        <span className="stat-value">{empty}</span>
+      )}
+    </div>
+  );
+}
+
 export default async function HomePage() {
   const [leaderboard, matches, streaks, allMatches] = await Promise.all([
     getLeaderboard(),
@@ -114,41 +140,41 @@ export default async function HomePage() {
         <div className="stats">
           <h2>Statistiken</h2>
           <div className="stat-grid">
+            <StatTile
+              label="Meiste Spiele"
+              entry={stats.mostGames}
+              format={(v) => `${v} Spiele`}
+            />
+            <StatTile
+              label="Höchste Siegesquote"
+              entry={stats.bestWinRate}
+              format={(v) => `${v}% Siege`}
+              empty={`ab ${MIN_GAMES_FOR_WIN_RATE} Spielen`}
+            />
+            <StatTile
+              label="Längste Zeit auf Platz 1"
+              entry={stats.longestAtTop}
+              format={formatDays}
+            />
+            <StatTile
+              label="Längste Serie aller Zeiten"
+              entry={stats.longestStreak}
+              format={(v) => (v === 1 ? "1 Sieg in Folge" : `${v} Siege in Folge`)}
+            />
+            <StatTile
+              label="Höchste Elo aller Zeiten"
+              entry={stats.highestElo}
+              format={(v) => `${v} Elo`}
+            />
             <div className="stat">
-              <span className="stat-label">Meiste Spiele</span>
-              {stats.mostGames ? (
+              <span className="stat-label">Spieltag-Rekord</span>
+              {stats.matchDayRecord ? (
                 <>
-                  <span className="stat-name">{names(stats.mostGames)}</span>
+                  <span className="stat-name">{stats.matchDayRecord.date}</span>
                   <span className="stat-value">
-                    {stats.mostGames.value} Spiele
-                  </span>
-                </>
-              ) : (
-                <span className="stat-value">–</span>
-              )}
-            </div>
-            <div className="stat">
-              <span className="stat-label">Höchste Siegesquote</span>
-              {stats.bestWinRate ? (
-                <>
-                  <span className="stat-name">{names(stats.bestWinRate)}</span>
-                  <span className="stat-value">
-                    {stats.bestWinRate.value}% Siege
-                  </span>
-                </>
-              ) : (
-                <span className="stat-value">
-                  ab {MIN_GAMES_FOR_WIN_RATE} Spielen
-                </span>
-              )}
-            </div>
-            <div className="stat">
-              <span className="stat-label">Längste Zeit auf Platz 1</span>
-              {stats.longestAtTop ? (
-                <>
-                  <span className="stat-name">{names(stats.longestAtTop)}</span>
-                  <span className="stat-value">
-                    {formatDays(stats.longestAtTop.value)}
+                    {stats.matchDayRecord.count === 1
+                      ? "1 Spiel"
+                      : `${stats.matchDayRecord.count} Spiele`}
                   </span>
                 </>
               ) : (
