@@ -1,3 +1,4 @@
+import type React from "react";
 import Link from "next/link";
 import {
   getLeaderboard,
@@ -31,7 +32,7 @@ function StatTile({
   format,
   empty = "",
 }: {
-  label: string;
+  label: React.ReactNode;
   entry: StatEntry | null;
   format: (value: number) => string;
   empty?: string;
@@ -155,17 +156,17 @@ export default async function HomePage() {
               empty={`ab ${MIN_GAMES_FOR_WIN_RATE} Spielen`}
             />
             <StatTile
-              label="Längste Zeit auf Platz 1"
+              label={<>Längste Zeit<br />auf Platz 1</>}
               entry={stats.longestAtTop}
               format={formatDays}
             />
             <StatTile
-              label="Längste Serie aller Zeiten"
+              label={<>Längste Serie<br />aller Zeiten</>}
               entry={stats.longestStreak}
               format={(v) => (v === 1 ? "1 Sieg in Folge" : `${v} Siege in Folge`)}
             />
             <StatTile
-              label="Höchste Elo aller Zeiten"
+              label={<>Höchste Elo<br />aller Zeiten</>}
               entry={stats.highestElo}
               format={(v) => `${v} Elo`}
             />
