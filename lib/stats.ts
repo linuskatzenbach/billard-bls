@@ -92,7 +92,7 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
 
     for (const id of leaders) msAtTop[id] += t - leadersSince;
 
-    // Spieltag-Rekord zählt alle Spiele, auch die ausgeblendeter Spieler.
+    // "Größter Zocktag" zählt alle Spiele, auch die ausgeblendeter Spieler.
     const day = dayFormatter.format(new Date(m.created_at));
     perDay.set(day, (perDay.get(day) ?? 0) + 1);
 

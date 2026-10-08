@@ -171,7 +171,7 @@ export default async function HomePage() {
               format={(v) => `${v} Elo`}
             />
             <div className="stat">
-              <span className="stat-label">Spieltag-Rekord</span>
+              <span className="stat-label">Größter Zocktag</span>
               {stats.matchDayRecord ? (
                 <>
                   <span className="stat-name">{stats.matchDayRecord.date}</span>
