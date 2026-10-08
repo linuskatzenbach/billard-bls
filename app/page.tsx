@@ -116,8 +116,16 @@ export default async function HomePage() {
         </div>
       )}
 
-      <Link href="/eintragen" className="nav-link">
-        Ergebnis eintragen →
+      <Link href="/eintragen" className="cta">
+        <span className="cta-felt">
+          <span className="cta-label">Ergebnis eintragen</span>
+          {/* Queue stößt die weiße Kugel an, sie rollt ins Loch */}
+          <span className="cta-track" aria-hidden="true">
+            <span className="cta-pocket" />
+            <span className="cta-cue" />
+            <span className="cta-ball" />
+          </span>
+        </span>
       </Link>
 
       {matches.length > 0 && (

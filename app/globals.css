@@ -794,3 +794,157 @@ body {
   transform: rotate(45deg);
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
+
+/* "Ergebnis eintragen" als kleiner Billardtisch mit Stoß-Animation */
+.cta {
+  display: block;
+  max-width: 22rem;
+  margin: 2.5rem auto 0;
+  padding: 0.45rem;
+  border-radius: 14px;
+  text-decoration: none;
+  background:
+    repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.1) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg, #7a4a28 0%, #5a3219 45%, #4a2812 100%);
+  box-shadow:
+    0 0.4rem 1.1rem rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 220, 170, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cta:hover,
+.cta:focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0.7rem 1.6rem rgba(0, 0, 0, 0.55),
+    0 0 0 2px var(--brass),
+    inset 0 1px 0 rgba(255, 220, 170, 0.25);
+  outline: none;
+}
+
+.cta:active {
+  transform: translateY(0);
+}
+
+.cta-felt {
+  position: relative;
+  display: block;
+  padding: 0.8rem 1rem 1.75rem;
+  border-radius: 8px;
+  text-align: center;
+  overflow: hidden;
+  background: var(--felt-noise),
+    radial-gradient(ellipse at 50% 20%, #2f6b56 0%, #1f4a3d 75%);
+  box-shadow: inset 0 0.35rem 0.9rem rgba(0, 0, 0, 0.45);
+}
+
+.cta-label {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--cream);
+  letter-spacing: 0.01em;
+  transition: color 0.15s ease;
+}
+
+.cta:hover .cta-label,
+.cta:focus-visible .cta-label {
+  color: var(--brass-bright);
+}
+
+.cta-track {
+  position: absolute;
+  left: 1rem;
+  right: 0.7rem;
+  bottom: 0.5rem;
+  height: 0.75rem;
+}
+
+.cta-pocket {
+  position: absolute;
+  right: 0;
+  top: -0.15rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 60%, #050a08 0%, #0b1712 55%, #173b30 100%);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
+}
+
+.cta-ball {
+  position: absolute;
+  top: 0;
+  left: 18%;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 70% 50%, #c8322a 0 0.09rem, transparent 0.1rem),
+    radial-gradient(circle at 35% 30%, #ffffff 0%, #ece4d1 55%, #b8ad94 100%);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.45);
+  animation: cta-roll 4.5s infinite;
+}
+
+/* Queue: dunkler Griff, heller Schaft, weiße Zwinge, blaue Kreide-Spitze.
+   Sie endet genau links an der Kugel (right = 100% - 18%). */
+.cta-cue {
+  position: absolute;
+  top: calc(50% - 2.5px);
+  right: calc(82% + 2px);
+  width: 9rem;
+  height: 5px;
+  background: linear-gradient(
+    90deg,
+    #2a170b 0 45%,
+    #c89a5a 45% 93%,
+    #f1e9d8 93% 97%,
+    #4a7fb5 97% 100%
+  );
+  clip-path: polygon(0 0, 100% 25%, 100% 75%, 0 100%);
+  animation: cta-strike 4.5s infinite;
+}
+
+@keyframes cta-strike {
+  0% { transform: translateX(-6px); }
+  12% { transform: translateX(-18px); animation-timing-function: cubic-bezier(0.6, 0, 1, 1); }
+  20% { transform: translateX(1px); }
+  28% { transform: translateX(-6px); }
+  100% { transform: translateX(-6px); }
+}
+
+@keyframes cta-roll {
+  0%, 20% {
+    left: 18%;
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    animation-timing-function: cubic-bezier(0.15, 0.7, 0.45, 1);
+  }
+  62% {
+    left: calc(100% - 0.9rem);
+    opacity: 1;
+    transform: rotate(1800deg) scale(1);
+    animation-timing-function: ease-in;
+  }
+  70% {
+    left: calc(100% - 0.9rem);
+    opacity: 0;
+    transform: rotate(1800deg) scale(0.3);
+  }
+  88% {
+    left: 18%;
+    opacity: 0;
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    left: 18%;
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta-ball,
+  .cta-cue {
+    animation: none;
+  }
+}
