@@ -8,8 +8,8 @@ export type EloPoint = {
 };
 
 const RANGES = [
+  { key: "1w", label: "1 Woche", days: 7 },
   { key: "1m", label: "1 Monat", days: 30 },
-  { key: "3m", label: "3 Monate", days: 91 },
   { key: "all", label: "Alles", days: null },
 ] as const;
 
