@@ -26,7 +26,9 @@ export default function RankBall({ rank }: { rank: number }) {
       style={{ "--ball": color } as React.CSSProperties}
       aria-label={`Platz ${rank}`}
     >
-      <span className="ball-number">{rank}</span>
+      <span className="ball-number">
+        <span className="ball-digits">{rank}</span>
+      </span>
     </span>
   );
 }
