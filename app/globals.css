@@ -632,13 +632,13 @@ h2.centered {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64%;
-  height: 64%;
+  width: 58%;
+  height: 58%;
   border-radius: 50%;
   background: #f4efe4;
   color: #151515;
   font-family: "Inter", system-ui, sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.72rem;
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: lining-nums tabular-nums;
@@ -659,5 +659,5 @@ h2.centered {
 /* Zweistellige Zahlen etwas kleiner, damit sie in den Kreis passen */
 .ball-striped .ball-number,
 .ball-cue .ball-number {
-  font-size: 0.72rem;
+  font-size: 0.62rem;
 }
