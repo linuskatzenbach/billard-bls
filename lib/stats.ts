@@ -212,3 +212,41 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     },
   };
 }
+
+// Elo-Veränderung der letzten Tage je Spieler: aktuelle Elo minus Elo vor
+// dem ersten Spiel im Zeitraum. Wer im Zeitraum nicht gespielt hat: 0.
+export function eloTrend(
+  matches: MatchRecord[],
+  currentElo: Record<string, number>,
+  days = 7,
+  now = new Date()
+): Record<string, number> {
+  const cutoff = now.getTime() - days * DAY_MS;
+  const before: Record<string, number> = {};
+  for (const m of matches) {
+    if (new Date(m.created_at).getTime() < cutoff) continue;
+    if (!(m.winner_id in before)) before[m.winner_id] = m.winner_elo_before;
+    if (!(m.loser_id in before)) before[m.loser_id] = m.loser_elo_before;
+  }
+  const trend: Record<string, number> = {};
+  for (const [id, elo] of Object.entries(currentElo)) {
+    trend[id] = id in before ? elo - before[id] : 0;
+  }
+  return trend;
+}
+
+// "heute", "gestern" oder "8.10." – nach deutscher Zeit.
+export function formatRelativeDay(iso: string, now = new Date()): string {
+  const key = (d: Date) => dayFormatter.format(d);
+  const date = new Date(iso);
+  if (key(date) === key(now)) return "heute";
+  if (key(date) === key(new Date(now.getTime() - DAY_MS))) return "gestern";
+  const parts = new Intl.DateTimeFormat("de-DE", {
+    timeZone: TIME_ZONE,
+    day: "numeric",
+    month: "numeric",
+  }).formatToParts(date);
+  const day = parts.find((p) => p.type === "day")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  return `${day}.${month}.`;
+}

@@ -29,27 +29,49 @@ function verticalNudge(digits: string): number {
   return CAP / 2 - (top + bottom) / 2;
 }
 
-// Ranglistenplatz als Billardkugel. Ab Platz 16 gibt es eine weiße Kugel.
-export default function RankBall({ rank }: { rank: number }) {
-  const solid = rank >= 1 && rank <= 8;
-  const striped = rank >= 9 && rank <= 15;
-  const color = solid || striped ? COLORS[(rank - 1) % 8] : "#f4efe4";
-  const kind = solid ? "solid" : striped ? "striped" : "cue";
+type BallKind = "solid" | "striped" | "cue";
 
+// Billardkugel mit beliebiger Beschriftung (Zahl oder Buchstabe).
+export function Ball({
+  label,
+  color,
+  kind,
+  ariaLabel,
+}: {
+  label: string;
+  color: string;
+  kind: BallKind;
+  ariaLabel?: string;
+}) {
+  // Buchstaben sind so hoch wie Großbuchstaben und brauchen keine Korrektur.
+  const nudge = /^\d+$/.test(label) ? verticalNudge(label) : 0;
   return (
     <span
       className={`ball ball-${kind}`}
       style={{ "--ball": color } as React.CSSProperties}
-      aria-label={`Platz ${rank}`}
+      aria-label={ariaLabel}
+      aria-hidden={ariaLabel ? undefined : true}
     >
       <span className="ball-number">
         <span
           className="ball-digits"
-          style={{ transform: `translateY(${-verticalNudge(String(rank)).toFixed(3)}em)` }}
+          style={{ transform: `translateY(${(-nudge).toFixed(3)}em)` }}
         >
-          {rank}
+          {label}
         </span>
       </span>
     </span>
   );
+}
+
+// Kugel Nr. n (1–15) aus dem Pool-Satz; ab 16 eine weiße Kugel.
+export function poolBall(n: number): { color: string; kind: BallKind } {
+  if (n >= 1 && n <= 8) return { color: COLORS[n - 1], kind: "solid" };
+  if (n >= 9 && n <= 15) return { color: COLORS[n - 9], kind: "striped" };
+  return { color: "#f4efe4", kind: "cue" };
+}
+
+// Ranglistenplatz als Billardkugel.
+export default function RankBall({ rank }: { rank: number }) {
+  return <Ball label={String(rank)} {...poolBall(rank)} ariaLabel={`Platz ${rank}`} />;
 }

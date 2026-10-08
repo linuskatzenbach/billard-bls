@@ -661,3 +661,86 @@ h2.centered {
 .ball-cue .ball-number {
   font-size: 0.62rem;
 }
+
+/* Elo-Trend der letzten 7 Tage in der Rangliste */
+.trend {
+  margin-right: 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend.up {
+  color: #9ed6a3;
+}
+
+.trend.down {
+  color: #e3a89a;
+}
+
+/* Spielerauswahl als Kugeln auf der Eintragen-Seite */
+.picker {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.picker legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr));
+  gap: 0.5rem;
+}
+
+.picker-option {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 0.3rem 0.6rem;
+  background: rgba(241, 233, 216, 0.04);
+  color: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+
+.picker-option:hover:not(:disabled):not(.selected) {
+  background: rgba(241, 233, 216, 0.08);
+}
+
+.picker-option.selected {
+  border-color: var(--brass-bright);
+  background: rgba(201, 162, 39, 0.16);
+  box-shadow: 0 0 0 1px var(--brass-bright) inset;
+}
+
+.picker-option:disabled {
+  opacity: 0.3;
+}
+
+.picker-option .ball {
+  width: 2.3rem;
+  height: 2.3rem;
+}
+
+.picker-option .ball-number {
+  font-size: 0.8rem;
+}
+
+.picker-name {
+  font-size: 0.85rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

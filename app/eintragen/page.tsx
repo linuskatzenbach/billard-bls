@@ -4,11 +4,50 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PLAYERS } from "@/lib/players";
+import { Ball, poolBall } from "../RankBall";
+
+// Spieler-Auswahl als antippbare Kugeln. Jeder Spieler hat eine feste
+// Kugelfarbe (nach Reihenfolge in lib/players.ts) mit seinem Anfangsbuchstaben.
+function PlayerPicker({
+  legend,
+  value,
+  onChange,
+  blockedId,
+}: {
+  legend: string;
+  value: string;
+  onChange: (id: string) => void;
+  blockedId: string;
+}) {
+  return (
+    <fieldset className="picker">
+      <legend>{legend}</legend>
+      <div className="picker-grid">
+        {PLAYERS.map((p, i) => {
+          const selected = value === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              className={`picker-option${selected ? " selected" : ""}`}
+              aria-pressed={selected}
+              disabled={p.id === blockedId}
+              onClick={() => onChange(selected ? "" : p.id)}
+            >
+              <Ball label={p.name.charAt(0).toUpperCase()} {...poolBall(i + 1)} />
+              <span className="picker-name">{p.name}</span>
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
 
 export default function EintragenPage() {
   const router = useRouter();
-  const [winnerId, setWinnerId] = useState(PLAYERS[0]?.id ?? "");
-  const [loserId, setLoserId] = useState(PLAYERS[1]?.id ?? "");
+  const [winnerId, setWinnerId] = useState("");
+  const [loserId, setLoserId] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<
     { type: "idle" } | { type: "loading" } | { type: "error"; message: string } | { type: "success"; message: string }
@@ -16,6 +55,11 @@ export default function EintragenPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!winnerId || !loserId) {
+      setStatus({ type: "error", message: "Bitte Gewinner und Verlierer auswählen." });
+      return;
+    }
 
     if (winnerId === loserId) {
       setStatus({ type: "error", message: "Gewinner und Verlierer müssen unterschiedlich sein." });
@@ -39,6 +83,8 @@ export default function EintragenPage() {
 
       setStatus({ type: "success", message: "Ergebnis gespeichert!" });
       setPassword("");
+      setWinnerId("");
+      setLoserId("");
       router.refresh();
     } catch {
       setStatus({ type: "error", message: "Verbindung fehlgeschlagen. Bitte erneut versuchen." });
@@ -51,27 +97,19 @@ export default function EintragenPage() {
       <p className="subtitle">Wer hat gegen wen gewonnen?</p>
 
       <form onSubmit={handleSubmit}>
-        <label>
-          Gewinner
-          <select value={winnerId} onChange={(e) => setWinnerId(e.target.value)}>
-            {PLAYERS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <PlayerPicker
+          legend="Gewinner"
+          value={winnerId}
+          onChange={setWinnerId}
+          blockedId={loserId}
+        />
 
-        <label>
-          Verlierer
-          <select value={loserId} onChange={(e) => setLoserId(e.target.value)}>
-            {PLAYERS.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <PlayerPicker
+          legend="Verlierer"
+          value={loserId}
+          onChange={setLoserId}
+          blockedId={winnerId}
+        />
 
         <label>
           Passwort

@@ -8,6 +8,8 @@ import {
 } from "@/lib/db";
 import {
   computeStats,
+  eloTrend,
+  formatRelativeDay,
   MIN_GAMES_FOR_WIN_RATE,
   type RankRow,
   type StatEntry,
@@ -17,11 +19,6 @@ import RankBall from "./RankBall";
 import { getPlayerName, isPlayerHidden } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
-
-function formatMatchDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()}.${d.getMonth() + 1}.`;
-}
 
 function names(entry: StatEntry): string {
   return entry.playerIds.map(getPlayerName).join(" & ");
@@ -57,6 +54,10 @@ export default async function HomePage() {
     getAllMatches(),
   ]);
   const stats = computeStats(allMatches);
+  const trend = eloTrend(
+    allMatches,
+    Object.fromEntries(leaderboard.map((e) => [e.id, e.elo]))
+  );
 
   return (
     <>
@@ -80,7 +81,18 @@ export default async function HomePage() {
                   {getPlayerName(entry.id)}
                   {streak >= 3 && <span className="streak"> 🔥{streak}</span>}
                 </span>
-                <span className="elo">{entry.elo}</span>
+                <span className="elo">
+                  {trend[entry.id] !== 0 && (
+                    <span
+                      className={`trend ${trend[entry.id] > 0 ? "up" : "down"}`}
+                      title="Veränderung in den letzten 7 Tagen"
+                    >
+                      {trend[entry.id] > 0 ? "▲" : "▼"}
+                      {Math.abs(trend[entry.id])}
+                    </span>
+                  )}
+                  {entry.elo}
+                </span>
               </Link>
             );
           })}
@@ -115,7 +127,7 @@ export default async function HomePage() {
                     </>
                   )}
                 </span>
-                <span className="match-date">{formatMatchDate(m.created_at)}</span>
+                <span className="match-date">{formatRelativeDay(m.created_at)}</span>
                 <span className="player-meta loser">
                   {loserHidden ? (
                     <span className="elo-before">???</span>
