@@ -67,6 +67,21 @@ export default async function HomePage() {
       {leaderboard.length === 0 ? (
         <p className="empty">Noch keine Spieler eingetragen.</p>
       ) : (
+        <div className="pool-table">
+          {/* Rauten auf der Bande wie bei einem echten Billardtisch */}
+          {[25, 50, 75].map((x) => (
+            <span key={`t${x}`} className="diamond" style={{ top: 6, left: `calc(${x}% - 3px)` }} />
+          ))}
+          {[25, 50, 75].map((x) => (
+            <span key={`b${x}`} className="diamond" style={{ bottom: 6, left: `calc(${x}% - 3px)` }} />
+          ))}
+          {[33, 66].map((y) => (
+            <span key={`l${y}`} className="diamond" style={{ left: 6, top: `calc(${y}% - 3px)` }} />
+          ))}
+          {[33, 66].map((y) => (
+            <span key={`r${y}`} className="diamond" style={{ right: 6, top: `calc(${y}% - 3px)` }} />
+          ))}
+          <div className="felt">
         <div className="leaderboard">
           {leaderboard.map((entry, index) => {
             const streak = streaks[entry.id] ?? 0;
@@ -96,6 +111,8 @@ export default async function HomePage() {
               </Link>
             );
           })}
+        </div>
+          </div>
         </div>
       )}
 
