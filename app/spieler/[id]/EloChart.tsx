@@ -47,8 +47,11 @@ type DayPoint = {
 // Punkt vorne steht für die Elo zu Beginn des ersten Tages. An Tagen ohne
 // Spiel bleibt die Elo gleich, die Linie verläuft dort also waagerecht.
 function dailySeries(history: EloPoint[], days: number | null, today: string): DayPoint[] {
-  const firstDay =
-    days === null ? dayKey(new Date(history[0].t)) : shiftDay(today, -(days - 1));
+  // Links beginnt der Graph am Anfang des Zeitraums, aber nie vor dem Tag
+  // des ersten Spiels. Rechts läuft er immer bis heute.
+  const firstGameDay = dayKey(new Date(history[0].t));
+  const windowStart = days === null ? firstGameDay : shiftDay(today, -(days - 1));
+  const firstDay = windowStart > firstGameDay ? windowStart : firstGameDay;
 
   const entries = history.map((p) => ({ day: dayKey(new Date(p.t)), elo: p.elo }));
   // history[0] ist die Start-Elo vor dem allerersten Spiel.
