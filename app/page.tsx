@@ -6,7 +6,13 @@ import {
   getCurrentStreaks,
   getAllMatches,
 } from "@/lib/db";
-import { computeStats, MIN_GAMES_FOR_WIN_RATE, type StatEntry } from "@/lib/stats";
+import {
+  computeStats,
+  MIN_GAMES_FOR_WIN_RATE,
+  type RankRow,
+  type StatEntry,
+} from "@/lib/stats";
+import StatTile, { type TopRow } from "./StatTile";
 import { getPlayerName, isPlayerHidden } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
@@ -26,33 +32,20 @@ function formatDays(days: number): string {
   return rounded === 1 ? "1 Tag" : `${rounded} Tage`;
 }
 
-function StatTile({
-  label,
-  entry,
-  format,
-  empty = "",
-}: {
-  label: React.ReactNode;
-  entry: StatEntry | null;
-  format: (value: number) => string;
-  empty?: string;
-}) {
-  return (
-    <div className="stat">
-      <span className="stat-label">{label}</span>
-      {entry ? (
-        <>
-          <span className="stat-name">{names(entry)}</span>
-          <span className="stat-value">{format(entry.value)}</span>
-        </>
-      ) : (
-        <>
-          <span className="stat-name">–</span>
-          <span className="stat-value">{empty}</span>
-        </>
-      )}
-    </div>
-  );
+function topRows(rows: RankRow[], format: (value: number) => string): TopRow[] {
+  return rows.map((r) => ({
+    rank: r.rank,
+    name: r.playerIds.map(getPlayerName).join(" & "),
+    value: format(r.value),
+  }));
+}
+
+function gamesText(n: number): string {
+  return n === 1 ? "1 Spiel" : `${n} Spiele`;
+}
+
+function streakText(n: number): string {
+  return n === 1 ? "1 Sieg in Folge" : `${n} Siege in Folge`;
 }
 
 export default async function HomePage() {
@@ -144,50 +137,73 @@ export default async function HomePage() {
         <div className="stats">
           <h2 className="centered">Statistiken</h2>
           <div className="stat-grid">
+            {(
+              [
+                {
+                  label: "Meiste Spiele",
+                  title: "Meiste Spiele",
+                  entry: stats.mostGames,
+                  rows: stats.top.mostGames,
+                  format: gamesText,
+                },
+                {
+                  label: "Höchste Siegesquote",
+                  title: "Höchste Siegesquote",
+                  entry: stats.bestWinRate,
+                  rows: stats.top.bestWinRate,
+                  format: (v: number) => `${v}% Siege`,
+                  empty: `ab ${MIN_GAMES_FOR_WIN_RATE} Spielen`,
+                },
+                {
+                  label: <>Längste Zeit<br />auf Platz 1</>,
+                  title: "Längste Zeit auf Platz 1",
+                  entry: stats.longestAtTop,
+                  rows: stats.top.longestAtTop,
+                  format: formatDays,
+                },
+                {
+                  label: <>Längste Serie<br />aller Zeiten</>,
+                  title: "Längste Serie aller Zeiten",
+                  entry: stats.longestStreak,
+                  rows: stats.top.longestStreak,
+                  format: streakText,
+                },
+                {
+                  label: <>Höchste Elo<br />aller Zeiten</>,
+                  title: "Höchste Elo aller Zeiten",
+                  entry: stats.highestElo,
+                  rows: stats.top.highestElo,
+                  format: (v: number) => `${v} Elo`,
+                },
+              ] as {
+                label: React.ReactNode;
+                title: string;
+                entry: StatEntry | null;
+                rows: RankRow[];
+                format: (v: number) => string;
+                empty?: string;
+              }[]
+            ).map((s) => (
+              <StatTile
+                key={s.title}
+                label={s.label}
+                title={s.title}
+                name={s.entry ? names(s.entry) : "–"}
+                value={s.entry ? s.format(s.entry.value) : s.empty ?? ""}
+                top={topRows(s.rows, s.format)}
+              />
+            ))}
             <StatTile
-              label="Meiste Spiele"
-              entry={stats.mostGames}
-              format={(v) => `${v} Spiele`}
+              label="Größter Zocktag"
+              title="Größter Zocktag"
+              name={stats.matchDayRecord?.date ?? "–"}
+              value={stats.matchDayRecord ? gamesText(stats.matchDayRecord.count) : ""}
+              top={stats.top.matchDays.map((d) => ({
+                rank: d.rank,
+                name: d.date,
+                value: gamesText(d.count),
+              }))}
             />
-            <StatTile
-              label="Höchste Siegesquote"
-              entry={stats.bestWinRate}
-              format={(v) => `${v}% Siege`}
-              empty={`ab ${MIN_GAMES_FOR_WIN_RATE} Spielen`}
-            />
-            <StatTile
-              label={<>Längste Zeit<br />auf Platz 1</>}
-              entry={stats.longestAtTop}
-              format={formatDays}
-            />
-            <StatTile
-              label={<>Längste Serie<br />aller Zeiten</>}
-              entry={stats.longestStreak}
-              format={(v) => (v === 1 ? "1 Sieg in Folge" : `${v} Siege in Folge`)}
-            />
-            <StatTile
-              label={<>Höchste Elo<br />aller Zeiten</>}
-              entry={stats.highestElo}
-              format={(v) => `${v} Elo`}
-            />
-            <div className="stat">
-              <span className="stat-label">Größter Zocktag</span>
-              {stats.matchDayRecord ? (
-                <>
-                  <span className="stat-name">{stats.matchDayRecord.date}</span>
-                  <span className="stat-value">
-                    {stats.matchDayRecord.count === 1
-                      ? "1 Spiel"
-                      : `${stats.matchDayRecord.count} Spiele`}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="stat-name">–</span>
-                  <span className="stat-value" />
-                </>
-              )}
-            </div>
           </div>
         </div>
       )}

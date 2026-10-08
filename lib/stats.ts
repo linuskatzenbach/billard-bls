@@ -20,6 +20,20 @@ export type MatchDayRecord = {
   count: number;
 };
 
+// Eine Zeile im Top-3-Leaderboard einer Statistik. Gleichstand → mehrere
+// Spieler in einer Zeile; der nächste Rang wird übersprungen (1, 1, 3).
+export type RankRow = {
+  rank: number;
+  playerIds: string[];
+  value: number;
+};
+
+export type DayRankRow = {
+  rank: number;
+  date: string;
+  count: number;
+};
+
 export type Stats = {
   mostGames: StatEntry | null;
   bestWinRate: StatEntry | null; // value in Prozent (gerundet)
@@ -27,7 +41,17 @@ export type Stats = {
   longestStreak: StatEntry | null; // value = Siege in Folge
   highestElo: StatEntry | null; // value = Elo-Höchststand
   matchDayRecord: MatchDayRecord | null;
+  top: {
+    mostGames: RankRow[];
+    bestWinRate: RankRow[];
+    longestAtTop: RankRow[];
+    longestStreak: RankRow[];
+    highestElo: RankRow[];
+    matchDays: DayRankRow[];
+  };
 };
+
+const TOP_N = 3;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -45,6 +69,27 @@ function best(values: Record<string, number>): StatEntry | null {
   }
   if (ids.length === 0 || top <= 0) return null;
   return { playerIds: ids, value: top };
+}
+
+// Top-3-Rangliste: gleiche Werte teilen sich einen Rang und eine Zeile.
+function ranking(values: Record<string, number>): RankRow[] {
+  const sorted = Object.entries(values)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const rows: RankRow[] = [];
+  let placed = 0;
+  for (const [id, v] of sorted) {
+    const last = rows[rows.length - 1];
+    if (last && last.value === v) {
+      last.playerIds.push(id);
+    } else {
+      const rank = placed + 1;
+      if (rank > TOP_N) break;
+      rows.push({ rank, playerIds: [id], value: v });
+    }
+    placed += 1;
+  }
+  return rows;
 }
 
 const dayFormatter = new Intl.DateTimeFormat("de-DE", {
@@ -140,6 +185,16 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     }
   }
 
+  // Top 3 Spieltage; bei Gleichstand steht der jüngere Tag weiter oben.
+  const days = [...perDay].reverse().sort((a, b) => b[1] - a[1]);
+  const matchDays: DayRankRow[] = [];
+  days.forEach(([date, count], i) => {
+    if (i >= TOP_N) return;
+    const prev = matchDays[matchDays.length - 1];
+    const rank = prev && prev.count === count ? prev.rank : i + 1;
+    matchDays.push({ rank, date, count });
+  });
+
   return {
     mostGames: best(games),
     bestWinRate: best(winRates),
@@ -147,5 +202,13 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     longestStreak: best(maxStreak),
     highestElo: best(peakElo),
     matchDayRecord,
+    top: {
+      mostGames: ranking(games),
+      bestWinRate: ranking(winRates),
+      longestAtTop: ranking(daysAtTop),
+      longestStreak: ranking(maxStreak),
+      highestElo: ranking(peakElo),
+      matchDays,
+    },
   };
 }

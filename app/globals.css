@@ -487,3 +487,93 @@ h2.centered {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Statistik-Kacheln sind antippbar und öffnen die Top 3. */
+.stats .stat-button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.stats .stat-button:hover:not(:disabled),
+.stats .stat-button:focus-visible {
+  border-color: var(--brass);
+  background: rgba(241, 233, 216, 0.08);
+  outline: none;
+}
+
+.stats .stat-button:disabled {
+  cursor: default;
+}
+
+.top-dialog {
+  width: min(22rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--felt-dark);
+  color: var(--cream);
+}
+
+.top-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.top-dialog-inner {
+  padding: 1.25rem 1.25rem 1rem;
+}
+
+.top-dialog h3 {
+  margin: 0 0 0.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+
+.top-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.top-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.top-row:last-child {
+  border-bottom: none;
+}
+
+.top-name {
+  font-size: 1.05rem;
+}
+
+.top-value {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.top-close {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.55rem;
+  font: inherit;
+  color: var(--cream);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.top-close:hover {
+  border-color: var(--brass);
+}
