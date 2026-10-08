@@ -328,15 +328,96 @@ button:disabled {
   letter-spacing: 0.05em;
 }
 
-.chart-wrap {
+/* Elo-Verlauf im Spielerprofil */
+.chart-card {
   margin-top: 2rem;
-  color: var(--brass-bright);
+  padding: 0.9rem 0.9rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(241, 233, 216, 0.04);
+}
+
+.chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.chart-head h2 {
+  font-size: 1.1rem;
+  opacity: 0.85;
+}
+
+.tabs {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--line);
+}
+
+.tabs .tab {
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--cream);
+  opacity: 0.65;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.tabs .tab:hover {
+  background: rgba(241, 233, 216, 0.08);
+  opacity: 0.9;
+}
+
+.tabs .tab.active {
+  background: var(--brass);
+  color: var(--felt-dark);
+  opacity: 1;
 }
 
 .elo-chart {
   width: 100%;
-  height: 64px;
+  height: auto;
   display: block;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: rgba(241, 233, 216, 0.12);
+  stroke-width: 1;
+}
+
+.chart-ylab,
+.chart-xlab {
+  fill: rgba(241, 233, 216, 0.55);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-ylab {
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--brass-bright);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-dot {
+  fill: var(--brass-bright);
+  stroke: var(--felt-dark);
+  stroke-width: 2;
 }
 
 .opponents,

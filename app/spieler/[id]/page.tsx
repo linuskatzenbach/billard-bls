@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PLAYERS, getPlayerName } from "@/lib/players";
 import { getLeaderboard, getMatchesForPlayer } from "@/lib/db";
 import { START_ELO } from "@/lib/elo";
+import EloChart, { type EloPoint } from "./EloChart";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,6 @@ export default async function PlayerPage({
   // Elo-Verlauf: Start-Elo, dann Elo nach jedem Spiel in chronologischer Reihenfolge.
   const eloHistory = [START_ELO, ...matches.map((m) => m.elo_after)];
   const highestElo = Math.max(...eloHistory);
-  const lowestElo = Math.min(...eloHistory);
 
   // Aufschlüsselung nach Gegner
   const opponentMap = new Map<string, { wins: number; losses: number }>();
@@ -52,22 +52,15 @@ export default async function PlayerPage({
     .map(([opponentId, stat]) => ({ opponentId, ...stat }))
     .sort((a, b) => b.wins + b.losses - (a.wins + a.losses));
 
-  // Punkte für das kleine SVG-Liniendiagramm berechnen.
-  const chartWidth = 280;
-  const chartHeight = 64;
-  const range = highestElo - lowestElo;
-  const points = eloHistory.map((elo, i) => {
-    const x =
-      eloHistory.length > 1
-        ? (i / (eloHistory.length - 1)) * chartWidth
-        : chartWidth / 2;
-    const y =
-      range > 0
-        ? chartHeight - ((elo - lowestElo) / range) * chartHeight
-        : chartHeight / 2;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const [lastX, lastY] = points[points.length - 1].split(",");
+  // Elo-Verlauf fürs Diagramm: Start-Elo zum Zeitpunkt des ersten Spiels,
+  // danach die Elo nach jedem Spiel.
+  const chartHistory: EloPoint[] =
+    matches.length > 0
+      ? [
+          { t: matches[0].created_at, elo: START_ELO },
+          ...matches.map((m) => ({ t: m.created_at, elo: m.elo_after })),
+        ]
+      : [];
 
   return (
     <>
@@ -96,25 +89,7 @@ export default async function PlayerPage({
         </div>
       </div>
 
-      {matches.length > 0 && (
-        <div className="chart-wrap">
-          <svg
-            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            className="elo-chart"
-            preserveAspectRatio="none"
-          >
-            <polyline
-              points={points.join(" ")}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-            <circle cx={lastX} cy={lastY} r="3" fill="currentColor" />
-          </svg>
-        </div>
-      )}
+      {matches.length > 0 && <EloChart history={chartHistory} />}
 
       {opponents.length > 0 && (
         <div className="opponents">
