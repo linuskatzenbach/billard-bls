@@ -13,6 +13,7 @@ import {
   type StatEntry,
 } from "@/lib/stats";
 import StatTile, { type TopRow } from "./StatTile";
+import RankBall from "./RankBall";
 import { getPlayerName, isPlayerHidden } from "@/lib/players";
 
 export const dynamic = "force-dynamic";
@@ -74,9 +75,7 @@ export default async function HomePage() {
                 className="row"
                 key={entry.id}
               >
-                <span className={`rank ${index === 0 ? "gold" : ""}`}>
-                  {index + 1}
-                </span>
+                <RankBall rank={index + 1} />
                 <span className="name">
                   {getPlayerName(entry.id)}
                   {streak >= 3 && <span className="streak"> 🔥{streak}</span>}

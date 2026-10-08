@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useRef } from "react";
+import RankBall from "./RankBall";
 
 export type TopRow = {
   rank: number;
@@ -55,9 +56,7 @@ export default function StatTile({
             <ol className="top-list">
               {top.map((row, i) => (
                 <li key={i} className="top-row">
-                  <span className={`rank ${row.rank === 1 ? "gold" : ""}`}>
-                    {row.rank}
-                  </span>
+                  <RankBall rank={row.rank} />
                   <span className="top-name">{row.name}</span>
                   <span className="top-value">{row.value}</span>
                 </li>
