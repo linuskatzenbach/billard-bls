@@ -15,32 +15,59 @@ const RANGES = [
 
 type RangeKey = (typeof RANGES)[number]["key"];
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-const dateFormatter = new Intl.DateTimeFormat("de-DE", {
+// Kalendertag (nach deutscher Zeit) als "JJJJ-MM-TT".
+const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
   timeZone: "Europe/Berlin",
-  day: "numeric",
-  month: "numeric",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
 });
 
-function formatDate(iso: string): string {
-  const parts = dateFormatter.formatToParts(new Date(iso));
-  const day = parts.find((p) => p.type === "day")?.value;
-  const month = parts.find((p) => p.type === "month")?.value;
-  return `${day}.${month}.`;
+function dayKey(date: Date): string {
+  return dayKeyFormatter.format(date);
 }
 
-// Punkte im Zeitraum. Der Verlauf beginnt mit der Elo, die der Spieler zu
-// Beginn des Zeitraums hatte, damit die Kurve nicht "in der Luft" startet.
-function pointsInRange(history: EloPoint[], days: number | null, now: number): EloPoint[] {
-  if (days === null) return history;
-  const cutoff = now - days * DAY_MS;
-  const inside = history.filter((p) => new Date(p.t).getTime() >= cutoff);
-  const before = history.filter((p) => new Date(p.t).getTime() < cutoff);
-  const startElo = before.length > 0 ? before[before.length - 1].elo : inside[0]?.elo;
-  if (startElo === undefined) return history;
-  const start: EloPoint = { t: new Date(cutoff).toISOString(), elo: startElo };
-  return before.length > 0 ? [start, ...inside] : inside;
+// Kalendertag um n Tage verschieben (reine Datumsrechnung, ohne Zeitzone).
+function shiftDay(key: string, n: number): string {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+function formatDay(key: string): string {
+  const [, m, d] = key.split("-").map(Number);
+  return `${d}.${m}.`;
+}
+
+type DayPoint = {
+  day: string; // Tag, zu dem der Punkt gehört
+  elo: number;
+};
+
+// Ein Punkt pro Kalendertag (Elo am Ende des Tages). Ein zusätzlicher
+// Punkt vorne steht für die Elo zu Beginn des ersten Tages. An Tagen ohne
+// Spiel bleibt die Elo gleich, die Linie verläuft dort also waagerecht.
+function dailySeries(history: EloPoint[], days: number | null, today: string): DayPoint[] {
+  const firstDay =
+    days === null ? dayKey(new Date(history[0].t)) : shiftDay(today, -(days - 1));
+
+  const entries = history.map((p) => ({ day: dayKey(new Date(p.t)), elo: p.elo }));
+  // history[0] ist die Start-Elo vor dem allerersten Spiel.
+  let elo = history[0].elo;
+  let i = 0;
+  while (i < entries.length && entries[i].day < firstDay) {
+    elo = entries[i].elo;
+    i += 1;
+  }
+
+  const series: DayPoint[] = [{ day: firstDay, elo }];
+  for (let day = firstDay; day <= today; day = shiftDay(day, 1)) {
+    while (i < entries.length && entries[i].day <= day) {
+      elo = entries[i].elo;
+      i += 1;
+    }
+    series.push({ day, elo });
+  }
+  return series;
 }
 
 // Runde Abstände für die Elo-Marken, höchstens 5 Linien.
@@ -57,12 +84,10 @@ const PAD = { left: 40, right: 14, top: 14, bottom: 26 };
 
 export default function EloChart({ history }: { history: EloPoint[] }) {
   const [range, setRange] = useState<RangeKey>("all");
-  const [now] = useState(() => Date.now());
+  const [today] = useState(() => dayKey(new Date()));
 
   const days = RANGES.find((r) => r.key === range)?.days ?? null;
-  let data = pointsInRange(history, days, now);
-  // Keine Spiele im Zeitraum: flache Linie bis heute.
-  if (data.length === 1) data = [data[0], { t: new Date(now).toISOString(), elo: data[0].elo }];
+  const data = dailySeries(history, days, today);
 
   const values = data.map((p) => p.elo);
   const min = Math.min(...values);
@@ -72,7 +97,7 @@ export default function EloChart({ history }: { history: EloPoint[] }) {
   let hi = Math.ceil(max / step) * step;
   if (hi === lo) hi = lo + step;
 
-  // Jedes Spiel bekommt gleich viel Platz (auch mehrere an einem Abend).
+  // x-Achse = Zeit: jeder Tag bekommt gleich viel Platz.
   const n = data.length;
   const x = (i: number) => PAD.left + ((W - PAD.left - PAD.right) * i) / (n - 1);
   const y = (v: number) => PAD.top + (H - PAD.top - PAD.bottom) * (1 - (v - lo) / (hi - lo));
@@ -117,15 +142,15 @@ export default function EloChart({ history }: { history: EloPoint[] }) {
         <circle cx={x(n - 1)} cy={y(data[n - 1].elo)} r={3.5} className="chart-dot" />
 
         <text x={PAD.left} y={H - 6} className="chart-xlab" textAnchor="start">
-          {formatDate(data[0].t)}
+          {formatDay(data[0].day)}
         </text>
         {n > 2 && (
           <text x={x(mid)} y={H - 6} className="chart-xlab" textAnchor="middle">
-            {formatDate(data[mid].t)}
+            {formatDay(data[mid].day)}
           </text>
         )}
         <text x={W - PAD.right} y={H - 6} className="chart-xlab" textAnchor="end">
-          {formatDate(data[n - 1].t)}
+          {formatDay(data[n - 1].day)}
         </text>
       </svg>
     </div>
