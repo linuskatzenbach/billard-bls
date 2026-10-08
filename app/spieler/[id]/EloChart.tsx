@@ -83,7 +83,7 @@ function niceStep(span: number): number {
 
 const W = 340;
 const H = 190;
-const PAD = { left: 40, right: 14, top: 14, bottom: 26 };
+const PAD = { left: 40, right: 18, top: 14, bottom: 26 };
 
 export default function EloChart({ history }: { history: EloPoint[] }) {
   const [range, setRange] = useState<RangeKey>("all");
@@ -100,21 +100,25 @@ export default function EloChart({ history }: { history: EloPoint[] }) {
   let hi = Math.ceil(max / step) * step;
   if (hi === lo) hi = lo + step;
 
-  // x-Achse = Zeit: jeder Tag bekommt gleich viel Platz.
+  // x-Achse = Zeit: jeder Tag bekommt gleich viel Platz. Der Punkt eines
+  // Tages sitzt in der Mitte seines Tages, also genau über seinem Datum.
+  // Punkt 0 (Elo vor dem ersten Tag) liegt am linken Rand.
   const n = data.length;
-  const x = (i: number) => PAD.left + ((W - PAD.left - PAD.right) * i) / (n - 1);
+  const totalDays = n - 1;
+  const pos = (k: number) => (k === 0 ? 0 : k - 0.5);
+  const maxPos = pos(n - 1);
+  const x = (k: number) => PAD.left + ((W - PAD.left - PAD.right) * pos(k)) / maxPos;
   const y = (v: number) => PAD.top + (H - PAD.top - PAD.bottom) * (1 - (v - lo) / (hi - lo));
 
   const ticks: number[] = [];
   for (let v = lo; v <= hi; v += step) ticks.push(v);
 
-  const line = data.map((p, i) => `${x(i).toFixed(1)},${y(p.elo).toFixed(1)}`).join(" ");
-  // Mittleres Datum genau in der Mitte der Achse: Die Achse reicht vom
-  // Beginn des ersten bis zum Ende des letzten Tages; Tag k liegt zwischen
-  // x(k) und x(k + 1). In der Mitte liegt also Tag Nr. floor((n - 1) / 2).
-  const totalDays = n - 1;
-  const midX = (x(0) + x(n - 1)) / 2;
-  const midDay = shiftDay(data[0].day, Math.floor(totalDays / 2));
+  const line = data.map((p, k) => `${x(k).toFixed(1)},${y(p.elo).toFixed(1)}`).join(" ");
+
+  // Beschriftete Tage: erster, mittlerer und letzter Tag (Punkt k = Tag k - 1).
+  const labelPoints = Array.from(
+    new Set([1, 1 + Math.floor((totalDays - 1) / 2), totalDays])
+  );
 
   return (
     <div className="chart-card">
@@ -149,17 +153,11 @@ export default function EloChart({ history }: { history: EloPoint[] }) {
         <polyline points={line} className="chart-line" />
         <circle cx={x(n - 1)} cy={y(data[n - 1].elo)} r={3.5} className="chart-dot" />
 
-        <text x={PAD.left} y={H - 6} className="chart-xlab" textAnchor="start">
-          {formatDay(data[0].day)}
-        </text>
-        {n > 2 && (
-          <text x={midX} y={H - 6} className="chart-xlab" textAnchor="middle">
-            {formatDay(midDay)}
+        {labelPoints.map((k) => (
+          <text key={k} x={x(k)} y={H - 6} className="chart-xlab" textAnchor="middle">
+            {formatDay(data[k].day)}
           </text>
-        )}
-        <text x={W - PAD.right} y={H - 6} className="chart-xlab" textAnchor="end">
-          {formatDay(data[n - 1].day)}
-        </text>
+        ))}
       </svg>
     </div>
   );
