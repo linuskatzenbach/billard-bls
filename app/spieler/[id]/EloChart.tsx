@@ -106,7 +106,12 @@ export default function EloChart({ history }: { history: EloPoint[] }) {
   for (let v = lo; v <= hi; v += step) ticks.push(v);
 
   const line = data.map((p, i) => `${x(i).toFixed(1)},${y(p.elo).toFixed(1)}`).join(" ");
-  const mid = Math.floor((n - 1) / 2);
+  // Mittleres Datum genau in der Mitte der Achse: Die Achse reicht vom
+  // Beginn des ersten bis zum Ende des letzten Tages; Tag k liegt zwischen
+  // x(k) und x(k + 1). In der Mitte liegt also Tag Nr. floor((n - 1) / 2).
+  const totalDays = n - 1;
+  const midX = (x(0) + x(n - 1)) / 2;
+  const midDay = shiftDay(data[0].day, Math.floor(totalDays / 2));
 
   return (
     <div className="chart-card">
@@ -145,8 +150,8 @@ export default function EloChart({ history }: { history: EloPoint[] }) {
           {formatDay(data[0].day)}
         </text>
         {n > 2 && (
-          <text x={x(mid)} y={H - 6} className="chart-xlab" textAnchor="middle">
-            {formatDay(data[mid].day)}
+          <text x={midX} y={H - 6} className="chart-xlab" textAnchor="middle">
+            {formatDay(midDay)}
           </text>
         )}
         <text x={W - PAD.right} y={H - 6} className="chart-xlab" textAnchor="end">
