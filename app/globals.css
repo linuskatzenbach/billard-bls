@@ -1046,3 +1046,17 @@ body {
     animation: none;
   }
 }
+
+/* Spielerprofil: Ranglistenplatz als Kugel neben der Elo */
+.profile-subtitle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.55rem;
+  opacity: 1;
+}
+
+/* Nur der Text ist gedämpft, die Kugel bleibt in vollen Farben */
+.profile-subtitle > span:last-child {
+  opacity: 0.65;
+}

@@ -4,6 +4,7 @@ import { PLAYERS, getPlayerName } from "@/lib/players";
 import { getLeaderboard, getMatchesForPlayer } from "@/lib/db";
 import { START_ELO } from "@/lib/elo";
 import EloChart, { type EloPoint } from "./EloChart";
+import RankBall from "../../RankBall";
 
 export const dynamic = "force-dynamic";
 
@@ -69,9 +70,9 @@ export default async function PlayerPage({
       </Link>
 
       <h1>{player.name}</h1>
-      <p className="subtitle">
-        Elo {currentElo}
-        {rank ? ` · Rang #${rank}` : ""}
+      <p className="subtitle profile-subtitle">
+        {rank && <RankBall rank={rank} />}
+        <span>Elo {currentElo}</span>
       </p>
 
       <div className="stat-grid">
