@@ -1060,3 +1060,24 @@ body {
 .profile-subtitle > span:last-child {
   opacity: 0.65;
 }
+
+/* Flackernde Flamme bei Siegesserien */
+.flame {
+  display: inline-block;
+  transform-origin: 50% 90%;
+  animation: flame-flicker 1.6s ease-in-out infinite;
+}
+
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); filter: brightness(1); }
+  20% { transform: scale(1.06, 0.94) rotate(-4deg); filter: brightness(1.15); }
+  40% { transform: scale(0.95, 1.08) rotate(3deg); filter: brightness(0.95); }
+  60% { transform: scale(1.04, 0.97) rotate(-2deg); filter: brightness(1.2); }
+  80% { transform: scale(0.97, 1.05) rotate(4deg); filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flame {
+    animation: none;
+  }
+}

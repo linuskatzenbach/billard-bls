@@ -94,7 +94,13 @@ export default async function HomePage() {
                 <RankBall rank={index + 1} />
                 <span className="name">
                   {getPlayerName(entry.id)}
-                  {streak >= 3 && <span className="streak"> 🔥{streak}</span>}
+                  {streak >= 3 && (
+                    <span className="streak">
+                      {" "}
+                      <span className="flame" aria-hidden="true">🔥</span>
+                      {streak}
+                    </span>
+                  )}
                 </span>
                 <span className="elo">
                   {trend[entry.id] !== 0 && (
