@@ -11,13 +11,9 @@ const SPRUECHE = [
   "Elo-Zahlen werden poliert …",
   "Banden werden geprüft …",
   "Weiße wird in Position gebracht …",
-  "Die 8 wartet geduldig …",
   "Effet wird berechnet …",
   "Taschen werden geleert …",
-  "Ausreden werden vorbereitet …",
   "Rangliste wird nachgezählt …",
-  "Angesagt: Ecke links …",
-  "Konzentration …",
 ];
 
 const INTERVALL_MS = 2200;
