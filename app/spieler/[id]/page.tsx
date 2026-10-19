@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PLAYERS, getPlayerName } from "@/lib/players";
@@ -6,7 +7,6 @@ import { START_ELO } from "@/lib/elo";
 import EloChart, { type EloPoint } from "./EloChart";
 import RankBall from "../../RankBall";
 
-export const dynamic = "force-dynamic";
 
 function formatMatchDate(iso: string): string {
   const d = new Date(iso);
@@ -18,6 +18,7 @@ export default async function PlayerPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const { id } = await params;
   const player = PLAYERS.find((p) => p.id === id);
 

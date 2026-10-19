@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import type React from "react";
 import Link from "next/link";
 import {
@@ -18,7 +19,6 @@ import StatTile, { type TopRow } from "./StatTile";
 import RankBall from "./RankBall";
 import { getPlayerName, isPlayerHidden } from "@/lib/players";
 
-export const dynamic = "force-dynamic";
 
 function names(entry: StatEntry): string {
   return entry.playerIds.map(getPlayerName).join(" & ");
@@ -47,6 +47,8 @@ function streakText(n: number): string {
 }
 
 export default async function HomePage() {
+  // Immer frische Daten pro Aufruf (statt beim Build).
+  await connection();
   const [leaderboard, matches, streaks, allMatches] = await Promise.all([
     getLeaderboard(),
     getRecentMatches(10),
