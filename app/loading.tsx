@@ -1,3 +1,5 @@
+import LoaderText from "./LoaderText";
+
 // Wird automatisch angezeigt, während eine Seite ihre Daten lädt.
 export default function Loading() {
   return (
@@ -22,7 +24,7 @@ export default function Loading() {
         </div>
         <div className="loader-shadow" />
       </div>
-      <p className="loader-text">Kugeln werden aufgebaut …</p>
+      <LoaderText />
     </div>
   );
 }
