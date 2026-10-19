@@ -1177,3 +1177,8 @@ body {
     transform: translateX(calc(var(--travel) / 2));
   }
 }
+
+/* Break-Animation wurde in dieser Sitzung schon gezeigt (siehe layout.tsx). */
+.bs-seen .bs {
+  display: none;
+}
