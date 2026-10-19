@@ -38,6 +38,8 @@ body {
   max-width: 640px;
   margin: 0 auto;
   padding: 3rem 1.5rem 5rem;
+  padding-top: max(3rem, calc(env(safe-area-inset-top) + 1.5rem));
+  padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 3rem));
 }
 
 h1,
