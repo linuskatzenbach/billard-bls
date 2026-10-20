@@ -794,10 +794,14 @@ h2.centered {
   opacity: 0.85;
 }
 
+/* Immer höchstens drei Kugeln pro Reihe, auch auf großen Bildschirmen,
+   damit der Tisch der Sieges-Animation überall gleich aussieht. */
 .picker-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
+  max-width: 21rem;
+  margin: 0 auto;
 }
 
 .picker-option {
