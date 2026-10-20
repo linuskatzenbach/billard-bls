@@ -47,6 +47,7 @@ export default function BreakSplash() {
         <circle cx="-35.0" cy="2222.5" r="7" fill="#f1e9d8" opacity="0.35" />
         <circle cx="1305.0" cy="2222.5" r="7" fill="#f1e9d8" opacity="0.35" />
         <circle cx="635.0" cy="635.0" r="5" fill="#f1e9d8" opacity="0.25" />
+        <image className="bs-seal" href="/splash-seal.svg" x="365.0" y="412.1" width="540" height="535.8" />
         <g className="bs-ball bs-b1" style={{ transform: "translate(635.0px,635.0px)" }}><circle r="28.575" fill="#f2c230" /><circle r="12.00" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
         <g className="bs-ball bs-b2" style={{ transform: "translate(663.6px,585.5px)" }}><circle r="28.575" fill="#1f4fb4" /><circle r="12.00" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
         <g className="bs-ball bs-b3" style={{ transform: "translate(692.1px,536.0px)" }}><circle r="28.575" fill="#c8322a" /><circle r="12.00" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
@@ -62,7 +63,7 @@ export default function BreakSplash() {
         <g className="bs-ball bs-b13" style={{ transform: "translate(692.1px,437.0px)" }}><circle r="28.575" fill="#f4efe4" /><rect x="-28.575" y="-16.00" width="57.15" height="32.00" fill="#ee7a1f" clipPath="url(#bs-clip)" /><circle r="12.00" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
         <g className="bs-ball bs-b14" style={{ transform: "translate(606.4px,486.5px)" }}><circle r="28.575" fill="#f4efe4" /><rect x="-28.575" y="-16.00" width="57.15" height="32.00" fill="#1d7a44" clipPath="url(#bs-clip)" /><circle r="12.00" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
         <g className="bs-ball bs-b15" style={{ transform: "translate(635.0px,437.0px)" }}><circle r="28.575" fill="#f4efe4" /><rect x="-28.575" y="-16.00" width="57.15" height="32.00" fill="#7a2232" clipPath="url(#bs-clip)" /><circle r="12.00" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
-        <g className="bs-ball bs-b0" style={{ transform: "translate(643.0px,1905.0px)" }}><circle r="28.575" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
+        <g className="bs-ball bs-b0" style={{ transform: "translate(638.0px,1905.0px)" }}><circle r="28.575" fill="#f4efe4" /><circle cx="-10.00" cy="-10.86" r="9.14" fill="#fff" opacity="0.28" /></g>
         <g className="bs-stick">
           <polygon points="-6.5,0 6.5,0 15,1450 -15,1450" fill="url(#bs-wood)" />
           <rect x="-6.5" y="0" width="13" height="10" rx="2" fill="#5f87b8" />

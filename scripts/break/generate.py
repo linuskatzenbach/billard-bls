@@ -3,7 +3,11 @@ Erzeugt aus sim.json die feste Start-Animation:
   app/BreakSplash.tsx   (Markup)
   app/break-splash.css  (CSS-Keyframes)
 
-Ablauf: python3 simulate.py 0.9 10 0.008 0.025 sim.json && python3 generate.py
+Ablauf: python3 simulate.py 0.9 11 0.003 0.025 sim.json && python3 generate.py
+
+Die Stoß-Parameter (11 m/s, 3 mm Versatz) sind aus einer Suche über viele
+Varianten gewählt: Bei ihnen ist der Bereich des Siegels nach gut einer
+Sekunde frei von Kugeln und bleibt es bis zum Ende.
 """
 import json
 import math
@@ -24,7 +28,7 @@ COLORS = ["#f2c230", "#1f4fb4", "#c8322a", "#5b2d8e",
 STICK_IN = 0.15        # Queue blendet ein
 BACK_END = 0.40        # Ausholen fertig
 CONTACT = 0.46         # Queue trifft die Weiße → Simulation startet
-SIM_SHOW = 2.30        # so lange läuft die Simulation sichtbar vor dem Ausblenden
+SIM_SHOW = 2.80        # so lange läuft die Simulation sichtbar vor dem Ausblenden
 FADE = 0.45
 SIM_LEN = min(d["settle"], SIM_SHOW + FADE)
 TOTAL = CONTACT + SIM_LEN
@@ -32,6 +36,14 @@ POCKET_DROP = 0.12     # Kugel rutscht in die Tasche
 TOL = 1.2              # mm, max. Abweichung der Keyframe-Vereinfachung
 
 RAIL = 70              # Bandenbreite (mm, nur Optik)
+
+# Siegel „Bucerius Law School · Billard“ an der Stelle des Dreiecks. Es ist
+# größer als das Dreieck und wird deshalb kurz nach dem Stoß eingeblendet,
+# während die Kugeln auseinanderfliegen (Datei: public/splash-seal.svg).
+SEAL_CX, SEAL_CY, SEAL_D = 635, 680, 540
+SEAL_RATIO = 1161 / 1170
+SEAL_IN = CONTACT + 0.45  # Beginn der Einblendung (s)
+SEAL_FADE = 0.75
 
 
 def pct(t):
@@ -144,6 +156,15 @@ header = f"""/* GENERIERT von scripts/break/generate.py – nicht von Hand bearb
 
 .bs-stick {{ animation-name: bs-stick; }}
 
+.bs-seal {{
+  opacity: 0;
+  animation: bs-seal-in {SEAL_FADE}s ease-out {SEAL_IN:.2f}s forwards;
+}}
+
+@keyframes bs-seal-in {{
+  to {{ opacity: 0.95; }}
+}}
+
 @keyframes bs-out {{
   to {{ opacity: 0; visibility: hidden; }}
 }}
@@ -199,6 +220,10 @@ stick_svg = f"""        <g className="bs-stick">
           <rect x="-6.6" y="10" width="13.2" height="22" fill="#f1e9d8" />
         </g>"""
 
+sh = SEAL_D * SEAL_RATIO
+seal_svg = (f'        <image className="bs-seal" href="/splash-seal.svg" x="{SEAL_CX - SEAL_D / 2:.1f}" '
+            f'y="{SEAL_CY - sh / 2:.1f}" width="{SEAL_D}" height="{sh:.1f}" />')
+
 vb = f"{-RAIL} {-RAIL} {W + 2 * RAIL} {L + 2 * RAIL}"
 balls = "\n".join(ball_svg(i) for i in [*range(1, 16), 0])
 tsx = f"""// GENERIERT von scripts/break/generate.py – nicht von Hand bearbeiten.
@@ -228,6 +253,7 @@ export default function BreakSplash() {{
 {pocket_svg}
 {diamonds()}
         <circle cx="{W / 2}" cy="{L / 4}" r="5" fill="#f1e9d8" opacity="0.25" />
+{seal_svg}
 {balls}
 {stick_svg}
       </svg>
