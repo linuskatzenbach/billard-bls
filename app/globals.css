@@ -1644,31 +1644,15 @@ body {
   animation: construction-place 3.2s ease-in-out infinite;
 }
 
-.construction-kicker {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--brass-bright);
-}
 
 .construction-title {
   display: block;
-  margin-top: 0.15rem;
   font-family: "Fraunces", Georgia, serif;
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--cream);
 }
 
-.construction-text {
-  margin: 0.45rem 0 0;
-  font-size: 0.86rem;
-  line-height: 1.45;
-  color: var(--cream);
-  opacity: 0.75;
-}
 
 @keyframes construction-sway {
   0%, 100% { transform: rotate(-1.2deg); }

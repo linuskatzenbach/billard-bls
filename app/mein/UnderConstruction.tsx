@@ -15,11 +15,7 @@ export default function UnderConstruction() {
             <circle className="b b2" cx="25.5" cy="28" r="5" />
             <circle className="b b3" cx="38.5" cy="28" r="5" />
           </svg>
-          <span className="construction-kicker">Achtung</span>
           <strong className="construction-title">Hier wird noch gebaut</strong>
-          <p className="construction-text">
-            Eigene Logins für alle Spieler kommen bald. Bis dahin findest du dein Profil über die Rangliste.
-          </p>
         </div>
         <span className="construction-stripes" aria-hidden="true" />
       </div>
