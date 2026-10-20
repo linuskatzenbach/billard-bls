@@ -14,6 +14,38 @@ const VictoryAnimation = dynamic(loadVictory, { ssr: false });
 
 type AnimSetup = Omit<VictoryProps, "result" | "onDone" | "onError">;
 
+// Nach dem Absenden ist auf dem Handy meist noch die Tastatur vom
+// Passwortfeld offen. Schließt sie sich erst, nachdem der Tisch vermessen
+// wurde, verrutscht die Seite darunter und der Tisch sitzt viel zu weit
+// oben. Deshalb erst die Tastatur schließen und warten, bis der sichtbare
+// Bereich wieder ruhig ist (höchstens knapp eine Sekunde).
+function settleViewport(): Promise<void> {
+  const active = document.activeElement;
+  const hadInput = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
+  if (active instanceof HTMLElement) active.blur();
+  const vv = window.visualViewport;
+  const keyboardOpen = vv ? window.innerHeight - vv.height > 80 : false;
+  if (!hadInput && !keyboardOpen) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const start = performance.now();
+    let last = "";
+    let stableSince = start;
+    const check = () => {
+      const now = performance.now();
+      const state = `${vv?.height ?? 0}|${vv?.offsetTop ?? 0}|${window.innerHeight}|${window.scrollY}`;
+      if (state !== last) {
+        last = state;
+        stableSince = now;
+      }
+      const closed = !vv || window.innerHeight - vv.height <= 80;
+      if ((closed && now - stableSince > 120 && now - start > 250) || now - start > 900) resolve();
+      else requestAnimationFrame(check);
+    };
+    requestAnimationFrame(check);
+  });
+}
+
 // Misst die beiden gewählten Kugeln und den Tisch, der sich darunter
 // einblendet. Liegen die Kugeln nicht beide im sichtbaren Bereich, wird
 // vorher passend gescrollt.
@@ -26,8 +58,8 @@ function measureAnimation(form: HTMLFormElement, winnerId: string, loserId: stri
   const li = PLAYERS.findIndex((p) => p.id === loserId);
   if (!grid || !wEl || !lEl || wi < 0 || li < 0) return null;
 
-  const vh = window.innerHeight;
-  const vw = window.innerWidth;
+  const vh = window.visualViewport?.height ?? window.innerHeight;
+  const vw = window.visualViewport?.width ?? window.innerWidth;
   const padX = 12;
   const padY = 34;
 
@@ -189,6 +221,7 @@ export default function EintragenPage() {
     // Fehler werden unten bzw. in der Animation behandelt.
     result.catch(() => {});
 
+    await settleViewport();
     const setup = formRef.current ? measureAnimation(formRef.current, winnerId, loserId) : null;
     if (setup) {
       setAnim({

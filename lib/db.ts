@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { PLAYERS } from "./players";
-import { START_ELO } from "./elo";
+import { START_ELO, calculateNewElo } from "./elo";
 
 // Vercel setzt beim Verbinden einer Neon-Postgres-Datenbank automatisch
 // eine dieser Umgebungsvariablen (üblicherweise DATABASE_URL). Die Prüfung
@@ -60,6 +60,93 @@ async function ensureSchema(): Promise<void> {
       VALUES (${player.id}, ${START_ELO})
       ON CONFLICT (id) DO NOTHING;
     `;
+  }
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS migrations (
+      name TEXT PRIMARY KEY,
+      applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
+  // Testspiel Julian gegen Linus vom 20.10.2026 entfernen.
+  await deleteMatchOnce(
+    "2026-10-20-testspiel-julian-linus",
+    ["julian", "linus"],
+    "2026-10-20T19:40:00Z"
+  );
+}
+
+// Löscht genau einmal (über die Tabelle "migrations" abgesichert) das
+// letzte Spiel zwischen den beiden Spielern vor dem Stichzeitpunkt und
+// rechnet die Elo-Zahlen aller späteren Spiele neu.
+async function deleteMatchOnce(
+  name: string,
+  [a, b]: [string, string],
+  before: string
+): Promise<void> {
+  const sql = getSql();
+  const done = await sql`SELECT 1 FROM migrations WHERE name = ${name};`;
+  if (done.length > 0) return;
+
+  const all = (await sql`
+    SELECT id, winner_id, loser_id, winner_elo_after, loser_elo_after,
+           created_at < ${before} AS early
+    FROM matches
+    ORDER BY created_at ASC, id ASC;
+  `) as {
+    id: number;
+    winner_id: string;
+    loser_id: string;
+    winner_elo_after: number;
+    loser_elo_after: number;
+    early: boolean;
+  }[];
+  let idx = -1;
+  all.forEach((m, i) => {
+    const pair = (m.winner_id === a && m.loser_id === b) || (m.winner_id === b && m.loser_id === a);
+    if (pair && m.early) idx = i;
+  });
+
+  // Ohne ON CONFLICT: Läuft eine zweite Instanz gleichzeitig, schlägt ihre
+  // Transaktion hier fehl und es wird nichts doppelt gelöscht.
+  const queries = [sql`INSERT INTO migrations (name) VALUES (${name})`];
+
+  if (idx >= 0) {
+    queries.push(sql`DELETE FROM matches WHERE id = ${all[idx].id}`);
+
+    // Stand jedes Spielers direkt vor dem gelöschten Spiel; die Spiele
+    // davor bleiben unverändert, nur die danach werden neu berechnet.
+    const elo: Record<string, number> = {};
+    for (const m of all.slice(0, idx)) {
+      elo[m.winner_id] = m.winner_elo_after;
+      elo[m.loser_id] = m.loser_elo_after;
+    }
+    const touched = new Set([a, b]);
+    for (const m of all.slice(idx + 1)) {
+      const w = elo[m.winner_id] ?? START_ELO;
+      const l = elo[m.loser_id] ?? START_ELO;
+      const { newWinnerElo, newLoserElo } = calculateNewElo(w, l);
+      elo[m.winner_id] = newWinnerElo;
+      elo[m.loser_id] = newLoserElo;
+      touched.add(m.winner_id).add(m.loser_id);
+      queries.push(sql`
+        UPDATE matches SET
+          winner_elo_before = ${w}, loser_elo_before = ${l},
+          winner_elo_after = ${newWinnerElo}, loser_elo_after = ${newLoserElo}
+        WHERE id = ${m.id}
+      `);
+    }
+    for (const id of touched) {
+      queries.push(sql`UPDATE player_elo SET elo = ${elo[id] ?? START_ELO} WHERE id = ${id}`);
+    }
+  }
+
+  try {
+    await sql.transaction(queries);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = ${name};`;
+    if (again.length === 0) throw err;
   }
 }
 
