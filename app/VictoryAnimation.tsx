@@ -327,7 +327,7 @@ export default function VictoryAnimation({
       put(loserRef.current, lx, ly, Math.max(ls, 0.001));
       if (sunk && loserRef.current) loserRef.current.style.opacity = "0";
 
-      if (closeAt >= 0 && t - closeAt > 0.32) {
+      if (closeAt >= 0 && t - closeAt > 1.1) {
         alive = false;
         if (!doneCalled && res) { doneCalled = true; onDone(res); }
         return;
@@ -370,6 +370,7 @@ export default function VictoryAnimation({
       onClick={() => tapRef.current()}
     >
       <div className="victory-backdrop" />
+      <div className="victory-stage">
       <div
         className="victory-table"
         style={{ left: table.left, top: table.top, width: table.width, height: table.height }}
@@ -407,6 +408,7 @@ export default function VictoryAnimation({
         ) : waiting ? (
           <p className="victory-wait">Speichert…</p>
         ) : null}
+      </div>
       </div>
     </div>
   );

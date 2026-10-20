@@ -838,6 +838,59 @@ h2.centered {
   font-size: 0.8rem;
 }
 
+.picker-option {
+  position: relative;
+}
+
+.picker-option.dim {
+  opacity: 0.35;
+}
+
+.picker-option.is-loser {
+  border-color: #e07b66;
+  background: rgba(193, 84, 60, 0.16);
+  box-shadow: 0 0 0 1px #e07b66 inset;
+}
+
+.picker-badge {
+  position: absolute;
+  top: -0.55rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  background: var(--brass-bright);
+  color: var(--felt-dark);
+}
+
+.is-loser .picker-badge {
+  background: #e07b66;
+}
+
+.picker-hint {
+  margin: 0.7rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .picker-name {
   font-size: 0.85rem;
   max-width: 100%;
@@ -1190,11 +1243,39 @@ body {
   z-index: 1000;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.3s ease;
 }
 
-.victory.closing {
+/* Zum Schluss blendet alles langsam aus, der Hintergrund wird deckend,
+   danach geht es zur Rangliste. */
+.victory-stage {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.9s ease;
+}
+
+.victory.closing .victory-stage {
   opacity: 0;
+  transition-delay: 0.15s;
+}
+
+.victory-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--felt-noise),
+    radial-gradient(circle at 50% -10%, var(--felt) 0%, var(--felt-dark) 60%);
+  background-color: var(--felt-dark);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.victory.closing .victory-backdrop::after {
+  opacity: 1;
+}
+
+.victory-backdrop {
+  background: var(--felt-dark);
+  transition: background 0.9s ease;
 }
 
 .victory-backdrop {

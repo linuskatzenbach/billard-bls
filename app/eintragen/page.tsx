@@ -18,66 +18,42 @@ type AnimSetup = Omit<VictoryProps, "result" | "onDone" | "onError">;
 // einblendet. Liegen die Kugeln nicht beide im sichtbaren Bereich, wird
 // vorher passend gescrollt.
 function measureAnimation(form: HTMLFormElement, winnerId: string, loserId: string): AnimSetup | null {
-  const find = (picker: string) =>
-    form.querySelector<HTMLElement>(`[data-picker="${picker}"] .picker-option.selected .ball`);
-  const wEl = find("winner");
-  const lEl = find("loser");
+  const grid = form.querySelector<HTMLElement>(".picker-grid");
+  const find = (role: string) => form.querySelector<HTMLElement>(`.picker-option.${role} .ball`);
+  const wEl = find("is-winner");
+  const lEl = find("is-loser");
   const wi = PLAYERS.findIndex((p) => p.id === winnerId);
   const li = PLAYERS.findIndex((p) => p.id === loserId);
-  if (!wEl || !lEl || wi < 0 || li < 0) return null;
+  if (!grid || !wEl || !lEl || wi < 0 || li < 0) return null;
 
   const vh = window.innerHeight;
   const vw = window.innerWidth;
-  const wPicker = form.querySelector<HTMLElement>('[data-picker="winner"]');
-  const lPicker = form.querySelector<HTMLElement>('[data-picker="loser"]');
+  const padX = 12;
+  const padY = 34;
 
-  // Am schönsten: Der Tisch deckt beide Auswahlfelder ganz ab, dann
-  // verschwinden alle anderen Kugeln darunter. Passt das nicht auf den
-  // Bildschirm, wird der Tisch nur um die beiden Kugeln gelegt.
-  const spanOf = (els: HTMLElement[]) => {
-    const rs = els.map((el) => el.getBoundingClientRect());
-    return { top: Math.min(...rs.map((r) => r.top)), bottom: Math.max(...rs.map((r) => r.bottom)) };
-  };
-  const pad = 12;
-  let cover = false;
-  let margin = 90;
-  let targets: HTMLElement[] = [wEl, lEl];
-  if (wPicker && lPicker) {
-    const s = spanOf([wPicker, lPicker]);
-    if (s.bottom - s.top + 2 * (pad + 8) <= vh) {
-      cover = true;
-      margin = pad + 8;
-      targets = [wPicker, lPicker];
-    }
-  }
-  const { top, bottom } = spanOf(targets);
+  // Der Tisch deckt das ganze Auswahlfeld ab, damit alle anderen Kugeln
+  // darunter verschwinden. Liegt es nicht ganz im Bild, wird vorher gescrollt.
+  const g0 = grid.getBoundingClientRect();
+  const margin = padY + 8;
   let shift = 0;
-  if (bottom - top + 2 * margin <= vh) {
-    if (top < margin) shift = top - margin;
-    else if (bottom > vh - margin) shift = bottom - (vh - margin);
+  if (g0.height + 2 * margin <= vh) {
+    if (g0.top < margin) shift = g0.top - margin;
+    else if (g0.bottom > vh - margin) shift = g0.bottom - (vh - margin);
   } else {
-    shift = (top + bottom) / 2 - vh / 2;
+    shift = (g0.top + g0.bottom) / 2 - vh / 2;
   }
   if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: "instant" as ScrollBehavior });
 
+  const g = grid.getBoundingClientRect();
   const wr = wEl.getBoundingClientRect();
   const lr = lEl.getBoundingClientRect();
-  const fr = form.getBoundingClientRect();
   const R = wr.width / 2;
   const wc = { x: wr.left + R, y: wr.top + R };
   const lc = { x: lr.left + R, y: lr.top + R };
-  const left = Math.max(6, fr.left - pad);
-  const right = Math.min(vw - 6, fr.right + pad);
-  let tTop: number;
-  let tBottom: number;
-  if (cover) {
-    const s = spanOf(targets);
-    tTop = Math.max(6, s.top - pad);
-    tBottom = Math.min(vh - 6, s.bottom + pad);
-  } else {
-    tTop = Math.max(6, Math.min(wc.y, lc.y) - R - 70);
-    tBottom = Math.min(vh - 6, Math.max(wc.y, lc.y) + R + 70);
-  }
+  const left = Math.max(6, g.left - padX);
+  const right = Math.min(vw - 6, g.right + padX);
+  const tTop = Math.max(6, Math.min(g.top - padY, Math.min(wc.y, lc.y) - R - 40));
+  const tBottom = Math.min(vh - 6, Math.max(g.bottom + padY, Math.max(wc.y, lc.y) + R + 40));
 
   const ball = (p: (typeof PLAYERS)[number], i: number, c: { x: number; y: number }) => ({
     name: p.name,
@@ -93,42 +69,50 @@ function measureAnimation(form: HTMLFormElement, winnerId: string, loserId: stri
   };
 }
 
-// Spieler-Auswahl als antippbare Kugeln. Jeder Spieler hat eine feste
-// Kugelfarbe (nach Reihenfolge in lib/players.ts) mit seinem Anfangsbuchstaben.
+// Spieler-Auswahl als antippbare Kugeln: erst den Gewinner antippen,
+// dann den Verlierer. Jeder Spieler hat eine feste Kugelfarbe (nach
+// Reihenfolge in lib/players.ts) mit seinem Anfangsbuchstaben.
 function PlayerPicker({
-  picker,
-  legend,
-  value,
-  onChange,
-  blockedId,
+  winnerId,
+  loserId,
+  onPick,
 }: {
-  picker: "winner" | "loser";
-  legend: string;
-  value: string;
-  onChange: (id: string) => void;
-  blockedId: string;
+  winnerId: string;
+  loserId: string;
+  onPick: (id: string) => void;
 }) {
+  const winner = PLAYERS.find((p) => p.id === winnerId);
+  const loser = PLAYERS.find((p) => p.id === loserId);
+  const hint = !winner
+    ? "Tippe den Gewinner an"
+    : !loser
+      ? `${winner.name} gewinnt – jetzt den Verlierer antippen`
+      : `${winner.name} schlägt ${loser.name}`;
   return (
-    <fieldset className="picker" data-picker={picker}>
-      <legend>{legend}</legend>
+    <fieldset className="picker">
+      <legend className="sr-only">Gewinner und Verlierer</legend>
       <div className="picker-grid">
         {PLAYERS.map((p, i) => {
-          const selected = value === p.id;
+          const role = p.id === winnerId ? "is-winner" : p.id === loserId ? "is-loser" : "";
+          const dim = winner && loser && !role;
           return (
             <button
               key={p.id}
               type="button"
-              className={`picker-option${selected ? " selected" : ""}`}
-              aria-pressed={selected}
-              disabled={p.id === blockedId}
-              onClick={() => onChange(selected ? "" : p.id)}
+              className={`picker-option${role ? ` selected ${role}` : ""}${dim ? " dim" : ""}`}
+              aria-label={`${p.name}${role === "is-winner" ? " (Gewinner)" : role === "is-loser" ? " (Verlierer)" : ""}`}
+              onClick={() => onPick(p.id)}
             >
+              {role && (
+                <span className="picker-badge">{role === "is-winner" ? "Sieger" : "Verlierer"}</span>
+              )}
               <Ball label={p.name.charAt(0).toUpperCase()} {...poolBall(i + 1)} />
               <span className="picker-name">{p.name}</span>
             </button>
           );
         })}
       </div>
+      <p className="picker-hint" aria-live="polite">{hint}</p>
     </fieldset>
   );
 }
@@ -142,6 +126,18 @@ export default function EintragenPage() {
     { type: "idle" } | { type: "loading" } | { type: "error"; message: string } | { type: "success"; message: string }
   >({ type: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Erster Tipp: Gewinner, zweiter: Verlierer. Gewählte Kugel nochmal
+  // antippen hebt die Wahl auf; ein dritter Tipp beginnt neu.
+  function pick(id: string) {
+    if (status.type === "error") setStatus({ type: "idle" });
+    if (id === winnerId) { setWinnerId(loserId); setLoserId(""); return; }
+    if (id === loserId) { setLoserId(""); return; }
+    if (!winnerId) { setWinnerId(id); return; }
+    if (!loserId) { setLoserId(id); return; }
+    setWinnerId(id);
+    setLoserId("");
+  }
   const [anim, setAnim] = useState<VictoryProps | null>(null);
 
   // Animation vorladen, sobald beide Spieler gewählt sind.
@@ -164,7 +160,7 @@ export default function EintragenPage() {
     e.preventDefault();
 
     if (!winnerId || !loserId) {
-      setStatus({ type: "error", message: "Bitte Gewinner und Verlierer auswählen." });
+      setStatus({ type: "error", message: "Bitte erst den Gewinner, dann den Verlierer antippen." });
       return;
     }
 
@@ -198,9 +194,10 @@ export default function EintragenPage() {
       setAnim({
         ...setup,
         result,
-        onDone: (r) => {
-          setAnim(null);
-          finish(r);
+        onDone: () => {
+          // Zurück zur Rangliste, die dann schon die neuen Elo-Zahlen zeigt.
+          router.push("/");
+          router.refresh();
         },
         onError: (message) => {
           setAnim(null);
@@ -223,21 +220,7 @@ export default function EintragenPage() {
       <p className="subtitle">Wer hat gegen wen gewonnen?</p>
 
       <form ref={formRef} onSubmit={handleSubmit}>
-        <PlayerPicker
-          picker="winner"
-          legend="Gewinner"
-          value={winnerId}
-          onChange={setWinnerId}
-          blockedId={loserId}
-        />
-
-        <PlayerPicker
-          picker="loser"
-          legend="Verlierer"
-          value={loserId}
-          onChange={setLoserId}
-          blockedId={winnerId}
-        />
+        <PlayerPicker winnerId={winnerId} loserId={loserId} onPick={pick} />
 
         <label>
           Passwort
