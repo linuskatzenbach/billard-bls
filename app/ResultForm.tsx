@@ -176,6 +176,20 @@ export default function ResultForm({ mode = "live" }: { mode?: "live" | "test" }
   }
   const [anim, setAnim] = useState<VictoryProps | null>(null);
 
+  // Next.js hebt die Seite beim Wegnavigieren samt Zustand auf und zeigt sie
+  // beim nächsten Besuch unverändert wieder. Ohne Zurücksetzen läge dann die
+  // ausgeblendete Sieges-Animation vom letzten Mal (nur grüner Filz) über
+  // allem. Deshalb beim Verlassen alles auf Anfang stellen.
+  useEffect(() => {
+    return () => {
+      setAnim(null);
+      setWinnerId("");
+      setLoserId("");
+      setPassword("");
+      setStatus({ type: "idle" });
+    };
+  }, []);
+
   // Animation vorladen, sobald beide Spieler gewählt sind.
   useEffect(() => {
     if (winnerId && loserId) void loadVictory();
