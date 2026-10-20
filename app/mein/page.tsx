@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 import LogoutButton from "./LogoutButton";
+import UnderConstruction from "./UnderConstruction";
 
 // Persönlicher Bereich: ohne Login das Login-Formular, als Admin der
 // Testbereich. Spielerprofile folgen später.
@@ -13,6 +14,7 @@ export default async function MeinPage() {
       <>
         <h1>Mein Bereich</h1>
         <p className="subtitle">Einloggen, um dein Profil zu sehen.</p>
+        <UnderConstruction />
         <LoginForm />
       </>
     );
