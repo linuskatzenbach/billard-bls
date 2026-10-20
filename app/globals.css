@@ -1419,7 +1419,7 @@ body {
     inset 0 -2px 0 rgba(0, 0, 0, 0.35);
 }
 
-.tab {
+.navtab {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1437,7 +1437,7 @@ body {
   transition: background 0.2s ease, opacity 0.2s ease;
 }
 
-.tab svg {
+.navtab svg {
   width: 1.45rem;
   height: 1.45rem;
   fill: none;
@@ -1447,18 +1447,18 @@ body {
   stroke-linejoin: round;
 }
 
-.tab.active {
+.navtab.active {
   opacity: 1;
   color: var(--brass-bright);
   background: var(--felt-noise), linear-gradient(180deg, var(--felt-light), var(--felt));
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 
-.tab:active {
+.navtab:active {
   opacity: 0.9;
 }
 
-.tab-divider {
+.navtab-divider {
   width: 1px;
   margin: 0.6rem 4px;
   background: rgba(255, 220, 170, 0.25);
