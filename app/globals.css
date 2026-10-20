@@ -1182,3 +1182,120 @@ body {
 .bs-seen .bs {
   display: none;
 }
+
+/* Sieges-Animation beim Eintragen: Tisch unter den gewählten Kugeln */
+.victory {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.3s ease;
+}
+
+.victory.closing {
+  opacity: 0;
+}
+
+.victory-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 20, 16, 0.72);
+  animation: victory-fade 0.45s ease both;
+}
+
+.victory-table {
+  position: absolute;
+  border-radius: 16px;
+  background:
+    repeating-linear-gradient(92deg, rgba(0, 0, 0, 0.1) 0 2px, transparent 2px 7px),
+    linear-gradient(180deg, #7a4a28 0%, #5a3219 45%, #4a2812 100%);
+  box-shadow:
+    0 0.6rem 1.6rem rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 220, 170, 0.25);
+  animation: victory-fade 0.45s ease both;
+}
+
+.victory-felt {
+  position: absolute;
+  border-radius: 6px;
+  background: var(--felt-noise),
+    radial-gradient(ellipse at 50% 35%, #2f6b56 0%, #1f4a3d 75%);
+  box-shadow:
+    inset 0 0 0 3px #173b30,
+    inset 0 0.5rem 1.2rem rgba(0, 0, 0, 0.45);
+}
+
+.victory-pocket {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #050505 0%, #111 70%, #1d1d1d 100%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+  animation: victory-fade 0.45s ease both;
+}
+
+.victory-ball {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  will-change: transform;
+}
+
+.victory-ball .ball {
+  width: 100%;
+  height: 100%;
+}
+
+.victory-ball .ball-number {
+  font-size: 0.8rem;
+}
+
+.victory-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  border: 2px solid;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.victory-result {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.victory-result p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.victory-result .victory-elo {
+  margin-top: 0.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.victory-up {
+  color: #7fd39a;
+}
+
+.victory-down {
+  color: #f08a75;
+}
+
+.victory-sep,
+.victory-wait {
+  opacity: 0.7;
+}
+
+@keyframes victory-fade {
+  from {
+    opacity: 0;
+  }
+}

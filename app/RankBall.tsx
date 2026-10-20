@@ -29,7 +29,7 @@ function verticalNudge(digits: string): number {
   return CAP / 2 - (top + bottom) / 2;
 }
 
-type BallKind = "solid" | "striped" | "cue";
+export type BallKind = "solid" | "striped" | "cue";
 
 // Billardkugel mit beliebiger Beschriftung (Zahl oder Buchstabe).
 export function Ball({

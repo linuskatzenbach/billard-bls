@@ -66,5 +66,7 @@ export async function POST(req: NextRequest) {
     success: true,
     winnerElo: newWinnerElo,
     loserElo: newLoserElo,
+    winnerDelta: newWinnerElo - winnerEloBefore,
+    loserDelta: newLoserElo - loserEloBefore,
   });
 }
