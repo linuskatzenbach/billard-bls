@@ -123,3 +123,11 @@ Für eine lokale `DATABASE_URL` kannst du entweder eine zweite (kostenlose)
 Neon-Datenbank direkt auf [neon.tech](https://neon.tech) anlegen, oder mit
 `vercel env pull .env.local` die Werte aus dem Vercel-Projekt lokal holen
 (dafür vorher `npm install -g vercel` und `vercel link`).
+
+## Persönlicher Bereich / Admin
+
+Unten in der Leiste geht es rechts zu „Mein Bereich“. Dort loggt man sich ein.
+Zurzeit gibt es nur das Admin-Profil: Benutzername `admin` (änderbar über
+`ADMIN_USERNAME`), Passwort aus der Umgebungsvariable `ADMIN_PASSWORD`.
+Als Admin kann man unter „Testspiel eintragen“ die komplette Sieges-Animation
+ausprobieren, ohne dass etwas gespeichert wird.

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BreakSplash from "./BreakSplash";
+import TabBar from "./TabBar";
 
 export const metadata: Metadata = {
   title: "Billard-Rangliste",
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body>
         <BreakSplash />
         <div className="container">{children}</div>
+        <TabBar />
       </body>
     </html>
   );
