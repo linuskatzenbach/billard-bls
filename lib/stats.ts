@@ -121,21 +121,23 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
   }
 
   // Platz 1 = alle sichtbaren Spieler mit der aktuell höchsten Elo.
-  // Bei Gleichstand an der Spitze teilen sich mehrere Spieler Platz 1
-  // und bekommen die Zeit alle gutgeschrieben.
+  // Bei Gleichstand an der Spitze teilen sich mehrere Spieler Platz 1.
+  // Gezählt wird nur die längste ununterbrochene Phase auf Platz 1:
+  // Wer Platz 1 verliert, fängt beim nächsten Mal wieder bei null an.
   const currentLeaders = (): string[] => {
     const top = Math.max(...visible.map((id) => elo[id]));
     return visible.filter((id) => elo[id] === top);
   };
 
-  let leaders: string[] = [];
-  let leadersSince = 0;
+  let leaders = new Set<string>();
+  const topSince: Record<string, number> = {};
+  const closeRun = (id: string, end: number) => {
+    msAtTop[id] = Math.max(msAtTop[id], end - topSince[id]);
+  };
   const perDay = new Map<string, number>();
 
   for (const m of matches) {
     const t = new Date(m.created_at).getTime();
-
-    for (const id of leaders) msAtTop[id] += t - leadersSince;
 
     // "Größter Zocktag" zählt alle Spiele, auch die ausgeblendeter Spieler.
     const day = dayFormatter.format(new Date(m.created_at));
@@ -158,11 +160,13 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
       }
     }
 
-    leaders = currentLeaders();
-    leadersSince = t;
+    const next = new Set(currentLeaders());
+    for (const id of leaders) if (!next.has(id)) closeRun(id, t);
+    for (const id of next) if (!leaders.has(id)) topSince[id] = t;
+    leaders = next;
   }
 
-  for (const id of leaders) msAtTop[id] += now.getTime() - leadersSince;
+  for (const id of leaders) closeRun(id, now.getTime());
 
   const winRates: Record<string, number> = {};
   for (const id of visible) {
