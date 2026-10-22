@@ -1,5 +1,5 @@
 import type { MatchRecord } from "./db";
-import { PLAYERS } from "./players";
+import { PLAYERS, getPlayerName } from "./players";
 import { START_ELO } from "./elo";
 
 // Wer weniger Spiele hat, zählt bei der Siegesquote nicht mit –
@@ -223,9 +223,9 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     daysAtTop[id] = msAtTop[id] / DAY_MS;
   }
 
-  // Formtabelle: Platz 1 hat die meisten Siege in den letzten 10 Spielen,
-  // bei Gleichstand entscheidet die Elo-Summe dieser Spiele. Ist auch die
-  // gleich, teilen sich die Spieler den Platz.
+  // Formtabelle: Platz 1 hat die meisten Siege in den letzten 10 Spielen.
+  // Bei gleich vielen Siegen teilen sich die Spieler den Platz
+  // (Reihenfolge innerhalb des Platzes alphabetisch).
   const formRaw = visible
     .filter((id) => recent[id].length > 0)
     .map((id) => ({
@@ -234,11 +234,15 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
       wins: recent[id].filter((r) => r.won).length,
       eloSum: recent[id].reduce((sum, r) => sum + r.delta, 0),
     }))
-    .sort((a, b) => b.wins - a.wins || b.eloSum - a.eloSum);
+    .sort(
+      (a, b) =>
+        b.wins - a.wins ||
+        getPlayerName(a.playerId).localeCompare(getPlayerName(b.playerId), "de")
+    );
   const form: FormRow[] = [];
   formRaw.forEach((r, i) => {
     const prev = form[form.length - 1];
-    const tied = prev && prev.wins === r.wins && prev.eloSum === r.eloSum;
+    const tied = prev && prev.wins === r.wins;
     form.push({ ...r, rank: tied ? prev.rank : i + 1 });
   });
 
