@@ -10,6 +10,7 @@ import {
 import {
   computeStats,
   eloTrend,
+  FORM_GAMES,
   formatRelativeDay,
   MIN_GAMES_FOR_WIN_RATE,
   type RankRow,
@@ -40,6 +41,10 @@ function topRows(rows: RankRow[], format: (value: number) => string): TopRow[] {
 
 function gamesText(n: number): string {
   return n === 1 ? "1 Spiel" : `${n} Spiele`;
+}
+
+function daysText(n: number): string {
+  return n === 1 ? "1 Tag" : `${n} Tage`;
 }
 
 function streakText(n: number): string {
@@ -199,8 +204,15 @@ export default async function HomePage() {
                   empty: `ab ${MIN_GAMES_FOR_WIN_RATE} Spielen`,
                 },
                 {
-                  label: <>Längste Zeit<br />auf Platz 1</>,
-                  title: "Längste Zeit auf Platz 1",
+                  label: <>Meiste Tage<br />auf Platz 1</>,
+                  title: "Meiste Tage auf Platz 1",
+                  entry: stats.mostDaysAtTop,
+                  rows: stats.top.mostDaysAtTop,
+                  format: daysText,
+                },
+                {
+                  label: <>Am Stück<br />auf Platz 1</>,
+                  title: "Längste Zeit am Stück auf Platz 1",
                   entry: stats.longestAtTop,
                   rows: stats.top.longestAtTop,
                   format: formatDays,
@@ -237,18 +249,47 @@ export default async function HomePage() {
                 top={topRows(s.rows, s.format)}
               />
             ))}
-            <StatTile
-              label="Größter Zocktag"
-              title="Größter Zocktag"
-              name={stats.matchDayRecord?.date ?? "–"}
-              value={stats.matchDayRecord ? gamesText(stats.matchDayRecord.count) : ""}
-              top={stats.top.matchDays.map((d) => ({
-                rank: d.rank,
-                name: d.date,
-                value: gamesText(d.count),
-              }))}
-            />
           </div>
+        </div>
+      )}
+
+      {stats.form.length > 0 && (
+        <div className="form-table">
+          <h2 className="centered">Formtabelle</h2>
+          <p className="form-hint">Letzte {FORM_GAMES} Spiele · neuestes rechts</p>
+          {stats.form.map((row) => {
+            // Wer weniger als 10 Spiele hat, bekommt links leere Plätze,
+            // damit das neueste Spiel bei allen ganz rechts steht.
+            const slots = [
+              ...Array(FORM_GAMES - row.results.length).fill(null),
+              ...row.results,
+            ] as (boolean | null)[];
+            return (
+              <Link
+                href={`/spieler/${row.playerId}`}
+                className="form-row"
+                key={row.playerId}
+              >
+                <RankBall rank={row.rank} />
+                <span className="form-name">{getPlayerName(row.playerId)}</span>
+                <span className="form-dots" aria-label={`${row.wins} Siege aus ${row.results.length} Spielen`}>
+                  {slots.map((r, i) => (
+                    <span
+                      key={i}
+                      className={`form-dot ${r === null ? "none" : r ? "win" : "loss"}`}
+                    />
+                  ))}
+                </span>
+                <span
+                  className={`form-sum delta ${row.eloSum > 0 ? "win" : row.eloSum < 0 ? "loss" : ""}`}
+                  title={`Elo-Bilanz der letzten ${FORM_GAMES} Spiele`}
+                >
+                  {row.eloSum > 0 ? "+" : row.eloSum < 0 ? "−" : "±"}
+                  {Math.abs(row.eloSum)}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       )}
     </>

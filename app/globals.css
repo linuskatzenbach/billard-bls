@@ -1671,3 +1671,67 @@ body {
     animation: none;
   }
 }
+
+/* Formtabelle unter den Statistiken: letzte 10 Spiele je Spieler. */
+.form-table {
+  margin-top: 3rem;
+}
+
+.form-table h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.2rem;
+  opacity: 0.85;
+}
+
+.form-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin: 0 0 0.6rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto 3.2rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+}
+
+.form-name {
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.form-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.form-dot.win {
+  background: #6fbf78;
+}
+
+.form-dot.loss {
+  background: var(--red);
+}
+
+.form-dot.none {
+  border: 1px solid var(--line);
+}
+
+.form-sum {
+  text-align: right;
+  font-size: 0.88rem;
+}
