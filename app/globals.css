@@ -1734,4 +1734,6 @@ body {
 .form-sum {
   text-align: right;
   font-size: 0.88rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }

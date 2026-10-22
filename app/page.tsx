@@ -280,12 +280,8 @@ export default async function HomePage() {
                     />
                   ))}
                 </span>
-                <span
-                  className={`form-sum delta ${row.eloSum > 0 ? "win" : row.eloSum < 0 ? "loss" : ""}`}
-                  title={`Elo-Bilanz der letzten ${FORM_GAMES} Spiele`}
-                >
-                  {row.eloSum > 0 ? "+" : row.eloSum < 0 ? "−" : "±"}
-                  {Math.abs(row.eloSum)}
+                <span className="form-sum" title={`Siege in den letzten ${FORM_GAMES} Spielen`}>
+                  {row.wins}/{row.results.length}
                 </span>
               </Link>
             );
