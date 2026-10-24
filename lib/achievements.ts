@@ -37,7 +37,7 @@ export const TIER_METAL: Metal[] = ["bronze", "silver", "gold"];
 export const TIER_NAME = ["Bronze", "Silber", "Gold"];
 
 export const BADGES: BadgeDef[] = [
-  { id: "stammgast", name: "Stammgast", icon: "🎱", desc: "{n} Spiele", tiers: [10, 50, 100], unit: "Spiele" },
+  { id: "stammgast", name: "Stammgast", icon: "🎱", desc: "{n} Spiele", tiers: [10, 50, 150], unit: "Spiele" },
   { id: "siegertyp", name: "Siegertyp", icon: "🏆", desc: "{n} Siege", tiers: [5, 25, 75], unit: "Siege" },
   { id: "heisser-lauf", name: "Heißer Lauf", icon: "⚡", desc: "{n} Siege in Folge", tiers: [3, 5, 10], unit: "in Folge" },
   { id: "dauerbrenner", name: "Dauerbrenner", icon: "📅", desc: "{n} Wochen Aktivität in Folge", tiers: [4, 10, 20], unit: "Wochen" },
