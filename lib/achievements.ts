@@ -39,7 +39,7 @@ export const BADGES: BadgeDef[] = [
   { id: "dauerbrenner", name: "Dauerbrenner", icon: "📅", desc: "{n} Wochen Aktivität in Folge", tiers: [4, 10, 20], unit: "Wochen" },
   { id: "netzwerker", name: "Netzwerker", icon: "🤝", desc: "gegen {n} verschiedene Gegner", tiers: [5, 10, 20], unit: "Gegner" },
   { id: "aufsteiger", name: "Aufsteiger", icon: "📈", desc: "Elo {n} erreicht", tiers: [1600, 1700, 1800], unit: "Elo" },
-  { id: "buce-spirit", name: "Buce-Spirit", icon: "🎓", desc: "gegen Spieler aus {n} verschiedenen Jahrgängen", tiers: [3, 4, 5], unit: "Jahrgänge" },
+  { id: "buce-spirit", name: "Buce-Spirit", icon: "🎓", desc: "Spiel gegen Spieler aus {n} verschiedenen Jahrgängen", tiers: [3, 4, 5], unit: "Jahrgänge" },
 
   { id: "erster-sieg", name: "Erster Sieg", icon: "✨", desc: "Der allererste Sieg", metal: "bronze", xp: 25 },
   { id: "revanche", name: "Revanche", icon: "🔁", desc: "Jemanden direkt nach einer Niederlage gegen ihn geschlagen", metal: "bronze", xp: 75 },
