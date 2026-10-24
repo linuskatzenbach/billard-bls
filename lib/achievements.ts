@@ -60,8 +60,6 @@ export const BADGES: BadgeDef[] = [
 
 export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 35
 
-export const FOUNDER_BADGE = { name: "Gründungsmitglied", icon: "🏛️", desc: "War schon vor der Uni-Öffnung dabei" };
-
 export type EarnedBadge = {
   key: string; // "stammgast:1" bzw. "underdog"
   id: string;

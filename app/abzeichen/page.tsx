@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getOverview } from "@/lib/server";
-import { BADGES, BADGE_TOTAL, FOUNDER_BADGE, TIER_METAL, badgeLabel } from "@/lib/achievements";
+import { BADGES, BADGE_TOTAL, TIER_METAL, badgeLabel } from "@/lib/achievements";
 import Medal from "../Medal";
 
 const NEW_MS = 3 * 86_400_000;
@@ -126,11 +126,6 @@ export default async function AbzeichenPage({
         <span>Bronze +50 · Silber +150 · Gold +400 · besondere Abzeichen +25 bis +500</span>
       </div>
 
-      {s.founder && (
-        <p className="founder-note">
-          {FOUNDER_BADGE.icon} {FOUNDER_BADGE.name} – {FOUNDER_BADGE.desc.toLowerCase()}
-        </p>
-      )}
     </>
   );
 }

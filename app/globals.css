@@ -2720,3 +2720,16 @@ button.ghost:hover { background: rgba(241, 233, 216, 0.08); }
 @media (prefers-reduced-motion: reduce) {
   .reward-rays, .reward-confetti i, .reward-medallion { animation: none; }
 }
+
+/* Name im Profil mit Krone für Platz 1 */
+.profile-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
+.profile-crown {
+  font-size: 0.85em;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}

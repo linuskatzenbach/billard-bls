@@ -3,7 +3,6 @@
 // Diese Liste wird nur EINMAL in die Datenbank übernommen (Tabelle
 // "players"). Danach legen sich Spieler selbst über ihre Uni-Mail an, und
 // Änderungen (Name, Mail, ausblenden) macht der Admin im Admin-Bereich.
-// Wer hier steht, bekommt das Sonderabzeichen "Gründungsmitglied".
 
 export type SeedPlayer = {
   id: string;
