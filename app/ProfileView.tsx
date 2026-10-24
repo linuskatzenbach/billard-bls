@@ -6,6 +6,7 @@ import { formatRelativeDay } from "@/lib/stats";
 import { DISPUTE_HOURS } from "@/lib/server";
 import EloChart, { type EloPoint } from "./spieler/[id]/EloChart";
 import Wreath from "./Wreath";
+import CtaTrack from "./CtaTrack";
 import DisputeButton from "./DisputeButton";
 import { cohortLong } from "@/lib/names";
 import { BADGE_TOTAL, QUEST_BONUS, badgeLabel } from "@/lib/achievements";
@@ -254,11 +255,7 @@ export default function ProfileView({
         <Link href="/eintragen" className="cta">
           <span className="cta-felt">
             <span className="cta-label">Spiel eintragen</span>
-            <span className="cta-track" aria-hidden="true">
-              <span className="cta-pocket" />
-              <span className="cta-cue" />
-              <span className="cta-ball" />
-            </span>
+            <CtaTrack />
           </span>
         </Link>
       )}

@@ -16,6 +16,7 @@ import { cohortShort } from "@/lib/names";
 import StatTile, { type TopRow } from "./StatTile";
 import RankBall from "./RankBall";
 import Wreath from "./Wreath";
+import CtaTrack from "./CtaTrack";
 
 function formatDays(days: number): string {
   if (days < 1) return "unter 1 Tag";
@@ -218,11 +219,7 @@ export default async function HomePage({
         <span className="cta-felt">
           <span className="cta-label">Ergebnis eintragen</span>
           {/* Queue stößt die weiße Kugel an, sie rollt ins Loch */}
-          <span className="cta-track" aria-hidden="true">
-            <span className="cta-pocket" />
-            <span className="cta-cue" />
-            <span className="cta-ball" />
-          </span>
+          <CtaTrack />
         </span>
       </Link>
 
