@@ -68,6 +68,7 @@ function createSigned(data: object, maxAge: number): string {
 
 function verifySigned<T>(token: string | undefined): (T & { exp: number }) | null {
   if (!token) return null;
+  if (!process.env.SESSION_SECRET && !process.env.ADMIN_PASSWORD) return null;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
   try {
