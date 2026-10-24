@@ -1,12 +1,13 @@
 import type { MatchRow, PlayerRow, World } from "./db";
 import { START_ELO } from "./elo";
+import { computeAchievements, type PlayerAchievements } from "./achievements";
 
 // Alles, was sich aus den Spielen ableiten lässt: Rangliste, XP, Level,
 // Aktivität, Wochenwertung. Wird bei jedem Seitenaufruf aus dem
 // zwischengespeicherten "World"-Paket berechnet (geht schnell, keine
 // Datenbankabfrage).
 
-export const TIME_ZONE = "Europe/Berlin";
+export { TIME_ZONE } from "./time";
 export const MIN_GAMES_RANKED = 3; // erst ab 3 Spielen in der Elo-Rangliste
 export const MAX_LEVEL = 18;
 export const UPSET_GAP = 150; // Upset-Bonus ab so viel Elo Unterschied
@@ -53,32 +54,8 @@ export function wreathName(level: number): string {
   return "Championkranz";
 }
 
-// ---------------------------------------------------------------------------
-// Datum und Woche nach deutscher Zeit
-
-const dayKeyFmt = new Intl.DateTimeFormat("en-CA", {
-  timeZone: TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-export const dayKey = (d: Date | string) => dayKeyFmt.format(typeof d === "string" ? new Date(d) : d);
-
-const keyToUtc = (k: string) => {
-  const [y, m, d] = k.split("-").map(Number);
-  return Date.UTC(y, m - 1, d);
-};
-const utcToKey = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-const DAY = 86_400_000;
-
-// Montag der Woche (deutsche Zeit) als "YYYY-MM-DD".
-export function weekKey(d: Date | string): string {
-  const k = dayKey(d);
-  const ms = keyToUtc(k);
-  const dow = (new Date(ms).getUTCDay() + 6) % 7; // Mo = 0
-  return utcToKey(ms - dow * DAY);
-}
-export const addWeeks = (wk: string, n: number) => utcToKey(keyToUtc(wk) + n * 7 * DAY);
+export { dayKey, weekKey, addWeeks } from "./time";
+import { dayKey, weekKey, addWeeks, DAY } from "./time";
 
 // ---------------------------------------------------------------------------
 
@@ -97,6 +74,9 @@ export type PlayerSummary = {
   rank: number | null; // Platz in der Elo-Rangliste (null = vorläufig)
   isLeader: boolean; // aktueller Platz 1 → goldener Name
   xp: number;
+  gameXp: number;
+  badgeXp: number;
+  questXp: number;
   level: number;
   levelInto: number;
   levelNeed: number;
@@ -120,6 +100,7 @@ export type Overview = {
   visible: PlayerSummary[];
   week: string; // Montag der laufenden Woche
   activityRecord: { playerId: string; weeks: number; from: string; to: string } | null;
+  ach: Record<string, PlayerAchievements>;
 };
 
 export function gameXp(m: MatchRow, playerId: string): number {
@@ -151,6 +132,9 @@ export function computeOverview(world: World, now = new Date()): Overview {
     rank: null,
     isLeader: false,
     xp: 0,
+    gameXp: 0,
+    badgeXp: 0,
+    questXp: 0,
     level: 1,
     levelInto: 0,
     levelNeed: LEVEL_XP[2],
@@ -196,6 +180,15 @@ export function computeOverview(world: World, now = new Date()): Overview {
       }
       if (t >= cutoff7 && !(id in eloBefore7)) eloBefore7[id] = before;
     }
+  }
+
+  // Abzeichen und Wochenaufgaben bringen zusätzliche XP.
+  const ach = computeAchievements(world, now);
+  for (const s of Object.values(byId)) {
+    s.gameXp = s.xp;
+    s.badgeXp = ach[s.id]?.badgeXp ?? 0;
+    s.questXp = ach[s.id]?.questXp ?? 0;
+    s.xp += s.badgeXp + s.questXp;
   }
 
   // Aktivität: Wochen in Folge mit mindestens einem Spiel.
@@ -253,7 +246,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
     .filter((s) => s.games < MIN_GAMES_RANKED)
     .sort((a, b) => b.games - a.games || b.elo - a.elo || a.name.localeCompare(b.name, "de"));
 
-  return { byId, ranked, provisional, visible, week: thisWeek, activityRecord: record };
+  return { byId, ranked, provisional, visible, week: thisWeek, activityRecord: record, ach };
 }
 
 // Spiele eines Spielers (älteste zuerst) aus Sicht dieses Spielers.

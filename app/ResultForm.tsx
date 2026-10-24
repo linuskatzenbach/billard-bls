@@ -6,7 +6,8 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Ball, poolBall } from "./RankBall";
 import Wreath from "./Wreath";
-import { XP_KEY } from "./XpToast";
+import { showReward } from "./RewardOverlay";
+import type { Reward } from "@/lib/reward";
 import type { VictoryProps, VictoryResult } from "./VictoryAnimation";
 
 // Die Sieges-Animation wird erst geladen, wenn sie gebraucht wird.
@@ -161,7 +162,7 @@ export default function ResultForm({
     }
     setStatus({ type: "loading" });
 
-    const result: Promise<VictoryResult & { xp: number; levelBefore: number; levelAfter: number }> = (async () => {
+    const result: Promise<VictoryResult & { reward: Reward | null }> = (async () => {
       let res: Response;
       try {
         res = await fetch(test ? "/api/test-result" : "/api/results", {
@@ -177,20 +178,11 @@ export default function ResultForm({
       return {
         winnerDelta: data.winnerDelta ?? 0,
         loserDelta: data.loserDelta ?? 0,
-        xp: data.xp ?? 0,
-        levelBefore: data.levelBefore ?? 1,
-        levelAfter: data.levelAfter ?? 1,
+        reward: (data.reward as Reward) ?? null,
       };
     })();
-    result
-      .then((r) => {
-        try {
-          if (!test) sessionStorage.setItem(XP_KEY, JSON.stringify(r));
-        } catch {
-          // egal
-        }
-      })
-      .catch(() => {});
+    let reward: Reward | null = null;
+    result.then((r) => (reward = r.reward)).catch(() => {});
 
     await settleViewport();
     const [winner, loser] = iWon ? [me, opponent] : [opponent, me];
@@ -200,6 +192,7 @@ export default function ResultForm({
         ...setup,
         result,
         onDone: () => {
+          if (reward) showReward(reward, test);
           router.push(home);
           router.refresh();
         },
@@ -213,6 +206,7 @@ export default function ResultForm({
 
     try {
       const r = await result;
+      if (r.reward) showReward(r.reward, test);
       setStatus({
         type: "success",
         message: `${test ? "Testspiel durchgespielt, nichts gespeichert" : "Ergebnis gespeichert!"} (+${r.winnerDelta} / −${Math.abs(r.loserDelta)} Elo)`,

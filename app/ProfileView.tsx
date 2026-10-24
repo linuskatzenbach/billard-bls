@@ -8,6 +8,8 @@ import EloChart, { type EloPoint } from "./spieler/[id]/EloChart";
 import Wreath from "./Wreath";
 import DisputeButton from "./DisputeButton";
 import { cohortLong } from "@/lib/names";
+import { BADGE_TOTAL, QUEST_BONUS, badgeLabel } from "@/lib/achievements";
+import Medal from "./Medal";
 
 const fmt = (n: number) => n.toLocaleString("de-DE");
 const time = (iso: string) =>
@@ -63,6 +65,10 @@ export default function ProfileView({
   const nemesis = [...qualified].filter((o) => o.rate < 0.5).sort((a, b) => a.rate - b.rate || b.n - a.n)[0];
 
   const recent = games.slice(-10).reverse();
+  const ach = ov.ach[s.id];
+  // Tage bis zu den neuen Aufgaben (Montag)
+  const berlinDow = (new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Berlin" })).getDay() + 6) % 7;
+  const daysLeft = 7 - berlinDow;
   const ranked = ov.ranked.length;
   const missing = Math.max(0, MIN_GAMES_RANKED - s.games);
 
@@ -178,6 +184,67 @@ export default function ProfileView({
           </span>
         </div>
       </div>
+
+      {own && ach.quests.length > 0 && (
+        <>
+          <div className="section-h">
+            <h2>Aufgaben der Woche</h2>
+            <span>neu {daysLeft <= 1 ? "morgen" : `in ${daysLeft} Tagen`}</span>
+          </div>
+          <div className="card quests">
+            {ach.quests.map((q) => (
+              <div className={`quest${q.done ? " done" : ""}`} key={q.key}>
+                <span className={`q-ico q-${q.tier}`}>{q.done ? "✓" : q.tier === "leicht" ? "1" : q.tier === "mittel" ? "2" : "3"}</span>
+                <span className="q-body">
+                  <span className="q-title">{q.title}</span>
+                  {q.note && !q.done && <span className="q-note">{q.note}</span>}
+                  {!q.done && q.goal > 1 && (
+                    <span className="q-prog">
+                      <span className="bar thin">
+                        <span style={{ width: `${Math.round((q.progress / q.goal) * 100)}%` }} />
+                      </span>
+                      {q.progress}/{q.goal}
+                    </span>
+                  )}
+                  {!q.done && q.kind === "defendTop" && (
+                    <span className="q-note">{s.isLeader ? "Stand jetzt: Platz 1 ✓" : "Stand jetzt: nicht Platz 1"}</span>
+                  )}
+                </span>
+                <span className="q-xp">+{q.xp} XP</span>
+              </div>
+            ))}
+            <div className={`quest bonus${ach.questBonus ? " done" : ""}`}>
+              <span className="q-ico">★</span>
+              <span className="q-body">
+                <span className="q-title">Bonus: alle drei geschafft</span>
+              </span>
+              <span className="q-xp">+{QUEST_BONUS} XP</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="section-h">
+        <h2>Abzeichen</h2>
+        <Link href={`/abzeichen${own ? "" : `?spieler=${s.id}`}`} className="section-link">
+          {ach.badges.length} von {BADGE_TOTAL} ›
+        </Link>
+      </div>
+      {ach.badges.length === 0 ? (
+        <p className="empty small">Noch keine – das erste gibt&apos;s für den ersten Sieg.</p>
+      ) : (
+        <Link href={`/abzeichen${own ? "" : `?spieler=${s.id}`}`} className="badge-strip">
+          {ach.badges.slice(0, 6).map((b) => {
+            const l = badgeLabel(b);
+            return (
+              <span className="strip-badge" key={b.key}>
+                <Medal metal={l.metal} icon={l.icon} size="2.6rem" />
+                <span className="strip-name">{l.name}</span>
+              </span>
+            );
+          })}
+        </Link>
+      )}
 
       {own && (
         <Link href="/eintragen" className="cta">

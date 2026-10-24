@@ -53,6 +53,7 @@ export default async function KraenzePage({
       <div className="card xp-rules">
         <b>So gibt es XP</b>
         <span>Jedes Spiel +10 · Sieg +5 · Sieg gegen jemanden mit 150+ Elo mehr +15</span>
+        <span>Wochenaufgaben +40 bis +75, alle drei geschafft +50 · Abzeichen +25 bis +500</span>
       </div>
     </>
   );

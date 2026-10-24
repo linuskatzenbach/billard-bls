@@ -16,7 +16,6 @@ import { cohortShort } from "@/lib/names";
 import StatTile, { type TopRow } from "./StatTile";
 import RankBall from "./RankBall";
 import Wreath from "./Wreath";
-import XpToast from "./XpToast";
 
 function formatDays(days: number): string {
   if (days < 1) return "unter 1 Tag";
@@ -146,7 +145,6 @@ export default async function HomePage({
     <>
       <h1>Billard-Rangliste</h1>
       <p className="subtitle">Jetzt wird gezockt!</p>
-      <XpToast />
 
       <nav className="rank-tabs" aria-label="Ranglisten">
         {TABS.map((t) => (
