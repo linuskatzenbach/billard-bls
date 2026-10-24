@@ -161,6 +161,13 @@ export default function EmailLogin() {
         </button>
         {error && <p className="message error">{error}</p>}
       </form>
+      <div className="card auth-note">
+        <span aria-hidden="true">📱</span>
+        <span>
+          <b>Tipp: Als App starten.</b> iPhone: in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Android: in Chrome
+          auf das Menü ⋮ → „Zum Startbildschirm hinzufügen“. Dann öffnet sich Billard BLS wie eine App.
+        </span>
+      </div>
     </div>
   );
 }
