@@ -13,10 +13,18 @@ export function mailConfigured(): boolean {
   return Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 }
 
+export class MailNotConfigured extends Error {
+  constructor() {
+    super("GMAIL_USER / GMAIL_APP_PASSWORD fehlen");
+  }
+}
+
 let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 
 export async function sendMail(to: string, subject: string, text: string, html: string): Promise<void> {
   if (!mailConfigured()) {
+    // Auf Vercel ohne Zugangsdaten: nicht so tun, als wäre die Mail raus.
+    if (process.env.VERCEL) throw new MailNotConfigured();
     console.log(`[mail] an ${to}: ${subject}\n${text}`);
     if (process.env.LOCAL_MAIL_LOG) {
       const fs = await import("fs");

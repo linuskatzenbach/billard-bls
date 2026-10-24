@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLoginToken, recentTokenCount } from "@/lib/db";
 import { newCode, newToken, normalizeEmail, sha256, UNI_DOMAIN } from "@/lib/auth";
-import { loginMail, sendMail } from "@/lib/mail";
+import { MailNotConfigured, loginMail, sendMail } from "@/lib/mail";
 import { jsonError, readJson, siteOrigin } from "@/lib/server";
 
 // Schickt einen Anmeldelink plus 6-stelligen Code an eine Uni-Mail.
@@ -25,6 +25,9 @@ export async function POST(req: NextRequest) {
     await sendMail(email, mail.subject, mail.text, mail.html);
   } catch (err) {
     console.error("Mail-Versand fehlgeschlagen", err);
+    if (err instanceof MailNotConfigured) {
+      return jsonError("Der Mail-Versand ist noch nicht eingerichtet. Bitte gib dem Admin Bescheid.", 503);
+    }
     return jsonError("Die Mail konnte gerade nicht verschickt werden. Bitte später nochmal versuchen.", 502);
   }
   return NextResponse.json({ success: true, email });
