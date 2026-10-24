@@ -119,6 +119,9 @@ function TableFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Statistik-Kacheln auf der Elo-Seite vorerst ausgeblendet – zum Einblenden auf true setzen.
+const SHOW_STATS = false;
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -266,7 +269,7 @@ export default async function HomePage({
         </div>
       )}
 
-      {allMatches.length > 0 && (
+      {SHOW_STATS && allMatches.length > 0 && (
         <div className="stats">
           <h2 className="centered">Statistiken</h2>
           <div className="stat-grid">
