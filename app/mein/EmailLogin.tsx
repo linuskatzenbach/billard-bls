@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import LoginForm from "./LoginForm";
 
 // Anmeldung per Uni-Mail: Link oder 6-stelliger Code, kein Passwort.
 export default function EmailLogin() {
@@ -13,7 +12,6 @@ export default function EmailLogin() {
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [adminOpen, setAdminOpen] = useState(false);
   const [resentAt, setResentAt] = useState(0);
 
   const fullEmail = (v: string) => {
@@ -163,19 +161,6 @@ export default function EmailLogin() {
         </button>
         {error && <p className="message error">{error}</p>}
       </form>
-      <div className="card auth-note">
-        <span aria-hidden="true">✨</span>
-        <span>
-          Neu hier? Nach dem Klick auf den Link legst du in 30 Sekunden dein Profil an. Schon dabei? Dann bist du direkt
-          eingeloggt.
-        </span>
-      </div>
-      <p className="auth-small">
-        <button type="button" className="linkish" onClick={() => setAdminOpen((v) => !v)}>
-          Admin-Login
-        </button>
-      </p>
-      {adminOpen && <LoginForm />}
     </div>
   );
 }

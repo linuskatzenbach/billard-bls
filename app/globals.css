@@ -2733,3 +2733,7 @@ button.ghost:hover { background: rgba(241, 233, 216, 0.08); }
   line-height: 1;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
 }
+
+/* Lange Namen nicht abschneiden: Level-Plakette und Krone rutschen notfalls in die nächste Zeile */
+.nline { flex-wrap: wrap; row-gap: 2px; }
+.nline .pname { flex-shrink: 0; max-width: 100%; }

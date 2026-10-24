@@ -24,6 +24,7 @@ export default function LoginForm() {
       if (!res.ok) throw new Error(data.error ?? "Login fehlgeschlagen.");
       setPassword("");
       window.dispatchEvent(new Event("billard:seen"));
+      router.push("/mein");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verbindung fehlgeschlagen.");
