@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getDisputes } from "@/lib/db";
+import { getDisputes, getUnseenSignups } from "@/lib/db";
 import { berlinDateTime, getOverview } from "@/lib/server";
 import { mailConfigured } from "@/lib/mail";
 import AdminPlayers from "./AdminPlayers";
@@ -13,8 +13,12 @@ export default async function AdminPage() {
   await connection();
   const session = await getSession();
   if (!session?.admin) redirect("/profil");
-  const [{ world, ov, nameOf }, disputes] = await Promise.all([getOverview(), getDisputes()]);
-  const unseen = disputes.some((d) => !d.seen);
+  const [{ world, ov, nameOf }, disputes, signups] = await Promise.all([
+    getOverview(),
+    getDisputes(),
+    getUnseenSignups(),
+  ]);
+  const unseen = disputes.some((d) => !d.seen) || signups.length > 0;
 
   const players = world.players.map((p) => ({
     id: p.id,
@@ -43,6 +47,11 @@ export default async function AdminPage() {
       )}
 
       <MarkDisputesSeen needed={unseen} />
+      {signups.length > 0 && (
+        <p className="message success">
+          Neu angemeldet: {signups.map((p) => p.name).join(", ")}
+        </p>
+      )}
       <div className="section-h">
         <h2>Widersprüche</h2>
         <span>gelöschte Spiele</span>

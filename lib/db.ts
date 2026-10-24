@@ -89,6 +89,10 @@ async function ensureSchema(): Promise<void> {
     );
   `;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS players_name_lower ON players (lower(name));`;
+  // Neue Anmeldungen für den roten Punkt beim Admin: bestehende Spieler gelten
+  // als gesehen, neu angelegte starten als ungesehen.
+  await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS admin_seen BOOLEAN NOT NULL DEFAULT true;`;
+  await sql`ALTER TABLE players ALTER COLUMN admin_seen SET DEFAULT false;`;
   await sql`
     CREATE TABLE IF NOT EXISTS login_tokens (
       id SERIAL PRIMARY KEY,
@@ -126,8 +130,8 @@ async function ensureSchema(): Promise<void> {
     for (const p of SEED_PLAYERS) {
       const email = SEED_EMAILS[p.id] ?? null;
       queries.push(sql`
-        INSERT INTO players (id, name, email, hidden, founder, is_admin)
-        VALUES (${p.id}, ${p.name}, ${email}, ${p.hidden ?? false}, true, ${SEED_ADMINS.includes(p.id)})
+        INSERT INTO players (id, name, email, hidden, founder, is_admin, admin_seen)
+        VALUES (${p.id}, ${p.name}, ${email}, ${p.hidden ?? false}, true, ${SEED_ADMINS.includes(p.id)}, true)
         ON CONFLICT (id) DO NOTHING
       `);
       queries.push(sql`
@@ -595,6 +599,24 @@ export async function getDisputes(): Promise<DisputeRow[]> {
 export async function markDisputesSeen(): Promise<void> {
   await ready();
   await getSql()`UPDATE disputes SET seen = true WHERE seen = false`;
+}
+
+// Neue Anmeldungen, die der Admin noch nicht gesehen hat.
+export async function getUnseenSignups(): Promise<{ id: string; name: string }[]> {
+  await ready();
+  const rows = await getSql()`SELECT id, name FROM players WHERE admin_seen = false ORDER BY created_at ASC`;
+  return rows.map((r) => ({ id: String(r.id), name: String(r.name) }));
+}
+
+export async function countUnseenSignups(): Promise<number> {
+  await ready();
+  const rows = await getSql()`SELECT count(*)::int AS n FROM players WHERE admin_seen = false`;
+  return Number(rows[0]?.n ?? 0);
+}
+
+export async function markSignupsSeen(): Promise<void> {
+  await ready();
+  await getSql()`UPDATE players SET admin_seen = true WHERE admin_seen = false`;
 }
 
 export async function countUnseenDisputes(): Promise<number> {
