@@ -51,8 +51,11 @@ const wrap = (inner: string) => `<!doctype html><html><body style="margin:0;back
 <div style="font-family:Georgia,serif;font-size:22px;font-weight:bold;margin-bottom:12px">🎱 Billard BLS</div>
 ${inner}
 </div>
-<p style="font-size:12px;color:#6b6252;text-align:center;margin-top:14px">Billard-Rangliste der Bucerius Law School</p>
 </div></body></html>`;
+
+// Tipp in den Anmelde-Mails: Website als App auf den Home-Bildschirm legen.
+const APP_TIP_TEXT = `📱 Tipp: Als App starten: in Safari auf „Teilen“ → „Zum Home-Bildschirm“ (auf Android in Chrome: ⋮ → „Zum Startbildschirm hinzufügen“). Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.`;
+const APP_TIP_HTML = `<p style="margin:18px 0 0;padding:12px 14px;background:rgba(241,233,216,.08);border-radius:10px;font-size:13px;line-height:1.5">📱 <b>Tipp: Als App starten:</b> in Safari auf „Teilen“ → „Zum Home-Bildschirm“ (auf Android in Chrome: ⋮ → „Zum Startbildschirm hinzufügen“). Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.</p>`;
 
 export function loginMail(link: string, code: string) {
   const subject = `Dein Anmeldelink für Billard BLS (Code ${code})`;
@@ -63,13 +66,16 @@ ${link}
 
 Oder gib diesen Code in der App ein: ${code}
 
-Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kannst du diese Mail ignorieren.`;
+Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kannst du diese Mail ignorieren.
+
+${APP_TIP_TEXT}`;
   const html = wrap(`
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Tippe auf den Knopf, um dich anzumelden:</p>
 <p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
 <p style="margin:0 0 6px;font-size:14px;opacity:.85">Oder diesen Code in der App eingeben:</p>
 <p style="margin:0 0 18px;font-family:Menlo,Consolas,monospace;font-size:30px;letter-spacing:6px;font-weight:bold;color:#e0bc4a">${code}</p>
-<p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kannst du diese Mail ignorieren.</p>`);
+<p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kannst du diese Mail ignorieren.</p>
+${APP_TIP_HTML}`);
   return { subject, text, html };
 }
 
@@ -86,14 +92,17 @@ ${link}
 
 Oder gib in der App unter „Mein Bereich“ deine Uni-Mail ein und dann diesen Code: ${code}
 
-Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.`;
+Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.
+
+${APP_TIP_TEXT}`;
   const html = wrap(`
 <p style="margin:0 0 10px;font-size:16px;line-height:1.5">Hallo <b>${name}</b>!</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Du bist zu Billard BLS eingeladen. Deine bisherigen Spiele, deine Elo und dein Level sind schon da.</p>
 <p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
 <p style="margin:0 0 6px;font-size:14px;opacity:.85">Oder in der App unter „Mein Bereich“ deine Uni-Mail und dann diesen Code eingeben:</p>
 <p style="margin:0 0 18px;font-family:Menlo,Consolas,monospace;font-size:30px;letter-spacing:6px;font-weight:bold;color:#e0bc4a">${code}</p>
-<p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.</p>`);
+<p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.</p>
+${APP_TIP_HTML}`);
   return { subject, text, html };
 }
 

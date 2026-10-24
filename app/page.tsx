@@ -395,7 +395,7 @@ function WeekBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null 
   const podium = list.slice(0, 3);
   return (
     <section>
-      <p className="board-hint">Wer diese Woche am meisten spielt · Wertung endet So, 23:59</p>
+      <p className="board-hint">Wer diese Woche am meisten spielt · Wertung endet So, 23:59 · Platz 1–3: +50 / +30 / +15 XP</p>
       {list.length === 0 ? (
         <p className="empty">Diese Woche wurde noch nicht gespielt. Sei der Erste!</p>
       ) : (
@@ -423,7 +423,6 @@ function WeekBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null 
                 <NameBlock s={s} />
                 <span className="bval">
                   {s.weekGames}
-                  <small>+{s.weekXp} XP</small>
                 </span>
               </Link>
             ))}

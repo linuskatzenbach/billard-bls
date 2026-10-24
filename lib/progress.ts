@@ -96,6 +96,7 @@ export type PlayerSummary = {
   gameXp: number;
   badgeXp: number;
   questXp: number;
+  podiumXp: number;
   level: number;
   levelInto: number;
   levelNeed: number;
@@ -154,6 +155,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
     gameXp: 0,
     badgeXp: 0,
     questXp: 0,
+    podiumXp: 0,
     level: 1,
     levelInto: 0,
     levelNeed: LEVEL_XP[2],
@@ -207,7 +209,8 @@ export function computeOverview(world: World, now = new Date()): Overview {
     s.gameXp = s.xp;
     s.badgeXp = ach[s.id]?.badgeXp ?? 0;
     s.questXp = ach[s.id]?.questXp ?? 0;
-    s.xp += s.badgeXp + s.questXp;
+    s.podiumXp = ach[s.id]?.podiumXp ?? 0;
+    s.xp += s.badgeXp + s.questXp + s.podiumXp;
   }
 
   // Aktivität: Wochen in Folge mit mindestens einem Spiel.

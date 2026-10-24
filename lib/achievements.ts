@@ -1,6 +1,6 @@
 import type { MatchRow, World } from "./db";
 import { START_ELO } from "./elo";
-import { DAY, addWeeks, berlinHour, dayKey, weekKey } from "./time";
+import { DAY, addWeeks, berlinHour, dayKey, weekEndIso, weekKey } from "./time";
 
 // Abzeichen und Wochenaufgaben. Alles wird aus den gespeicherten Spielen
 // berechnet (auch rückwirkend) – es gibt dafür keine eigene Tabelle.
@@ -10,6 +10,10 @@ const MIN_RANKED = 3; // wie in progress.ts: erst ab 3 Spielen in der Elo-Rangli
 // Wochenaufgaben gibt es ab dieser Woche (Montag der Uni-Öffnung).
 export const QUEST_START = "2026-10-19";
 export const QUEST_BONUS = 50;
+
+// XP für Platz 1–3 im Wochenzocker (abgeschlossene Wochen ab QUEST_START).
+// Gleich viele Spiele = gleicher Platz.
+export const PODIUM_XP = [50, 30, 15];
 
 // ---------------------------------------------------------------------------
 // Abzeichen
@@ -150,6 +154,7 @@ export type PlayerAchievements = {
   badges: EarnedBadge[];
   badgeXp: number;
   questXp: number;
+  podiumXp: number; // Wochenzocker Platz 1–3
   quests: Quest[]; // laufende Woche
   questBonus: boolean; // alle drei geschafft
   questWeek: string;
@@ -510,15 +515,21 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
   checkThrone(now.getTime());
   flushWeeksUntil(thisWeek);
 
-  // Abgeschlossene Wochen: Wochenzocker und Perfekte Woche
+  // Abgeschlossene Wochen: Wochenzocker, Podest-XP und Perfekte Woche
+  const podiumXp: Record<string, number> = {};
   for (const [wk, stats] of Object.entries(weekStats)) {
     if (wk >= thisWeek) continue;
-    const end = new Date(new Date(`${addWeeks(wk, 1)}T00:00:00+01:00`).getTime() - 1000).toISOString();
-    const rows = Object.entries(stats).filter(([id]) => visible.has(id));
+    const end = weekEndIso(wk);
+    const rows = Object.entries(stats).filter(([id]) => visible.has(id) && stats[id].g > 0);
     const top = Math.max(0, ...rows.map(([, s]) => s.g));
     for (const [id, s] of rows) {
       if (top > 0 && s.g === top) give(id, "wochenzocker", null, end);
       if (s.w >= 5 && s.l === 0) give(id, "perfekte-woche", null, end);
+      if (wk >= QUEST_START) {
+        // Platz = 1 + Anzahl der Spieler mit mehr Spielen
+        const place = 1 + rows.filter(([, o]) => o.g > s.g).length;
+        if (place <= PODIUM_XP.length) podiumXp[id] = (podiumXp[id] ?? 0) + PODIUM_XP[place - 1];
+      }
     }
   }
 
@@ -583,6 +594,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       badges,
       badgeXp: badges.reduce((n, b) => n + b.xp, 0),
       questXp,
+      podiumXp: podiumXp[id] ?? 0,
       quests: current,
       questBonus: current.length > 0 && current.every((q) => q.done),
       questWeek: thisWeek,

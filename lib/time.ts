@@ -25,6 +25,14 @@ export function weekKey(d: Date | string): string {
 }
 export const addWeeks = (wk: string, n: number) => utcToKey(keyToUtc(wk) + n * 7 * DAY);
 
+// Letzte Sekunde einer Woche (So 23:59:59 deutscher Zeit) als ISO-Zeitpunkt –
+// berücksichtigt Sommer- und Winterzeit.
+export function weekEndIso(wk: string): string {
+  const nextMonday = keyToUtc(addWeeks(wk, 1)); // 00:00 UTC
+  const offsetH = berlinHour(new Date(nextMonday)); // 1 (Winter) oder 2 (Sommer)
+  return new Date(nextMonday - offsetH * 3_600_000 - 1000).toISOString();
+}
+
 
 const hourFmt = new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, hour: "2-digit", hourCycle: "h23" });
 // Stunde (0–23) nach deutscher Zeit.
