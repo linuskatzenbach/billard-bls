@@ -160,6 +160,22 @@ async function unhideJulian(): Promise<void> {
   }
 }
 
+// Einmalig: "Promotion" und "Mitarbeiter" heißen jetzt zusammen "WissMit".
+async function wissMit(): Promise<void> {
+  const sql = getSql();
+  const done = await sql`SELECT 1 FROM migrations WHERE name = 'cohort-wissmit';`;
+  if (done.length > 0) return;
+  try {
+    await sql.transaction([
+      sql`UPDATE players SET cohort = 'WissMit' WHERE cohort IN ('Promotion', 'Mitarbeiter')`,
+      sql`INSERT INTO migrations (name) VALUES ('cohort-wissmit')`,
+    ]);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = 'cohort-wissmit';`;
+    if (again.length === 0) throw err;
+  }
+}
+
 // Einmalig: alle Spieler aus der Startliste sind Jahrgang 2022.
 async function founderCohort(): Promise<void> {
   const sql = getSql();
@@ -178,7 +194,7 @@ async function founderCohort(): Promise<void> {
 
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).catch((err) => {
+    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).catch((err) => {
       schemaReady = null;
       throw err;
     });

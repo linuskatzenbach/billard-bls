@@ -18,11 +18,11 @@ export default function DatenschutzPage() {
       <h2>Welche Daten speichern wir?</h2>
       <ul>
         <li>deine Uni-Mail-Adresse (nur für die Anmeldung, nicht öffentlich sichtbar)</li>
-        <li>deinen Anzeigenamen und deinen Jahrgang</li>
+        <li>deinen Vornamen (aus der Uni-Mail, bei Namensgleichheit mit Anfangsbuchstaben des Nachnamens) und deinen Jahrgang</li>
         <li>deine eingetragenen Spiele mit Datum und Uhrzeit sowie die daraus berechneten Werte (Elo, Level, Statistiken)</li>
       </ul>
       <p>
-        Öffentlich sichtbar sind dein Anzeigename, dein Jahrgang, deine Spiele und die daraus berechneten Werte – das ist der Sinn der
+        Öffentlich sichtbar sind dein Vorname, dein Jahrgang, deine Spiele und die daraus berechneten Werte – das ist der Sinn der
         Rangliste.
       </p>
 

@@ -1,8 +1,8 @@
 import { connection } from "next/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSession, getSignupEmail, suggestName } from "@/lib/auth";
-import { COHORTS } from "@/lib/names";
+import { getSession, getSignupEmail } from "@/lib/auth";
+import { COHORTS, firstNameFromEmail } from "@/lib/names";
 import Onboarding from "./Onboarding";
 
 // Profil anlegen nach dem ersten Login mit einer neuen Uni-Mail.
@@ -21,5 +21,5 @@ export default async function WillkommenPage() {
       </div>
     );
   }
-  return <Onboarding suggested={suggestName(email)} cohorts={COHORTS} />;
+  return <Onboarding first={firstNameFromEmail(email)} cohorts={COHORTS} />;
 }

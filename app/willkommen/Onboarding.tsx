@@ -2,12 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Wreath from "../Wreath";
 
-export default function Onboarding({ suggested, cohorts }: { suggested: string; cohorts: string[] }) {
-  const router = useRouter();
-  const [name, setName] = useState(suggested);
+export default function Onboarding({ first, cohorts }: { first: string; cohorts: string[] }) {
   const [cohort, setCohort] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,13 +18,12 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, cohort }),
+        body: JSON.stringify({ cohort }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Das hat nicht geklappt.");
       window.dispatchEvent(new Event("billard:seen"));
       setDone(true);
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verbindung fehlgeschlagen.");
     } finally {
@@ -36,7 +32,6 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
   }
 
   if (done) {
-    const first = name.trim().split(" ")[0];
     return (
       <div className="auth welcome">
         <div className="welcome-wreath">
@@ -84,21 +79,9 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
 
   return (
     <div className="auth">
-      <h1>Wer bist du?</h1>
-      <p className="subtitle">So erscheinst du in der Rangliste.</p>
+      <h1>Hallo, {first}!</h1>
+      <p className="subtitle">Schön, dass du dabei bist.</p>
       <form className="auth-form" onSubmit={submit}>
-        <label>
-          Anzeigename
-          <input
-            type="text"
-            value={name}
-            maxLength={20}
-            autoComplete="nickname"
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <span className="field-help">Am besten Vorname und Anfangsbuchstabe, z. B. „Max M.“</span>
-        </label>
         <fieldset className="chips-field">
           <legend>Jahrgang</legend>
           <div className="chips">
@@ -115,13 +98,13 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
             ))}
           </div>
         </fieldset>
-        <button type="submit" disabled={busy || name.trim().length < 2 || !cohort}>
+        <button type="submit" disabled={busy || !cohort}>
           {busy ? "Lege an…" : "Profil anlegen"}
         </button>
         {error && <p className="message error">{error}</p>}
       </form>
       <p className="auth-small">
-        Mit dem Anlegen erscheinen dein Anzeigename und deine Spiele öffentlich in der Rangliste.{" "}
+        Mit der Anmeldung erscheint dein Vorname, dein Jahrgang und die Spiele öffentlich in der Rangliste. Die Mail-Adresse ist geheim.{" "}
         <Link href="/datenschutz">Datenschutz</Link>
       </p>
     </div>
