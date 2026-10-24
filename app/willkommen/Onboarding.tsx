@@ -68,7 +68,7 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
             <i>2</i>
             <i>3</i>
           </div>
-          <div className="slots-help">In „Wochensieger“ und „Aktivität“ zählst du ab sofort.</div>
+          <div className="slots-help">In „Wochenzocker“ und „Aktivität“ zählst du ab sofort.</div>
         </div>
         <Link href="/eintragen" className="cta">
           <span className="cta-felt">

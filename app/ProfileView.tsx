@@ -115,7 +115,6 @@ export default function ProfileView({
         <p className="profile-chip">
           {s.rank ? `Platz ${s.rank}` : "Vorläufig"} · {wreathName(s.level)}
           {s.cohort && ` · ${cohortLong(s.cohort)}`}
-          {s.founder && " · Gründungsmitglied"}
         </p>
       </div>
 

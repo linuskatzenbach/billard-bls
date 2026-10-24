@@ -40,7 +40,7 @@ const fmtElo = (n: number) => n.toLocaleString("de-DE");
 
 const TABS = [
   { key: "elo", label: "Elo" },
-  { key: "woche", label: "Wochensieger" },
+  { key: "woche", label: "Wochenzocker" },
   { key: "level", label: "Level" },
   { key: "aktiv", label: "Aktivität" },
 ] as const;
