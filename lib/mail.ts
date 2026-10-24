@@ -73,6 +73,30 @@ Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kanns
   return { subject, text, html };
 }
 
+// Einladung aus dem Admin-Bereich (z. B. für Freunde mit bestehendem Spieler).
+export function inviteMail(name: string, link: string, code: string, days: number) {
+  const subject = `Deine Einladung zu Billard BLS`;
+  const text = `Hallo ${name}!
+
+Du bist zu Billard BLS eingeladen, der Billard-Rangliste der Bucerius Law School.
+Deine bisherigen Spiele, deine Elo und dein Level sind schon da.
+
+Tippe auf diesen Link, um dich anzumelden:
+${link}
+
+Oder gib in der App unter „Mein Bereich“ deine Uni-Mail ein und dann diesen Code: ${code}
+
+Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.`;
+  const html = wrap(`
+<p style="margin:0 0 10px;font-size:16px;line-height:1.5">Hallo <b>${name}</b>!</p>
+<p style="margin:0 0 16px;font-size:15px;line-height:1.5">Du bist zu Billard BLS eingeladen. Deine bisherigen Spiele, deine Elo und dein Level sind schon da.</p>
+<p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
+<p style="margin:0 0 6px;font-size:14px;opacity:.85">Oder in der App unter „Mein Bereich“ deine Uni-Mail und dann diesen Code eingeben:</p>
+<p style="margin:0 0 18px;font-family:Menlo,Consolas,monospace;font-size:30px;letter-spacing:6px;font-weight:bold;color:#e0bc4a">${code}</p>
+<p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.</p>`);
+  return { subject, text, html };
+}
+
 export function disputeMail(p: {
   winner: string;
   loser: string;

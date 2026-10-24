@@ -73,8 +73,8 @@ export default async function AdminPage() {
         <span>Name, Uni-Mail, sichtbar</span>
       </div>
       <p className="hint-left">
-        Trag hier die Uni-Mails deiner Freunde ein – wer sich dann mit dieser Adresse anmeldet, übernimmt seinen
-        bestehenden Spieler.
+        Uni-Mail eintragen, speichern und dann „Einladung schicken“ tippen – die Mail ist 7 Tage gültig. Wer sich mit
+        dieser Adresse anmeldet, übernimmt seinen bestehenden Spieler.
       </p>
       <AdminPlayers players={players} cohorts={COHORTS} />
 

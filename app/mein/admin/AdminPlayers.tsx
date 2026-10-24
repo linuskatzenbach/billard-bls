@@ -14,6 +14,19 @@ function Row({ p, cohorts }: { p: P; cohorts: string[] }) {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function invite() {
+    setBusy(true);
+    setMsg("");
+    const res = await fetch("/api/admin/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id }),
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => ({})) : {};
+    setBusy(false);
+    setMsg(res && res.ok ? `Einladung an ${data.email} verschickt ✓` : data.error ?? "Hat nicht geklappt.");
+  }
+
   async function save(fields: Partial<{ name: string; email: string; hidden: boolean; cohort: string }>) {
     setBusy(true);
     setMsg("");
@@ -82,6 +95,11 @@ function Row({ p, cohorts }: { p: P; cohorts: string[] }) {
               {p.hidden ? "Wieder einblenden" : "Ausblenden"}
             </button>
           </div>
+          {p.email && (
+            <button type="button" className="ghost invite-btn" disabled={busy} onClick={invite}>
+              ✉️ Einladung an {p.email} schicken
+            </button>
+          )}
           <span className="ap-id">ID: {p.id}</span>
           {msg && <p className={`message ${msg.includes("✓") ? "success" : "error"}`}>{msg}</p>}
         </div>
