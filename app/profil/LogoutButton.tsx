@@ -15,7 +15,7 @@ export default function LogoutButton() {
         setBusy(true);
         await fetch("/api/logout", { method: "POST" }).catch(() => {});
         window.dispatchEvent(new Event("billard:seen"));
-        router.push("/mein");
+        router.push("/profil");
         router.refresh();
         setBusy(false);
       }}

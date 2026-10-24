@@ -139,10 +139,10 @@ export default function RewardOverlay() {
         ))}
 
         <div className="reward-btns">
-          <Link href={state.test ? "/mein/admin" : "/mein"} className="bigbtn ghost-btn" onClick={close}>
+          <Link href={state.test ? "/profil/admin" : "/profil"} className="bigbtn ghost-btn" onClick={close}>
             Profil
           </Link>
-          <Link href={state.test ? "/mein/test" : "/eintragen"} className="bigbtn" onClick={close}>
+          <Link href={state.test ? "/profil/test" : "/eintragen"} className="bigbtn" onClick={close}>
             Noch ein Spiel
           </Link>
         </div>

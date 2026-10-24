@@ -110,7 +110,7 @@ export default function ResultForm({
   opponents: Pick[];
 }) {
   const test = mode === "test";
-  const home = test ? "/mein/admin" : "/";
+  const home = test ? "/profil/admin" : "/";
   const router = useRouter();
   const [opponentId, setOpponentId] = useState("");
   const [iWon, setIWon] = useState<boolean | null>(null);

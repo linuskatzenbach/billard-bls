@@ -21,7 +21,7 @@ export default function LinkLogin({ token }: { token: string }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Das hat nicht geklappt.");
       window.dispatchEvent(new Event("billard:seen"));
-      router.replace(data.next ?? "/mein");
+      router.replace(data.next ?? "/profil");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verbindung fehlgeschlagen.");
@@ -44,7 +44,7 @@ export default function LinkLogin({ token }: { token: string }) {
       {error && (
         <>
           <p className="message error">{error}</p>
-          <Link href="/mein" className="nav-link">
+          <Link href="/profil" className="nav-link">
             Neuen Link anfordern
           </Link>
         </>

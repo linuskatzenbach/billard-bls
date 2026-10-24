@@ -42,7 +42,7 @@ export default async function MeinPage() {
     <>
       <MarkSeen needed={unread > 0} />
       {session.admin && (
-        <Link href="/mein/admin" className="admin-link">
+        <Link href="/profil/admin" className="admin-link">
           🛡️ Admin-Bereich
           {disputes > 0 && <span className="admin-badge">{disputes} neu</span>}
         </Link>

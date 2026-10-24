@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function DatenschutzPage() {
   return (
     <div className="legal">
-      <Link href="/mein" className="back-link">
+      <Link href="/profil" className="back-link">
         ← Zurück
       </Link>
       <h1>Datenschutz</h1>

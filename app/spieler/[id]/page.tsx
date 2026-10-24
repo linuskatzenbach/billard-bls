@@ -10,6 +10,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ id: str
   const [{ world, ov }, session] = await Promise.all([getOverview(), getSession()]);
   const s = ov.byId[id];
   if (!s || s.hidden) notFound();
-  if (session?.playerId === id) redirect("/mein");
+  if (session?.playerId === id) redirect("/profil");
   return <ProfileView s={s} world={world} ov={ov} viewerId={session?.playerId ?? null} />;
 }

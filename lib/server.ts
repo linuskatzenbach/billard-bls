@@ -40,7 +40,7 @@ export function siteOrigin(req: NextRequest): string {
 export async function loginResponse(email: string): Promise<NextResponse> {
   const player = await getPlayerByEmail(email);
   if (player) {
-    const res = NextResponse.json({ success: true, next: "/mein" });
+    const res = NextResponse.json({ success: true, next: "/profil" });
     res.cookies.set(SESSION_COOKIE, sessionToken({ playerId: player.id, admin: player.is_admin }), cookieOptions(SESSION_MAX_AGE));
     res.cookies.set(SIGNUP_COOKIE, "", { path: "/", maxAge: 0 });
     return res;

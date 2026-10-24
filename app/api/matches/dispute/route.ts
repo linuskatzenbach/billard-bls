@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       enteredBy: await name(m.entered_by),
       disputedBy: await name(session.playerId),
       playedAt: berlinDateTime(m.created_at),
-      adminLink: `${siteOrigin(req)}/mein/admin`,
+      adminLink: `${siteOrigin(req)}/profil/admin`,
     });
     await sendMail(ADMIN_MAIL, mail.subject, mail.text, mail.html);
   } catch (err) {

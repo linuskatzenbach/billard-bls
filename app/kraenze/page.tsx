@@ -21,7 +21,7 @@ export default async function KraenzePage({
 
   return (
     <>
-      <Link href={s ? (s.id === session?.playerId ? "/mein" : `/spieler/${s.id}`) : "/"} className="back-link">
+      <Link href={s ? (s.id === session?.playerId ? "/profil" : `/spieler/${s.id}`) : "/"} className="back-link">
         ← {s ? (s.id === session?.playerId ? "Profil" : s.name) : "Rangliste"}
       </Link>
       <h1>Lorbeerkränze</h1>

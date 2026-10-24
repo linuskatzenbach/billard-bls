@@ -12,7 +12,7 @@ import MarkDisputesSeen from "./MarkDisputesSeen";
 export default async function AdminPage() {
   await connection();
   const session = await getSession();
-  if (!session?.admin) redirect("/mein");
+  if (!session?.admin) redirect("/profil");
   const [{ world, ov, nameOf }, disputes] = await Promise.all([getOverview(), getDisputes()]);
   const unseen = disputes.some((d) => !d.seen);
 
@@ -28,7 +28,7 @@ export default async function AdminPage() {
 
   return (
     <>
-      <Link href="/mein" className="back-link">
+      <Link href="/profil" className="back-link">
         ← Mein Profil
       </Link>
       <h1>Admin-Bereich</h1>
@@ -78,7 +78,7 @@ export default async function AdminPage() {
       </p>
       <AdminPlayers players={players} cohorts={COHORTS} />
 
-      <Link href="/mein/test" className="cta cta-test">
+      <Link href="/profil/test" className="cta cta-test">
         <span className="cta-felt">
           <span className="cta-label">Testspiel eintragen</span>
         </span>

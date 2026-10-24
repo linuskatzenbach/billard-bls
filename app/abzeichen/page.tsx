@@ -26,7 +26,7 @@ export default async function AbzeichenPage({
         <div className="auth">
           <h1>Abzeichen</h1>
           <p className="subtitle">Melde dich an, um deine Abzeichen zu sehen.</p>
-          <Link href="/mein" className="bigbtn">
+          <Link href="/profil" className="bigbtn">
             Anmelden
           </Link>
         </div>
@@ -60,7 +60,7 @@ export default async function AbzeichenPage({
 
   return (
     <>
-      <Link href={own ? "/mein" : `/spieler/${s.id}`} className="back-link">
+      <Link href={own ? "/profil" : `/spieler/${s.id}`} className="back-link">
         ← {own ? "Profil" : s.name}
       </Link>
       <h1>Abzeichen</h1>

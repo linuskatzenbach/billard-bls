@@ -18,7 +18,7 @@ export default function TabBar() {
 let lastCheck = 0;
 let lastDot = false;
 
-const isMine = (path: string) => path === "/mein" || path.startsWith("/mein/");
+const isMine = (path: string) => path === "/profil" || path.startsWith("/profil/");
 
 // Beim Antippen wird sofort nur der neue Tab markiert, auch wenn die Seite
 // noch lädt und die Adresse sich noch nicht geändert hat.
@@ -78,7 +78,7 @@ function Bar({ mine, dot = false, onPick }: { mine: boolean | null; dot?: boolea
           <span>Rangliste</span>
         </Link>
         <span className="navtab-divider" aria-hidden="true" />
-        <Link href="/mein" onClick={() => onPick?.(true)} className={`navtab${mine ? " active" : ""}`} aria-current={mine ? "page" : undefined}>
+        <Link href="/profil" onClick={() => onPick?.(true)} className={`navtab${mine ? " active" : ""}`} aria-current={mine ? "page" : undefined}>
           <span className="navtab-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="8" r="3.6" />

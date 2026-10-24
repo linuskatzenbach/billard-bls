@@ -52,7 +52,7 @@ export default function EmailLogin() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Der Code stimmt nicht.");
       window.dispatchEvent(new Event("billard:seen"));
-      router.push(data.next ?? "/mein");
+      router.push(data.next ?? "/profil");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verbindung fehlgeschlagen.");

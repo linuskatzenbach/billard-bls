@@ -75,7 +75,7 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
             <span className="cta-label">Erstes Spiel eintragen</span>
           </span>
         </Link>
-        <Link href="/mein" className="nav-link">
+        <Link href="/profil" className="nav-link">
           Zu meinem Profil
         </Link>
       </div>

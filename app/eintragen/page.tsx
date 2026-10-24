@@ -15,7 +15,7 @@ export default async function EintragenPage() {
         <p className="subtitle">Eingetragen wird vom eigenen Profil aus.</p>
         <div className="card login-needed">
           <p>Melde dich mit deiner Uni-Mail an – dauert 30 Sekunden, ganz ohne Passwort.</p>
-          <Link href="/mein" className="bigbtn">
+          <Link href="/profil" className="bigbtn">
             Anmelden
           </Link>
         </div>
