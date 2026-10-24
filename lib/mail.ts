@@ -54,8 +54,8 @@ ${inner}
 </div></body></html>`;
 
 // Tipp in den Anmelde-Mails: Website als App auf den Home-Bildschirm legen.
-const APP_TIP_TEXT = `📱 Tipp: Als App starten: in Safari auf „Teilen“ → „Zum Home-Bildschirm“ (auf Android in Chrome: ⋮ → „Zum Startbildschirm hinzufügen“). Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.`;
-const APP_TIP_HTML = `<p style="margin:18px 0 0;padding:12px 14px;background:rgba(241,233,216,.08);border-radius:10px;font-size:13px;line-height:1.5">📱 <b>Tipp: Als App starten:</b> in Safari auf „Teilen“ → „Zum Home-Bildschirm“ (auf Android in Chrome: ⋮ → „Zum Startbildschirm hinzufügen“). Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.</p>`;
+const APP_TIP_TEXT = `📱 Tipp: Als App starten: in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.`;
+const APP_TIP_HTML = `<p style="margin:18px 0 0;padding:12px 14px;background:rgba(241,233,216,.08);border-radius:10px;font-size:13px;line-height:1.5">📱 <b>Tipp: Als App starten:</b> in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.</p>`;
 
 export function loginMail(link: string, code: string) {
   const subject = `Dein Anmeldelink für Billard BLS (Code ${code})`;
