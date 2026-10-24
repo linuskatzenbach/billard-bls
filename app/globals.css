@@ -1917,6 +1917,9 @@ h1.leader {
   font-weight: 400;
   opacity: 0.6;
 }
+/* Level-Tab: feste Spaltenbreite, damit Level und XP in jeder Zeile exakt mittig untereinander stehen */
+.row.brow.wrow.lrow { grid-template-columns: 2.8rem minmax(0, 1fr) 4.6rem; }
+.bval.lval { text-align: center; }
 .bval b { font-family: "Fraunces", Georgia, serif; font-size: 1.3rem; }
 .wflame { margin-right: 3px; }
 .wflame.dim { filter: grayscale(0.6); opacity: 0.55; }

@@ -449,10 +449,10 @@ function LevelBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null
       ) : (
         <div className="board">
           {list.map((s, i) => (
-            <Link href={`/spieler/${s.id}`} key={s.id} className={`row brow wrow${s.id === myId ? " is-me" : ""}`}>
+            <Link href={`/spieler/${s.id}`} key={s.id} className={`row brow wrow lrow${s.id === myId ? " is-me" : ""}`}>
               <Wreath level={s.level} rank={pl[i]} label={`Platz ${pl[i]}, Level ${s.level}`} />
               <NameBlock s={s} />
-              <span className="bval">
+              <span className="bval lval">
                 Lvl {s.level}
                 <small>{fmtElo(s.xp)} XP</small>
               </span>
