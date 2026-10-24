@@ -42,13 +42,18 @@ export default function ProfileView({
       ? [{ t: games[0].createdAt, elo: START_ELO }, ...games.map((g) => ({ t: g.createdAt, elo: g.eloAfter }))]
       : [];
 
-  // Größter Upset: Sieg gegen den Gegner mit dem größten Elo-Vorsprung.
-  let upset: { gap: number; opp: string } | null = null;
-  for (const m of world.matches) {
-    if (m.winner_id !== s.id) continue;
-    const gap = m.loser_elo_before - m.winner_elo_before;
-    if (gap > 0 && (!upset || gap > upset.gap)) upset = { gap, opp: m.loser_id };
+  // Bester Tag: Kalendertag (Berlin) mit dem größten Elo-Gewinn netto.
+  const dayKey = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "numeric" });
+  const perDay = new Map<string, { gain: number; label: string }>();
+  for (const g of games) {
+    const d = new Date(g.createdAt);
+    const key = d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }); // YYYY-MM-DD
+    const e = perDay.get(key) ?? { gain: 0, label: dayKey.format(d) };
+    e.gain += g.eloAfter - g.eloBefore;
+    perDay.set(key, e);
   }
+  let bestDay: { gain: number; label: string } | null = null;
+  for (const e of perDay.values()) if (e.gain > 0 && (!bestDay || e.gain >= bestDay.gain)) bestDay = e;
 
   // Kopf an Kopf
   const rec = new Map<string, { w: number; l: number }>();
@@ -296,9 +301,9 @@ export default function ProfileView({
               </span>
             </div>
             <div className="kpi card">
-              <span className="kpi-l">Größter Upset</span>
-              <span className="kpi-v">{upset ? `+${upset.gap}` : "–"}</span>
-              {upset && <span className="kpi-s">vs. {nameOf(upset.opp)}</span>}
+              <span className="kpi-l">Bester Tag</span>
+              <span className="kpi-v">{bestDay ? `+${bestDay.gain} Elo` : "–"}</span>
+              {bestDay && <span className="kpi-s">{bestDay.label}</span>}
             </div>
             <div className="kpi card">
               <span className="kpi-l">Aktuell</span>
