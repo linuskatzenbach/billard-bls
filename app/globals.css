@@ -1872,12 +1872,21 @@ h1.leader {
   font-family: "Fraunces", Georgia, serif;
   font-weight: 700;
   font-size: 0.68rem;
-  padding: 1px 6px;
-  border-radius: 9px;
+  /* Ziffern exakt mittig im Kreis: Versalziffern (Fraunces nutzt sonst Mediävalziffern,
+     die nach unten hängen) und Zentrierung per Flexbox statt über die Zeilenhöhe */
+  font-variant-numeric: lining-nums tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 5px;
+  border-radius: 999px;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(224, 188, 74, 0.5);
   color: var(--brass-bright);
-  line-height: 1.4;
+  line-height: 1;
 }
 .crown { font-size: 0.9rem; }
 .row.is-me {
