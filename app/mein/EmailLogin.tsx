@@ -165,7 +165,7 @@ export default function EmailLogin() {
         <span aria-hidden="true">📱</span>
         <span>
           <b>Tipp: Als App starten:</b> in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Dann öffnet sich Billard BLS
-          wie eine App.
+          wie eine App, aber ohne Speicherplatz wegzunehmen.
         </span>
       </div>
     </div>
