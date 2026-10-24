@@ -39,6 +39,7 @@ export const BADGES: BadgeDef[] = [
   { id: "dauerbrenner", name: "Dauerbrenner", icon: "📅", desc: "{n} Wochen Aktivität in Folge", tiers: [4, 10, 20], unit: "Wochen" },
   { id: "netzwerker", name: "Netzwerker", icon: "🤝", desc: "gegen {n} verschiedene Gegner", tiers: [5, 10, 20], unit: "Gegner" },
   { id: "aufsteiger", name: "Aufsteiger", icon: "📈", desc: "Elo {n} erreicht", tiers: [1600, 1700, 1800], unit: "Elo" },
+  { id: "buce-spirit", name: "Buce-Spirit", icon: "🎓", desc: "gegen Spieler aus {n} verschiedenen Jahrgängen", tiers: [3, 4, 5], unit: "Jahrgänge" },
 
   { id: "erster-sieg", name: "Erster Sieg", icon: "✨", desc: "Der allererste Sieg", metal: "bronze", xp: 25 },
   { id: "revanche", name: "Revanche", icon: "🔁", desc: "Jemanden direkt nach einer Niederlage gegen ihn geschlagen", metal: "bronze", xp: 75 },
@@ -57,7 +58,7 @@ export const BADGES: BadgeDef[] = [
   { id: "sechs-sieben", name: "6?-7!", icon: "♟️", desc: "Mindestens 6 Niederlagen in Folge, direkt danach mindestens 7 Siege in Folge", secret: true, metal: "secret", xp: 500 },
 ];
 
-export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 32
+export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 35
 
 export const FOUNDER_BADGE = { name: "Gründungsmitglied", icon: "🏛️", desc: "War schon vor der Uni-Öffnung dabei" };
 
@@ -139,6 +140,7 @@ type PlayerState = {
   bestWinStreak: number;
   peakElo: number;
   opponents: Set<string>;
+  oppCohorts: Set<string>; // Jahrgänge der Gegner
   // Bilanz gegen einzelne Gegner
   vs: Map<string, { w: number; l: number; last: "w" | "l" }>;
   days: Map<string, number>;
@@ -159,6 +161,7 @@ export type PlayerAchievements = {
 
 export function computeAchievements(world: World, now = new Date()): Record<string, PlayerAchievements> {
   const visible = new Set(world.players.filter((p) => !p.hidden).map((p) => p.id));
+  const cohortOf = new Map(world.players.filter((p) => p.cohort).map((p) => [p.id, p.cohort as string]));
   const st: Record<string, PlayerState> = {};
   const S = (id: string): PlayerState =>
     (st[id] ??= {
@@ -171,6 +174,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       bestWinStreak: 0,
       peakElo: START_ELO,
       opponents: new Set(),
+      oppCohorts: new Set(),
       vs: new Map(),
       days: new Map(),
       weeks: new Set(),
@@ -455,6 +459,8 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       s.elo = after;
       s.peakElo = Math.max(s.peakElo, after);
       s.opponents.add(opp);
+      const oc = cohortOf.get(opp);
+      if (oc) s.oppCohorts.add(oc);
       const r = s.vs.get(opp) ?? { w: 0, l: 0, last: "w" as const };
       if (won) {
         r.w++;
@@ -486,6 +492,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       giveTiers(id, "heisser-lauf", s.bestWinStreak, m.created_at);
       giveTiers(id, "netzwerker", s.opponents.size, m.created_at);
       giveTiers(id, "aufsteiger", s.peakElo, m.created_at);
+      giveTiers(id, "buce-spirit", s.oppCohorts.size, m.created_at);
       if ((s.days.get(day) ?? 0) >= 5) give(id, "suechtiger", null, m.created_at);
       const h = berlinHour(m.created_at);
       if (h < 5) give(id, "nachteule", null, m.created_at);
@@ -564,6 +571,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       dauerbrenner: weekRun,
       netzwerker: s.opponents.size,
       aufsteiger: s.peakElo,
+      "buce-spirit": s.oppCohorts.size,
     };
     const progress: PlayerAchievements["progress"] = {};
     for (const def of BADGES) {

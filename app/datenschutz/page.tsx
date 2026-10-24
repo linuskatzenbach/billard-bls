@@ -8,7 +8,6 @@ export default function DatenschutzPage() {
         ← Zurück
       </Link>
       <h1>Datenschutz</h1>
-      <p className="subtitle">Kurz und verständlich</p>
 
       <h2>Wer betreibt Billard BLS?</h2>
       <p>
@@ -19,11 +18,11 @@ export default function DatenschutzPage() {
       <h2>Welche Daten speichern wir?</h2>
       <ul>
         <li>deine Uni-Mail-Adresse (nur für die Anmeldung, nicht öffentlich sichtbar)</li>
-        <li>deinen Anzeigenamen und optional deinen Jahrgang</li>
+        <li>deinen Anzeigenamen und deinen Jahrgang</li>
         <li>deine eingetragenen Spiele mit Datum und Uhrzeit sowie die daraus berechneten Werte (Elo, Level, Statistiken)</li>
       </ul>
       <p>
-        Öffentlich sichtbar sind dein Anzeigename, deine Spiele und die daraus berechneten Werte – das ist der Sinn der
+        Öffentlich sichtbar sind dein Anzeigename, dein Jahrgang, deine Spiele und die daraus berechneten Werte – das ist der Sinn der
         Rangliste.
       </p>
 

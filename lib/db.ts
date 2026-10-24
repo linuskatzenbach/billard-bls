@@ -144,6 +144,22 @@ async function ensureSchema(): Promise<void> {
   }
 }
 
+// Einmalig: Julian möchte wieder öffentlich in allen Ranglisten stehen.
+async function unhideJulian(): Promise<void> {
+  const sql = getSql();
+  const done = await sql`SELECT 1 FROM migrations WHERE name = 'unhide-julian';`;
+  if (done.length > 0) return;
+  try {
+    await sql.transaction([
+      sql`UPDATE players SET hidden = false WHERE id = 'julian'`,
+      sql`INSERT INTO migrations (name) VALUES ('unhide-julian')`,
+    ]);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = 'unhide-julian';`;
+    if (again.length === 0) throw err;
+  }
+}
+
 // Einmalig: alle Spieler aus der Startliste sind Jahrgang 2022.
 async function founderCohort(): Promise<void> {
   const sql = getSql();
@@ -162,7 +178,7 @@ async function founderCohort(): Promise<void> {
 
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().then(founderCohort).catch((err) => {
+    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).catch((err) => {
       schemaReady = null;
       throw err;
     });

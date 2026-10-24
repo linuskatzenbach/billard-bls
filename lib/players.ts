@@ -13,7 +13,7 @@ export type SeedPlayer = {
 
 export const SEED_PLAYERS: SeedPlayer[] = [
   { id: "linus", name: "Linus" },
-  { id: "julian", name: "Julian", hidden: true },
+  { id: "julian", name: "Julian" },
   { id: "jannik", name: "Jannik" },
   { id: "benedikt", name: "Benedikt" },
   { id: "philip", name: "Philip" },
