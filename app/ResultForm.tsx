@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { PLAYERS } from "@/lib/players";
 import { Ball, poolBall } from "./RankBall";
+import Wreath from "./Wreath";
+import { XP_KEY } from "./XpToast";
 import type { VictoryProps, VictoryResult } from "./VictoryAnimation";
 
 // Die Sieges-Animation wird erst geladen, wenn sie gebraucht wird.
@@ -46,25 +47,25 @@ function settleViewport(): Promise<void> {
   });
 }
 
-// Misst die beiden gewählten Kugeln und den Tisch, der sich darunter
-// einblendet. Liegen die Kugeln nicht beide im sichtbaren Bereich, wird
-// vorher passend gescrollt.
-function measureAnimation(form: HTMLFormElement, winnerId: string, loserId: string): AnimSetup | null {
-  const grid = form.querySelector<HTMLElement>(".picker-grid");
-  const find = (role: string) => form.querySelector<HTMLElement>(`.picker-option.${role} .ball`);
-  const wEl = find("is-winner");
-  const lEl = find("is-loser");
-  const wi = PLAYERS.findIndex((p) => p.id === winnerId);
-  const li = PLAYERS.findIndex((p) => p.id === loserId);
-  if (!grid || !wEl || !lEl || wi < 0 || li < 0) return null;
+import type { Pick } from "@/lib/picks";
+export type { Pick };
+
+const ballOf = (p: Pick) => (p.rank ? poolBall(p.rank) : { color: "#f4efe4", kind: "cue" as const });
+const initial = (p: Pick) => p.name.charAt(0).toUpperCase();
+
+// Misst die beiden Kugeln im Duell-Feld und den Tisch, der sich darunter
+// einblendet. Liegt das Feld nicht ganz im Bild, wird vorher gescrollt.
+function measureAnimation(form: HTMLFormElement, winner: Pick, loser: Pick): AnimSetup | null {
+  const grid = form.querySelector<HTMLElement>(".duel");
+  const wEl = form.querySelector<HTMLElement>(".duel-ball.is-winner .ball");
+  const lEl = form.querySelector<HTMLElement>(".duel-ball.is-loser .ball");
+  if (!grid || !wEl || !lEl) return null;
 
   const vh = window.visualViewport?.height ?? window.innerHeight;
   const vw = window.visualViewport?.width ?? window.innerWidth;
   const padX = 12;
   const padY = 34;
 
-  // Der Tisch deckt das ganze Auswahlfeld ab, damit alle anderen Kugeln
-  // darunter verschwinden. Liegt es nicht ganz im Bild, wird vorher gescrollt.
   const g0 = grid.getBoundingClientRect();
   const margin = padY + 8;
   let shift = 0;
@@ -87,167 +88,118 @@ function measureAnimation(form: HTMLFormElement, winnerId: string, loserId: stri
   const tTop = Math.max(6, Math.min(g.top - padY, Math.min(wc.y, lc.y) - R - 40));
   const tBottom = Math.min(vh - 6, Math.max(g.bottom + padY, Math.max(wc.y, lc.y) + R + 40));
 
-  const ball = (p: (typeof PLAYERS)[number], i: number, c: { x: number; y: number }) => ({
-    name: p.name,
-    label: p.name.charAt(0).toUpperCase(),
-    ...poolBall(i + 1),
-    ...c,
-  });
+  const ball = (p: Pick, c: { x: number; y: number }) => ({ name: p.name, label: initial(p), ...ballOf(p), ...c });
   return {
-    winner: ball(PLAYERS[wi], wi, wc),
-    loser: ball(PLAYERS[li], li, lc),
+    winner: ball(winner, wc),
+    loser: ball(loser, lc),
     radius: R,
     table: { left, top: tTop, width: right - left, height: tBottom - tTop },
   };
 }
 
-// Spieler-Auswahl als antippbare Kugeln: erst den Gewinner antippen,
-// dann den Verlierer. Jeder Spieler hat eine feste Kugelfarbe (nach
-// Reihenfolge in lib/players.ts) mit seinem Anfangsbuchstaben.
-function PlayerPicker({
-  winnerId,
-  loserId,
-  onPick,
+// "live": echtes Spiel, zählt sofort.
+// "test": nur im Admin-Bereich – volle Animation, aber nichts wird gespeichert.
+export default function ResultForm({
+  mode = "live",
+  me,
+  opponents,
 }: {
-  winnerId: string;
-  loserId: string;
-  onPick: (id: string) => void;
+  mode?: "live" | "test";
+  me: Pick;
+  opponents: Pick[];
 }) {
-  const winner = PLAYERS.find((p) => p.id === winnerId);
-  const loser = PLAYERS.find((p) => p.id === loserId);
-  const hint = !winner
-    ? "Tippe den Gewinner an"
-    : !loser
-      ? `${winner.name} gewinnt – jetzt den Verlierer antippen`
-      : `${winner.name} schlägt ${loser.name}`;
-  return (
-    <fieldset className="picker">
-      <legend className="sr-only">Gewinner und Verlierer</legend>
-      <div className="picker-grid">
-        {PLAYERS.map((p, i) => {
-          const role = p.id === winnerId ? "is-winner" : p.id === loserId ? "is-loser" : "";
-          const dim = winner && loser && !role;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className={`picker-option${role ? ` selected ${role}` : ""}${dim ? " dim" : ""}`}
-              aria-label={`${p.name}${role === "is-winner" ? " (Gewinner)" : role === "is-loser" ? " (Verlierer)" : ""}`}
-              onClick={() => onPick(p.id)}
-            >
-              {role && (
-                <span className="picker-badge">{role === "is-winner" ? "Sieger" : "Verlierer"}</span>
-              )}
-              <Ball label={p.name.charAt(0).toUpperCase()} {...poolBall(i + 1)} />
-              <span className="picker-name">{p.name}</span>
-            </button>
-          );
-        })}
-      </div>
-      <p className="picker-hint" aria-live="polite">{hint}</p>
-    </fieldset>
-  );
-}
-
-// "live": echtes Ergebnis mit gemeinsamem Passwort, wird gespeichert.
-// "test": nur im Admin-Profil – volle Animation, aber nichts wird gespeichert.
-export default function ResultForm({ mode = "live" }: { mode?: "live" | "test" }) {
   const test = mode === "test";
-  const home = test ? "/mein" : "/";
+  const home = test ? "/mein/admin" : "/";
   const router = useRouter();
-  const [winnerId, setWinnerId] = useState("");
-  const [loserId, setLoserId] = useState("");
-  const [password, setPassword] = useState("");
+  const [opponentId, setOpponentId] = useState("");
+  const [iWon, setIWon] = useState<boolean | null>(null);
+  const [query, setQuery] = useState("");
   const [status, setStatus] = useState<
     { type: "idle" } | { type: "loading" } | { type: "error"; message: string } | { type: "success"; message: string }
   >({ type: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
-
-  // Erster Tipp: Gewinner, zweiter: Verlierer. Gewählte Kugel nochmal
-  // antippen hebt die Wahl auf; ein dritter Tipp beginnt neu.
-  function pick(id: string) {
-    if (status.type === "error") setStatus({ type: "idle" });
-    if (id === winnerId) { setWinnerId(loserId); setLoserId(""); return; }
-    if (id === loserId) { setLoserId(""); return; }
-    if (!winnerId) { setWinnerId(id); return; }
-    if (!loserId) { setLoserId(id); return; }
-    setWinnerId(id);
-    setLoserId("");
-  }
+  const duelRef = useRef<HTMLDivElement>(null);
   const [anim, setAnim] = useState<VictoryProps | null>(null);
 
-  // Next.js hebt die Seite beim Wegnavigieren samt Zustand auf und zeigt sie
-  // beim nächsten Besuch unverändert wieder. Ohne Zurücksetzen läge dann die
-  // ausgeblendete Sieges-Animation vom letzten Mal (nur grüner Filz) über
-  // allem. Deshalb beim Verlassen alles auf Anfang stellen.
+  const opponent = opponents.find((p) => p.id === opponentId) ?? null;
+  const q = query.trim().toLowerCase();
+  const shown = q ? opponents.filter((p) => p.name.toLowerCase().includes(q)) : opponents;
+
+  // Beim Verlassen alles auf Anfang stellen (Next.js hebt die Seite auf).
   useEffect(() => {
     return () => {
       setAnim(null);
-      setWinnerId("");
-      setLoserId("");
-      setPassword("");
+      setOpponentId("");
+      setIWon(null);
+      setQuery("");
       setStatus({ type: "idle" });
     };
   }, []);
 
-  // Animation vorladen, sobald beide Spieler gewählt sind.
   useEffect(() => {
-    if (winnerId && loserId) void loadVictory();
-  }, [winnerId, loserId]);
+    if (opponentId) void loadVictory();
+  }, [opponentId]);
 
-  function finish(r: VictoryResult) {
-    setStatus({
-      type: "success",
-      message: `${test ? "Testspiel durchgespielt, nichts gespeichert" : "Ergebnis gespeichert!"} (+${r.winnerDelta} / −${Math.abs(r.loserDelta)} Elo)`,
-    });
-    setPassword("");
-    setWinnerId("");
-    setLoserId("");
-    router.refresh();
+  function chooseOpponent(id: string) {
+    if (status.type === "error") setStatus({ type: "idle" });
+    setOpponentId(id === opponentId ? "" : id);
+    setIWon(null);
+    if (id !== opponentId) {
+      requestAnimationFrame(() => duelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    if (!winnerId || !loserId) {
-      setStatus({ type: "error", message: "Bitte erst den Gewinner, dann den Verlierer antippen." });
+    if (!opponent) {
+      setStatus({ type: "error", message: "Bitte zuerst deinen Gegner antippen." });
       return;
     }
-
-    if (winnerId === loserId) {
-      setStatus({ type: "error", message: "Gewinner und Verlierer müssen unterschiedlich sein." });
+    if (iWon === null) {
+      setStatus({ type: "error", message: "Bitte die Kugel des Gewinners antippen." });
       return;
     }
-
     setStatus({ type: "loading" });
 
-    const result: Promise<VictoryResult> = (async () => {
+    const result: Promise<VictoryResult & { xp: number; levelBefore: number; levelAfter: number }> = (async () => {
       let res: Response;
       try {
         res = await fetch(test ? "/api/test-result" : "/api/results", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(test ? { winnerId, loserId } : { winnerId, loserId, password }),
+          body: JSON.stringify({ opponentId: opponent.id, won: iWon }),
         });
       } catch {
         throw new Error("Verbindung fehlgeschlagen. Bitte erneut versuchen.");
       }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Etwas ist schiefgelaufen.");
-      return { winnerDelta: data.winnerDelta ?? 0, loserDelta: data.loserDelta ?? 0 };
+      return {
+        winnerDelta: data.winnerDelta ?? 0,
+        loserDelta: data.loserDelta ?? 0,
+        xp: data.xp ?? 0,
+        levelBefore: data.levelBefore ?? 1,
+        levelAfter: data.levelAfter ?? 1,
+      };
     })();
-    // Fehler werden unten bzw. in der Animation behandelt.
-    result.catch(() => {});
+    result
+      .then((r) => {
+        try {
+          if (!test) sessionStorage.setItem(XP_KEY, JSON.stringify(r));
+        } catch {
+          // egal
+        }
+      })
+      .catch(() => {});
 
     await settleViewport();
-    const setup = formRef.current ? measureAnimation(formRef.current, winnerId, loserId) : null;
+    const [winner, loser] = iWon ? [me, opponent] : [opponent, me];
+    const setup = formRef.current ? measureAnimation(formRef.current, winner, loser) : null;
     if (setup) {
       setAnim({
         ...setup,
         result,
         onDone: () => {
-          // Zurück zur Rangliste, die dann schon die neuen Elo-Zahlen zeigt
-          // (im Testmodus zurück in den Admin-Bereich).
           router.push(home);
           router.refresh();
         },
@@ -260,41 +212,107 @@ export default function ResultForm({ mode = "live" }: { mode?: "live" | "test" }
     }
 
     try {
-      finish(await result);
+      const r = await result;
+      setStatus({
+        type: "success",
+        message: `${test ? "Testspiel durchgespielt, nichts gespeichert" : "Ergebnis gespeichert!"} (+${r.winnerDelta} / −${Math.abs(r.loserDelta)} Elo)`,
+      });
+      setOpponentId("");
+      setIWon(null);
+      router.refresh();
     } catch (err) {
       setStatus({ type: "error", message: err instanceof Error ? err.message : "Etwas ist schiefgelaufen." });
     }
   }
 
+  const hint = !opponent
+    ? ""
+    : iWon === null
+      ? "Tippe die Kugel des Gewinners an"
+      : iWon
+        ? `Du schlägst ${opponent.name}`
+        : `${opponent.name} schlägt dich`;
+
   return (
     <>
-      <h1>{test ? "Testspiel" : "Ergebnis eintragen"}</h1>
-      <p className="subtitle">Wer hat gegen wen gewonnen?</p>
-      {test && (
-        <p className="test-banner">
-          Testmodus: Animation wie echt, aber nichts wird gespeichert und die Rangliste bleibt unverändert.
-        </p>
-      )}
+      <h1>{test ? "Testspiel" : "Spiel eintragen"}</h1>
+      <p className="subtitle">{test ? "Animation wie echt – nichts wird gespeichert" : "Gegen wen hast du gespielt?"}</p>
 
-      <form ref={formRef} onSubmit={handleSubmit}>
-        <PlayerPicker winnerId={winnerId} loserId={loserId} onPick={pick} />
+      <form ref={formRef} onSubmit={handleSubmit} className="result-form">
+        {opponents.length > 8 && (
+          <input
+            type="search"
+            className="opp-search"
+            placeholder="🔍 Spieler suchen …"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Spieler suchen"
+          />
+        )}
+        <div className="opp-grid" role="listbox" aria-label="Gegner">
+          {shown.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="option"
+              aria-selected={p.id === opponentId}
+              className={`opp${p.id === opponentId ? " selected" : ""}`}
+              onClick={() => chooseOpponent(p.id)}
+            >
+              <Wreath level={p.level} rank={p.rank} size="3rem" />
+              <span className="opp-name">{p.name}</span>
+            </button>
+          ))}
+          {shown.length === 0 && <p className="empty small">Niemand gefunden.</p>}
+        </div>
 
-        {!test && (
-          <label>
-            Passwort
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
+        {opponent && (
+          <div className="duel-wrap" ref={duelRef}>
+            <p className="duel-title">Wer hat gewonnen?</p>
+            <div className="duel">
+              {[
+                { p: me, mine: true },
+                { p: opponent, mine: false },
+              ].map(({ p, mine }) => {
+                const role = iWon === null ? "" : iWon === mine ? "is-winner" : "is-loser";
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={`duel-ball ${role}${iWon !== null && !role ? "" : ""}`}
+                    onClick={() => {
+                      if (status.type === "error") setStatus({ type: "idle" });
+                      setIWon(mine);
+                    }}
+                    aria-label={`${mine ? "Ich" : p.name} hat gewonnen`}
+                  >
+                    {role && <span className="picker-badge">{role === "is-winner" ? "Sieger" : "Verlierer"}</span>}
+                    <Ball label={initial(p)} {...ballOf(p)} />
+                    <span className="duel-name">{mine ? "Ich" : p.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="picker-hint" aria-live="polite">
+              {hint}
+            </p>
+          </div>
         )}
 
-        <button type="submit" disabled={status.type === "loading"}>
+        {!test && opponent && (
+          <p className="result-note">
+            Zählt sofort. {opponent.name} sieht das Spiel und kann bei einem Fehler 24 h lang widersprechen.
+          </p>
+        )}
+
+        <button type="submit" disabled={status.type === "loading" || !opponent || iWon === null}>
           {status.type === "loading"
-            ? test ? "Läuft…" : "Speichert…"
-            : test ? "Testspiel starten" : "Ergebnis speichern"}
+            ? test
+              ? "Läuft…"
+              : "Speichert…"
+            : test
+              ? "Testspiel starten"
+              : "Ergebnis speichern"}
         </button>
 
         {status.type === "error" && <p className="message error">{status.message}</p>}

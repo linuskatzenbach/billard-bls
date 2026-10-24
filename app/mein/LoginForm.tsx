@@ -15,7 +15,7 @@ export default function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/login", {
+      const res = await fetch("/api/auth/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -23,6 +23,7 @@ export default function LoginForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Login fehlgeschlagen.");
       setPassword("");
+      window.dispatchEvent(new Event("billard:seen"));
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verbindung fehlgeschlagen.");

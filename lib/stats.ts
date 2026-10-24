@@ -1,5 +1,4 @@
 import type { MatchRecord } from "./db";
-import { PLAYERS, getPlayerName } from "./players";
 import { START_ELO } from "./elo";
 
 // Wer weniger Spiele hat, zählt bei der Siegesquote nicht mit –
@@ -119,8 +118,13 @@ function daysBetween(a: string, b: string): number {
 }
 
 // Erwartet die Spiele chronologisch sortiert (älteste zuerst).
-export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
-  const visible = PLAYERS.filter((p) => !p.hidden).map((p) => p.id);
+// visible: Spieler, die in den Statistiken auftauchen (ohne ausgeblendete).
+export function computeStats(
+  matches: MatchRecord[],
+  visible: string[],
+  nameOf: (id: string) => string,
+  now = new Date()
+): Stats {
   const visibleSet = new Set(visible);
 
   const games: Record<string, number> = {};
@@ -237,7 +241,7 @@ export function computeStats(matches: MatchRecord[], now = new Date()): Stats {
     .sort(
       (a, b) =>
         b.wins - a.wins ||
-        getPlayerName(a.playerId).localeCompare(getPlayerName(b.playerId), "de")
+        nameOf(a.playerId).localeCompare(nameOf(b.playerId), "de")
     );
   const form: FormRow[] = [];
   formRaw.forEach((r, i) => {

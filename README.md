@@ -131,3 +131,25 @@ Zurzeit gibt es nur das Admin-Profil: Benutzername `admin` (änderbar über
 `ADMIN_USERNAME`), Passwort aus der Umgebungsvariable `ADMIN_PASSWORD`.
 Als Admin kann man unter „Testspiel eintragen“ die komplette Sieges-Animation
 ausprobieren, ohne dass etwas gespeichert wird.
+
+## Anmeldung per Uni-Mail (seit Oktober 2026)
+
+Spieler melden sich mit ihrer Uni-Mail (`…@law-school.de`) an – per Link oder
+6-stelligem Code aus der Mail, ohne Passwort. Eingetragen wird vom eigenen
+Profil aus; das gemeinsame `RESULT_PASSWORD` wird nicht mehr gebraucht.
+Spieler stehen jetzt in der Datenbank (Tabelle `players`), `lib/players.ts`
+enthält nur noch die Startliste.
+
+Umgebungsvariablen in Vercel:
+
+| Name | Wofür |
+|---|---|
+| `GMAIL_USER` | `bls.billard@gmail.com` – Absender der Mails |
+| `GMAIL_APP_PASSWORD` | App-Passwort des Gmail-Kontos (16 Zeichen) |
+| `SESSION_SECRET` | optional, Schlüssel für die Login-Cookies (sonst `ADMIN_PASSWORD`) |
+| `ADMIN_PASSWORD` | Notfall-Login für den Admin („Admin-Login“ unter Mein Bereich) |
+| `ADMIN_MAIL` | optional, Empfänger der Widerspruchs-Mails (Standard `bls.billard@gmail.com`) |
+
+Lokal testen ohne Neon: `LOCAL_PGLITE_DIR=./.localdb` setzen (dafür ist
+`@electric-sql/pglite` als Entwicklungs-Abhängigkeit dabei); ohne
+Gmail-Variablen werden Mails nur ins Server-Log geschrieben.

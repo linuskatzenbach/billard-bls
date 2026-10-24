@@ -1,8 +1,16 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
+import { getOverview } from "@/lib/server";
+import { picksFor } from "@/lib/picks";
 import ResultForm from "../../ResultForm";
 
 export default async function TestPage() {
-  if (!(await isAdmin())) redirect("/mein");
-  return <ResultForm mode="test" />;
+  await connection();
+  const session = await getSession();
+  if (!session?.admin) redirect("/mein");
+  const { ov } = await getOverview();
+  const { me, opponents } = picksFor(ov, session.playerId);
+  if (!me) redirect("/mein");
+  return <ResultForm mode="test" me={me} opponents={opponents} />;
 }

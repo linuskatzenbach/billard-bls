@@ -1,34 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PLAYERS } from "@/lib/players";
 import { calculateNewElo } from "@/lib/elo";
-import { getElo } from "@/lib/db";
-import { isAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
+import { getWorld } from "@/lib/db";
+import { computeOverview } from "@/lib/progress";
+import { jsonError, readJson } from "@/lib/server";
 
-// Testspiel für das Admin-Profil: rechnet die Elo-Änderung mit den
-// aktuellen Zahlen aus, speichert aber NICHTS. Rangliste, Statistiken
-// und Profile bleiben unverändert.
+// Testspiel im Admin-Bereich: rechnet mit den echten Zahlen, speichert aber NICHTS.
 export async function POST(req: NextRequest) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: "Nur im Admin-Profil möglich." }, { status: 401 });
-  }
-
-  const { winnerId, loserId } = (await req.json().catch(() => ({}))) as {
-    winnerId?: string;
-    loserId?: string;
-  };
-  const validIds = new Set(PLAYERS.map((p) => p.id));
-  if (!winnerId || !loserId || winnerId === loserId || !validIds.has(winnerId) || !validIds.has(loserId)) {
-    return NextResponse.json({ error: "Bitte zwei verschiedene Spieler wählen." }, { status: 400 });
-  }
-
-  const winnerEloBefore = await getElo(winnerId);
-  const loserEloBefore = await getElo(loserId);
-  const { newWinnerElo, newLoserElo } = calculateNewElo(winnerEloBefore, loserEloBefore);
-
+  const session = await getSession();
+  if (!session?.admin) return jsonError("Nur im Admin-Bereich möglich.", 401);
+  const body = await readJson<{ opponentId: string; won: boolean }>(req);
+  const ov = computeOverview(await getWorld());
+  const me = ov.byId[session.playerId];
+  const opp = ov.byId[String(body.opponentId ?? "")];
+  if (!me || !opp || me.id === opp.id) return jsonError("Bitte einen Gegner wählen.");
+  const [w, l] = body.won ? [me, opp] : [opp, me];
+  const { newWinnerElo, newLoserElo } = calculateNewElo(w.elo, l.elo);
   return NextResponse.json({
     success: true,
     test: true,
-    winnerDelta: newWinnerElo - winnerEloBefore,
-    loserDelta: newLoserElo - loserEloBefore,
+    winnerDelta: newWinnerElo - w.elo,
+    loserDelta: newLoserElo - l.elo,
+    xp: 0,
+    levelBefore: me.level,
+    levelAfter: me.level,
   });
 }

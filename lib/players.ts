@@ -1,20 +1,17 @@
-// Hier trägst DU als Entwickler die Spieler ein.
-// Besucher der Website können diese Liste NICHT über die Website verändern.
+// Startliste der Spieler aus der Zeit vor der Uni-Öffnung.
 //
-// "id" muss eindeutig sein (keine Leerzeichen/Umlaute, z.B. "linus", "max_m").
-// "name" ist der Anzeigename auf der Website.
-//
-// Neuen Spieler hinzufügen: einfach eine neue Zeile einfügen, committen und
-// zu GitHub pushen - Vercel deployt automatisch neu. Der neue Spieler
-// bekommt beim ersten Aufruf der Website automatisch eine Start-Elo von 1500.
+// Diese Liste wird nur EINMAL in die Datenbank übernommen (Tabelle
+// "players"). Danach legen sich Spieler selbst über ihre Uni-Mail an, und
+// Änderungen (Name, Mail, ausblenden) macht der Admin im Admin-Bereich.
+// Wer hier steht, bekommt das Sonderabzeichen "Gründungsmitglied".
 
-export type Player = {
+export type SeedPlayer = {
   id: string;
   name: string;
   hidden?: boolean;
 };
 
-export const PLAYERS: Player[] = [
+export const SEED_PLAYERS: SeedPlayer[] = [
   { id: "linus", name: "Linus" },
   { id: "julian", name: "Julian", hidden: true },
   { id: "jannik", name: "Jannik" },
@@ -23,10 +20,12 @@ export const PLAYERS: Player[] = [
   { id: "tobias", name: "Tobias" },
 ];
 
-export function getPlayerName(id: string): string {
-  return PLAYERS.find((p) => p.id === id)?.name ?? id;
-}
+// Uni-Mails, die von Anfang an mit einem Spieler verknüpft sind. Wer sich
+// mit dieser Adresse anmeldet, übernimmt den bestehenden Spieler. Weitere
+// Adressen trägt der Admin im Admin-Bereich ein.
+export const SEED_EMAILS: Record<string, string> = {
+  linus: "linus.katzenbach@law-school.de",
+};
 
-export function isPlayerHidden(id: string): boolean {
-  return PLAYERS.find((p) => p.id === id)?.hidden ?? false;
-}
+// Spieler mit Zugang zum Admin-Bereich.
+export const SEED_ADMINS = ["linus"];

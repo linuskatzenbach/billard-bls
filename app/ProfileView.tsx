@@ -1,0 +1,337 @@
+import Link from "next/link";
+import type { World } from "@/lib/db";
+import { MIN_GAMES_RANKED, gamesOf, wreathName, type Overview, type PlayerSummary } from "@/lib/progress";
+import { START_ELO } from "@/lib/elo";
+import { formatRelativeDay } from "@/lib/stats";
+import { DISPUTE_HOURS } from "@/lib/server";
+import EloChart, { type EloPoint } from "./spieler/[id]/EloChart";
+import Wreath from "./Wreath";
+import DisputeButton from "./DisputeButton";
+
+const fmt = (n: number) => n.toLocaleString("de-DE");
+const time = (iso: string) =>
+  new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+
+export default function ProfileView({
+  s,
+  world,
+  ov,
+  own = false,
+  viewerId = null,
+  seenAt = null,
+}: {
+  s: PlayerSummary;
+  world: World;
+  ov: Overview;
+  own?: boolean;
+  viewerId?: string | null;
+  seenAt?: string | null;
+}) {
+  const nameOf = (id: string) => ov.byId[id]?.name ?? id;
+  const games = gamesOf(world, s.id);
+  const now = Date.now();
+  const winRate = s.games > 0 ? Math.round((s.wins / s.games) * 100) : null;
+
+  // Elo-Verlauf
+  const chart: EloPoint[] =
+    games.length > 0
+      ? [{ t: games[0].createdAt, elo: START_ELO }, ...games.map((g) => ({ t: g.createdAt, elo: g.eloAfter }))]
+      : [];
+
+  // Größter Upset: Sieg gegen den Gegner mit dem größten Elo-Vorsprung.
+  let upset: { gap: number; opp: string } | null = null;
+  for (const m of world.matches) {
+    if (m.winner_id !== s.id) continue;
+    const gap = m.loser_elo_before - m.winner_elo_before;
+    if (gap > 0 && (!upset || gap > upset.gap)) upset = { gap, opp: m.loser_id };
+  }
+
+  // Kopf an Kopf
+  const rec = new Map<string, { w: number; l: number }>();
+  for (const g of games) {
+    const r = rec.get(g.opponentId) ?? { w: 0, l: 0 };
+    if (g.won) r.w++;
+    else r.l++;
+    rec.set(g.opponentId, r);
+  }
+  const opps = [...rec.entries()]
+    .filter(([id]) => !ov.byId[id]?.hidden)
+    .map(([id, r]) => ({ id, ...r, n: r.w + r.l, rate: r.w / (r.w + r.l) }));
+  const qualified = opps.filter((o) => o.n >= 3);
+  const fav = [...qualified].filter((o) => o.rate > 0.5).sort((a, b) => b.rate - a.rate || b.n - a.n)[0];
+  const nemesis = [...qualified].filter((o) => o.rate < 0.5).sort((a, b) => a.rate - b.rate || b.n - a.n)[0];
+
+  const recent = games.slice(-10).reverse();
+  const ranked = ov.ranked.length;
+  const missing = Math.max(0, MIN_GAMES_RANKED - s.games);
+
+  // Neue Spiele, die jemand anderes mit mir eingetragen hat (eigenes Profil).
+  const windowMs = DISPUTE_HOURS * 3600_000;
+  const fresh = own
+    ? games
+        .filter((g) => now - new Date(g.createdAt).getTime() < windowMs)
+        .filter((g) => g.enteredBy && g.enteredBy !== s.id)
+        .reverse()
+    : [];
+
+  return (
+    <>
+      {!own && (
+        <Link href="/" className="back-link">
+          ← Rangliste
+        </Link>
+      )}
+
+      {fresh.length > 0 && (
+        <div className="card news">
+          <div className="news-title">Neu für dich</div>
+          {fresh.map((g) => {
+            const isNew = seenAt ? new Date(g.createdAt) > new Date(seenAt) : true;
+            return (
+              <div className="news-row" key={g.id}>
+                {isNew && <span className="news-dot" aria-label="neu" />}
+                <span className="news-text">
+                  <b>{nameOf(g.enteredBy!)}</b> hat eingetragen:{" "}
+                  {g.won ? `Du hast gegen ${nameOf(g.opponentId)} gewonnen` : `${nameOf(g.opponentId)} hat gegen dich gewonnen`} ·{" "}
+                  {formatRelativeDay(g.createdAt)}, {time(g.createdAt)}
+                </span>
+                <DisputeButton matchId={g.id} own={false} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="profile-head">
+        <Link href={`/kraenze${own ? "" : `?spieler=${s.id}`}`} className="profile-wreath" aria-label="Alle Kränze ansehen">
+          <Wreath level={s.level} rank={s.rank} size="132px" label={`Level ${s.level}`} />
+          <span className="lvl-plaque">{s.level}</span>
+        </Link>
+        <h1 className={s.isLeader ? "leader" : ""}>
+          {s.name}
+          {s.isLeader && <span className="crown"> 👑</span>}
+        </h1>
+        <p className="profile-chip">
+          {s.rank ? `Platz ${s.rank}` : "Vorläufig"} · {wreathName(s.level)}
+          {s.founder && " · Gründungsmitglied"}
+        </p>
+      </div>
+
+      <div className="xp">
+        <div className="xp-row">
+          <span>
+            <b>Level {s.level}</b>
+            {s.levelNeed > 0 ? ` · noch ${fmt(s.levelNeed - s.levelInto)} XP bis Level ${s.level + 1}` : " · Höchstes Level!"}
+          </span>
+          <Link href={`/kraenze${own ? "" : `?spieler=${s.id}`}`}>alle Kränze ›</Link>
+        </div>
+        <div className="bar">
+          <span style={{ width: `${s.levelNeed > 0 ? Math.round((s.levelInto / s.levelNeed) * 100) : 100}%` }} />
+        </div>
+      </div>
+
+      <div className="kpis">
+        <div className="kpi card">
+          <span className="kpi-l">Elo</span>
+          <span className="kpi-v">{fmt(s.elo)}</span>
+          <span className={`kpi-s ${s.trend7 > 0 ? "up" : s.trend7 < 0 ? "down" : ""}`}>
+            {s.trend7 === 0 ? "diese Woche ±0" : `${s.trend7 > 0 ? "▲" : "▼"} ${Math.abs(s.trend7)} / Woche`}
+          </span>
+        </div>
+        <div className="kpi card">
+          <span className="kpi-l">Platz</span>
+          <span className="kpi-v">{s.rank ? `#${s.rank}` : "–"}</span>
+          <span className="kpi-s">{s.rank ? `von ${ranked}` : `noch ${missing} ${missing === 1 ? "Spiel" : "Spiele"}`}</span>
+        </div>
+        <div className="kpi card">
+          <span className="kpi-l">Siegquote</span>
+          <span className="kpi-v">{winRate === null ? "–" : `${winRate} %`}</span>
+          <span className="kpi-s">
+            {s.games} {s.games === 1 ? "Spiel" : "Spiele"}
+          </span>
+        </div>
+      </div>
+
+      <div className="activity card">
+        <span className="activity-icon" aria-hidden="true">
+          📅
+        </span>
+        <div className="activity-body">
+          <div className="activity-title">
+            {s.activity.streak > 0
+              ? `Aktivität: ${s.activity.streak} ${s.activity.streak === 1 ? "Woche" : "Wochen"} in Folge`
+              : "Aktivität: noch keine Serie"}
+          </div>
+          <div className="activity-sub">
+            {s.activity.thisWeek
+              ? "Diese Woche gespielt ✓"
+              : s.activity.atRisk
+                ? "⏳ Diese Woche noch offen – läuft So ab"
+                : "Diese Woche noch nicht gespielt"}{" "}
+            · letzte 8 Wochen
+          </div>
+          <span className="wk big" aria-hidden="true">
+            {s.activity.weeks8.map((w, i) => (
+              <i key={i} className={w ? "on" : i === 7 && s.activity.atRisk ? "open" : ""} />
+            ))}
+          </span>
+        </div>
+      </div>
+
+      {own && (
+        <Link href="/eintragen" className="cta">
+          <span className="cta-felt">
+            <span className="cta-label">Spiel eintragen</span>
+            <span className="cta-track" aria-hidden="true">
+              <span className="cta-pocket" />
+              <span className="cta-cue" />
+              <span className="cta-ball" />
+            </span>
+          </span>
+        </Link>
+      )}
+
+      {games.length === 0 ? (
+        <p className="empty">Noch keine Spiele gespielt.</p>
+      ) : (
+        <>
+          <EloChart history={chart} />
+
+          <div className="section-h">
+            <h2>Bilanz</h2>
+            <span>
+              {s.games} {s.games === 1 ? "Spiel" : "Spiele"}
+            </span>
+          </div>
+          <div className="wl">
+            {s.wins > 0 && (
+              <span className="w" style={{ flexGrow: s.wins }}>
+                {s.wins} {s.wins === 1 ? "Sieg" : "Siege"}
+              </span>
+            )}
+            {s.losses > 0 && (
+              <span className="l" style={{ flexGrow: s.losses }}>
+                {s.losses} {s.losses === 1 ? "Niederlage" : "Niederlagen"}
+              </span>
+            )}
+          </div>
+          <div className="kpis small">
+            <div className="kpi card">
+              <span className="kpi-l">Beste Serie</span>
+              <span className="kpi-v">
+                {s.bestWinStreak} {s.bestWinStreak === 1 ? "Sieg" : "Siege"}
+              </span>
+            </div>
+            <div className="kpi card">
+              <span className="kpi-l">Größter Upset</span>
+              <span className="kpi-v">{upset ? `+${upset.gap}` : "–"}</span>
+              {upset && <span className="kpi-s">vs. {nameOf(upset.opp)}</span>}
+            </div>
+            <div className="kpi card">
+              <span className="kpi-l">Aktuell</span>
+              <span className="kpi-v">
+                {s.winStreak >= 3 && "🔥 "}
+                {s.winStreak} {s.winStreak === 1 ? "Sieg" : "Siege"}
+              </span>
+            </div>
+          </div>
+
+          {(fav || nemesis) && (
+            <>
+              <div className="section-h">
+                <h2>Kopf an Kopf</h2>
+                <span>ab 3 Spielen</span>
+              </div>
+              <div className="h2h">
+                <div className="card">
+                  <span className="kpi-l">😎 Lieblingsgegner</span>
+                  {fav ? (
+                    <>
+                      <Link href={`/spieler/${fav.id}`} className="h2h-name">
+                        {nameOf(fav.id)}
+                      </Link>
+                      <span className="h2h-rec">
+                        <span className="up">
+                          {fav.w} : {fav.l}
+                        </span>{" "}
+                        · {Math.round(fav.rate * 100)} %
+                      </span>
+                    </>
+                  ) : (
+                    <span className="h2h-rec muted">noch keiner</span>
+                  )}
+                </div>
+                <div className="card">
+                  <span className="kpi-l">😬 Angstgegner</span>
+                  {nemesis ? (
+                    <>
+                      <Link href={`/spieler/${nemesis.id}`} className="h2h-name">
+                        {nameOf(nemesis.id)}
+                      </Link>
+                      <span className="h2h-rec">
+                        <span className="down">
+                          {nemesis.w} : {nemesis.l}
+                        </span>{" "}
+                        · {Math.round(nemesis.rate * 100)} %
+                      </span>
+                    </>
+                  ) : (
+                    <span className="h2h-rec muted">noch keiner</span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {opps.length > 0 && (
+            <details className="all-opps">
+              <summary>Gegen alle Gegner ({opps.length})</summary>
+              {opps
+                .sort((a, b) => b.n - a.n)
+                .map((o) => (
+                  <Link href={`/spieler/${o.id}`} className="opponent-row" key={o.id}>
+                    <span className="opponent-name">{nameOf(o.id)}</span>
+                    <span className="opponent-record">
+                      <span className="rec-win">{o.w} S</span>
+                      <span className="rec-sep">–</span>
+                      <span className="rec-loss">{o.l} N</span>
+                    </span>
+                  </Link>
+                ))}
+            </details>
+          )}
+
+          <div className="section-h">
+            <h2>Letzte Spiele</h2>
+          </div>
+          <div className="games">
+            {recent.map((g) => {
+              const canFix =
+                own &&
+                now - new Date(g.createdAt).getTime() < windowMs &&
+                (g.enteredBy === s.id || g.enteredBy === null || viewerId === s.id);
+              return (
+                <div className="game" key={g.id}>
+                  <span className={`res ${g.won ? "s" : "n"}`}>{g.won ? "S" : "N"}</span>
+                  <span className="game-main">
+                    vs. <Link href={`/spieler/${g.opponentId}`}>{nameOf(g.opponentId)}</Link>
+                    <span className="when">
+                      {formatRelativeDay(g.createdAt)}, {time(g.createdAt)}
+                      {g.upset && " · Upset!"}
+                    </span>
+                    {canFix && g.enteredBy === s.id && <DisputeButton matchId={g.id} own />}
+                  </span>
+                  <span className="xpg">+{g.xp} XP</span>
+                  <span className={`de ${g.eloAfter >= g.eloBefore ? "up" : "down"}`}>
+                    {g.eloAfter >= g.eloBefore ? "+" : "−"}
+                    {Math.abs(g.eloAfter - g.eloBefore)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
