@@ -100,16 +100,14 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
           <span className="field-help">Am besten Vorname und Anfangsbuchstabe, z. B. „Max M.“</span>
         </label>
         <fieldset className="chips-field">
-          <legend>
-            Jahrgang <span className="muted">(optional)</span>
-          </legend>
+          <legend>Jahrgang</legend>
           <div className="chips">
             {cohorts.map((c) => (
               <button
                 type="button"
                 key={c}
                 className={`chip${cohort === c ? " on" : ""}`}
-                onClick={() => setCohort(cohort === c ? null : c)}
+                onClick={() => setCohort(c)}
                 aria-pressed={cohort === c}
               >
                 {c}
@@ -117,7 +115,7 @@ export default function Onboarding({ suggested, cohorts }: { suggested: string; 
             ))}
           </div>
         </fieldset>
-        <button type="submit" disabled={busy || name.trim().length < 2}>
+        <button type="submit" disabled={busy || name.trim().length < 2 || !cohort}>
           {busy ? "Lege an…" : "Profil anlegen"}
         </button>
         {error && <p className="message error">{error}</p>}

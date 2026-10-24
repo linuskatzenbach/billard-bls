@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdmin, normalizeEmail } from "@/lib/auth";
 import { getPlayerByEmail, isNameTaken, updatePlayer } from "@/lib/db";
-import { validateName } from "@/lib/names";
+import { COHORTS, validateName } from "@/lib/names";
 import { jsonError, readJson, refreshWorld } from "@/lib/server";
 
 // Admin: Spieler umbenennen, Uni-Mail zuordnen, aus-/einblenden.
 export async function POST(req: NextRequest) {
   if (!(await isAdmin())) return jsonError("Nur für den Admin.", 403);
-  const body = await readJson<{ id: string; name: string; email: string; hidden: boolean }>(req);
+  const body = await readJson<{ id: string; name: string; email: string; hidden: boolean; cohort: string }>(req);
   const id = String(body.id ?? "");
-  const fields: { name?: string; email?: string | null; hidden?: boolean } = {};
+  const fields: { name?: string; email?: string | null; hidden?: boolean; cohort?: string | null } = {};
 
   if (body.name !== undefined) {
     const name = String(body.name).trim().replace(/\s+/g, " ");
@@ -30,6 +30,10 @@ export async function POST(req: NextRequest) {
     }
   }
   if (body.hidden !== undefined) fields.hidden = Boolean(body.hidden);
+  if (body.cohort !== undefined) {
+    if (body.cohort && !COHORTS.includes(body.cohort)) return jsonError("Unbekannter Jahrgang.");
+    fields.cohort = body.cohort || null;
+  }
 
   await updatePlayer(id, fields);
   refreshWorld();

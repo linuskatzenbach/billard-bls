@@ -3,17 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type P = { id: string; name: string; email: string; hidden: boolean; games: number; founder: boolean };
+type P = { id: string; name: string; email: string; hidden: boolean; games: number; founder: boolean; cohort: string };
 
-function Row({ p }: { p: P }) {
+function Row({ p, cohorts }: { p: P; cohorts: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(p.name);
   const [email, setEmail] = useState(p.email);
+  const [cohort, setCohort] = useState(p.cohort);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function save(fields: Partial<{ name: string; email: string; hidden: boolean }>) {
+  async function save(fields: Partial<{ name: string; email: string; hidden: boolean; cohort: string }>) {
     setBusy(true);
     setMsg("");
     const res = await fetch("/api/admin/player", {
@@ -39,7 +40,10 @@ function Row({ p }: { p: P }) {
           {p.founder && <span className="ap-tag">Gründer</span>}
           {p.hidden && <span className="ap-tag">ausgeblendet</span>}
         </span>
-        <span className="ap-meta">{p.email ? "✓ Mail" : <span className="warn">keine Mail</span>} · {p.games} Spiele</span>
+        <span className="ap-meta">
+          {p.email ? "✓ Mail" : <span className="warn">keine Mail</span>} ·{" "}
+          {p.cohort ? p.cohort : <span className="warn">kein Jg.</span>} · {p.games} Spiele
+        </span>
       </button>
       {open && (
         <div className="ap-edit">
@@ -59,8 +63,19 @@ function Row({ p }: { p: P }) {
               spellCheck={false}
             />
           </label>
+          <label>
+            Jahrgang
+            <select value={cohort} onChange={(e) => setCohort(e.target.value)}>
+              <option value="">– nicht gesetzt –</option>
+              {cohorts.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="ap-actions">
-            <button type="button" disabled={busy} onClick={() => save({ name, email })}>
+            <button type="button" disabled={busy} onClick={() => save({ name, email, cohort })}>
               Speichern
             </button>
             <button type="button" className="ghost" disabled={busy} onClick={() => save({ hidden: !p.hidden })}>
@@ -75,7 +90,7 @@ function Row({ p }: { p: P }) {
   );
 }
 
-export default function AdminPlayers({ players }: { players: P[] }) {
+export default function AdminPlayers({ players, cohorts }: { players: P[]; cohorts: string[] }) {
   const [q, setQ] = useState("");
   const shown = q ? players.filter((p) => `${p.name} ${p.email}`.toLowerCase().includes(q.toLowerCase())) : players;
   return (
@@ -84,7 +99,7 @@ export default function AdminPlayers({ players }: { players: P[] }) {
         <input className="opp-search" placeholder="🔍 Spieler suchen …" value={q} onChange={(e) => setQ(e.target.value)} />
       )}
       {shown.map((p) => (
-        <Row key={p.id} p={p} />
+        <Row key={p.id} p={p} cohorts={cohorts} />
       ))}
     </div>
   );

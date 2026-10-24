@@ -12,6 +12,7 @@ import {
 import { MIN_GAMES_RANKED, type PlayerSummary } from "@/lib/progress";
 import { getOverview } from "@/lib/server";
 import { getSession } from "@/lib/auth";
+import { cohortShort } from "@/lib/names";
 import StatTile, { type TopRow } from "./StatTile";
 import RankBall from "./RankBall";
 import Wreath from "./Wreath";
@@ -55,6 +56,19 @@ const shortDate = (wk: string) => {
   const [, m, d] = wk.split("-").map(Number);
   return `${d}.${m}.`;
 };
+
+// Name (Zeile 1, mit Extras wie der Flamme) und Jahrgang (Zeile 2).
+function NameBlock({ s, children }: { s: PlayerSummary; children?: React.ReactNode }) {
+  return (
+    <span className="name">
+      <span className="nline">
+        <PlayerName s={s} />
+        {children}
+      </span>
+      {s.cohort && <span className="cohort">{cohortShort(s.cohort)}</span>}
+    </span>
+  );
+}
 
 // Name mit goldener Farbe und Krone für die aktuelle Nr. 1.
 function PlayerName({ s, me }: { s: PlayerSummary; me?: boolean }) {
@@ -159,10 +173,9 @@ export default async function HomePage({
                 {ov.ranked.map((s) => (
                   <Link href={`/spieler/${s.id}`} className={`row wrow${s.id === myId ? " is-me" : ""}`} key={s.id}>
                     <Wreath level={s.level} rank={s.rank} label={`Platz ${s.rank}, Level ${s.level}`} />
-                    <span className="name">
-                      <PlayerName s={s} />
+                    <NameBlock s={s}>
                       <WinFlame n={s.winStreak} />
-                    </span>
+                    </NameBlock>
                     <span className="elo">
                       {s.trend7 !== 0 && (
                         <span className={`trend ${s.trend7 > 0 ? "up" : "down"}`} title="Veränderung in den letzten 7 Tagen">
@@ -186,9 +199,7 @@ export default async function HomePage({
               {ov.provisional.map((s) => (
                 <Link href={`/spieler/${s.id}`} className={`row wrow${s.id === myId ? " is-me" : ""}`} key={s.id}>
                   <Wreath level={s.level} rank={null} label={`Level ${s.level}`} />
-                  <span className="name">
-                    <PlayerName s={s} />
-                  </span>
+                  <NameBlock s={s} />
                   <span className="prov-left">
                     noch {MIN_GAMES_RANKED - s.games} {MIN_GAMES_RANKED - s.games === 1 ? "Spiel" : "Spiele"}
                   </span>
@@ -414,9 +425,7 @@ function WeekBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null 
             {list.map((s, i) => (
               <Link href={`/spieler/${s.id}`} key={s.id} className={`row brow${s.id === myId ? " is-me" : ""}`}>
                 <RankBall rank={pl[i]} />
-                <span className="name">
-                  <PlayerName s={s} />
-                </span>
+                <NameBlock s={s} />
                 <span className="bval">
                   {s.weekGames}
                   <small>+{s.weekXp} XP</small>
@@ -445,9 +454,7 @@ function LevelBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null
           {list.map((s, i) => (
             <Link href={`/spieler/${s.id}`} key={s.id} className={`row brow wrow${s.id === myId ? " is-me" : ""}`}>
               <Wreath level={s.level} rank={pl[i]} label={`Platz ${pl[i]}, Level ${s.level}`} />
-              <span className="name">
-                <PlayerName s={s} />
-              </span>
+              <NameBlock s={s} />
               <span className="bval">
                 Lvl {s.level}
                 <small>{fmtElo(s.xp)} XP</small>
@@ -518,6 +525,7 @@ function ActivityBoard({
               <span className="name">
                 <span className="aname">
                   <PlayerName s={s} />
+                  {s.cohort && <span className="cohort inline">{cohortShort(s.cohort)}</span>}
                 </span>
                 <WeekBars weeks={s.activity.weeks8} open={s.activity.atRisk} />
                 {s.activity.atRisk && <span className="risk">⏳ diese Woche noch offen – läuft So ab</span>}

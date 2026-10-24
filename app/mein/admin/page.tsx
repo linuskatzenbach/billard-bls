@@ -6,6 +6,7 @@ import { getDisputes } from "@/lib/db";
 import { berlinDateTime, getOverview } from "@/lib/server";
 import { mailConfigured } from "@/lib/mail";
 import AdminPlayers from "./AdminPlayers";
+import { COHORTS } from "@/lib/names";
 import MarkDisputesSeen from "./MarkDisputesSeen";
 
 export default async function AdminPage() {
@@ -22,6 +23,7 @@ export default async function AdminPage() {
     hidden: p.hidden,
     games: ov.byId[p.id]?.games ?? 0,
     founder: p.founder,
+    cohort: p.cohort ?? "",
   }));
 
   return (
@@ -74,7 +76,7 @@ export default async function AdminPage() {
         Trag hier die Uni-Mails deiner Freunde ein – wer sich dann mit dieser Adresse anmeldet, übernimmt seinen
         bestehenden Spieler.
       </p>
-      <AdminPlayers players={players} />
+      <AdminPlayers players={players} cohorts={COHORTS} />
 
       <Link href="/mein/test" className="cta cta-test">
         <span className="cta-felt">

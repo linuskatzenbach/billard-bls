@@ -144,9 +144,25 @@ async function ensureSchema(): Promise<void> {
   }
 }
 
+// Einmalig: alle Spieler aus der Startliste sind Jahrgang 2022.
+async function founderCohort(): Promise<void> {
+  const sql = getSql();
+  const done = await sql`SELECT 1 FROM migrations WHERE name = 'founder-cohort-2022';`;
+  if (done.length > 0) return;
+  try {
+    await sql.transaction([
+      sql`UPDATE players SET cohort = '2022' WHERE founder = true AND cohort IS NULL`,
+      sql`INSERT INTO migrations (name) VALUES ('founder-cohort-2022')`,
+    ]);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = 'founder-cohort-2022';`;
+    if (again.length === 0) throw err;
+  }
+}
+
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().catch((err) => {
+    schemaReady = ensureSchema().then(founderCohort).catch((err) => {
       schemaReady = null;
       throw err;
     });

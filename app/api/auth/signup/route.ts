@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   if (nameError) return jsonError(nameError);
   if (await isNameTaken(name)) return jsonError("Diesen Namen gibt es schon. Ergänze z. B. den Anfangsbuchstaben deines Nachnamens.");
   const cohort = body.cohort && COHORTS.includes(body.cohort) ? body.cohort : null;
+  if (!cohort) return jsonError("Bitte wähle deinen Jahrgang aus.");
 
   const existing = await getPlayerByEmail(email);
   const player = existing ?? (await createPlayer({ email, name, cohort }));

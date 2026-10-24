@@ -2481,3 +2481,19 @@ button.ghost:hover { background: rgba(241, 233, 216, 0.08); }
 .legal h2 { font-size: 1.05rem; margin-top: 1.4rem; }
 .legal a { color: var(--brass-bright); }
 .legal ul { padding-left: 1.2rem; }
+
+/* Jahrgang unter dem Namen in den Ranglisten */
+.row .name { flex-direction: column; align-items: flex-start; gap: 1px; flex-wrap: nowrap; }
+.nline { display: flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }
+.cohort { font-size: 0.68rem; opacity: 0.55; letter-spacing: 0.02em; }
+.cohort.inline { margin-left: 2px; }
+.ap-edit select {
+  background: var(--felt);
+  border: 1px solid var(--line);
+  color: var(--cream);
+  padding: 0.65rem 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+

@@ -7,6 +7,7 @@ import { DISPUTE_HOURS } from "@/lib/server";
 import EloChart, { type EloPoint } from "./spieler/[id]/EloChart";
 import Wreath from "./Wreath";
 import DisputeButton from "./DisputeButton";
+import { cohortLong } from "@/lib/names";
 
 const fmt = (n: number) => n.toLocaleString("de-DE");
 const time = (iso: string) =>
@@ -113,6 +114,7 @@ export default function ProfileView({
         </h1>
         <p className="profile-chip">
           {s.rank ? `Platz ${s.rank}` : "Vorläufig"} · {wreathName(s.level)}
+          {s.cohort && ` · ${cohortLong(s.cohort)}`}
           {s.founder && " · Gründungsmitglied"}
         </p>
       </div>
