@@ -283,12 +283,12 @@ export default function ProfileView({
           </div>
           <div className="wl">
             {s.wins > 0 && (
-              <span className="w" style={{ flexGrow: s.wins }}>
+              <span className="w" style={{ flex: `${s.wins} 1 0` }}>
                 {s.wins} {s.wins === 1 ? "Sieg" : "Siege"}
               </span>
             )}
             {s.losses > 0 && (
-              <span className="l" style={{ flexGrow: s.losses }}>
+              <span className="l" style={{ flex: `${s.losses} 1 0` }}>
                 {s.losses} {s.losses === 1 ? "Niederlage" : "Niederlagen"}
               </span>
             )}
