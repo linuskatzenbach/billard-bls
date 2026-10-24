@@ -9,7 +9,7 @@ import Wreath from "./Wreath";
 import CtaTrack from "./CtaTrack";
 import DisputeButton from "./DisputeButton";
 import { cohortLong } from "@/lib/names";
-import { BADGE_TOTAL, QUEST_BONUS, badgeLabel } from "@/lib/achievements";
+import { BADGES, QUEST_BONUS, badgeLabel } from "@/lib/achievements";
 import Medal from "./Medal";
 
 const fmt = (n: number) => n.toLocaleString("de-DE");
@@ -67,6 +67,10 @@ export default function ProfileView({
 
   const recent = games.slice(-10).reverse();
   const ach = ov.ach[s.id];
+  // Auf fremden Profilen bleiben die geheimen Abzeichen unsichtbar.
+  const shownDefs = BADGES.filter((d) => own || !d.secret);
+  const shownBadges = ach.badges.filter((b) => shownDefs.some((d) => d.id === b.id));
+  const badgeTotal = shownDefs.reduce((n, d) => n + (d.tiers ? d.tiers.length : 1), 0);
   // Tage bis zu den neuen Aufgaben (Montag)
   const berlinDow = (new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Berlin" })).getDay() + 6) % 7;
   const daysLeft = 7 - berlinDow;
@@ -232,14 +236,14 @@ export default function ProfileView({
       <div className="section-h">
         <h2>Abzeichen</h2>
         <Link href={`/abzeichen${own ? "" : `?spieler=${s.id}`}`} className="section-link">
-          {ach.badges.length} von {BADGE_TOTAL} ›
+          {shownBadges.length} von {badgeTotal} ›
         </Link>
       </div>
-      {ach.badges.length === 0 ? (
+      {shownBadges.length === 0 ? (
         <p className="empty small">Noch keine – das erste gibt&apos;s für den ersten Sieg.</p>
       ) : (
         <Link href={`/abzeichen${own ? "" : `?spieler=${s.id}`}`} className="badge-strip">
-          {ach.badges.slice(0, 6).map((b) => {
+          {shownBadges.slice(0, 6).map((b) => {
             const l = badgeLabel(b);
             return (
               <span className="strip-badge" key={b.key}>
