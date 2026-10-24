@@ -14,13 +14,32 @@ export const UPSET_GAP = 150; // Upset-Bonus ab so viel Elo Unterschied
 
 export const XP = { game: 10, win: 5, upset: 15 } as const;
 
-// XP, die man insgesamt braucht, um ein Level zu erreichen.
-// Level 2: 100, Level 3: 250, Level 4: 450 … Level 18: 8.500
-export const LEVEL_XP: number[] = (() => {
-  const t = [0, 0]; // Index = Level
-  for (let l = 1; l < MAX_LEVEL; l++) t.push(t[l] + 100 + 50 * (l - 1));
-  return t;
-})();
+// XP, die man insgesamt braucht, um ein Level zu erreichen (Index = Level).
+// Grobe Richtwerte für sehr aktive Spieler (~15 Spiele pro Woche plus die
+// meisten Wochenaufgaben, rund 350 XP pro Woche):
+//   Bronze (Level 4) nach ca. 3 Wochen, Silber (7) nach ca. 2 Monaten,
+//   Gold (10) nach ca. 5 Monaten, Champion (16) erst nach über einem Jahr.
+export const LEVEL_XP: number[] = [
+  0, // (Level 0 gibt es nicht)
+  0, // Level 1 – Olivenzweig
+  100,
+  300,
+  1_000, // Level 4 – Bronze
+  1_600,
+  2_400,
+  3_400, // Level 7 – Silber
+  4_600,
+  6_000,
+  8_000, // Level 10 – Gold
+  10_000,
+  12_500,
+  15_000, // Level 13 – Gold mit Rubinen
+  17_500,
+  20_000,
+  24_000, // Level 16 – Champion
+  30_000,
+  38_000,
+];
 
 export function levelFor(xp: number): { level: number; into: number; need: number; next: number | null } {
   let level = 1;
