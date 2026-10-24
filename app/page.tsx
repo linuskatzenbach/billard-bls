@@ -58,11 +58,19 @@ const shortDate = (wk: string) => {
 };
 
 // Name (Zeile 1, mit Extras wie der Flamme) und Jahrgang (Zeile 2).
-function NameBlock({ s, children }: { s: PlayerSummary; children?: React.ReactNode }) {
+function NameBlock({
+  s,
+  children,
+  hideLevel,
+}: {
+  s: PlayerSummary;
+  children?: React.ReactNode;
+  hideLevel?: boolean;
+}) {
   return (
     <span className="name">
       <span className="nline">
-        <PlayerName s={s} />
+        <PlayerName s={s} hideLevel={hideLevel} />
         {children}
       </span>
       {s.cohort && <span className="cohort">{cohortShort(s.cohort)}</span>}
@@ -71,13 +79,15 @@ function NameBlock({ s, children }: { s: PlayerSummary; children?: React.ReactNo
 }
 
 // Name mit goldener Farbe und Krone für die aktuelle Nr. 1.
-function PlayerName({ s, me }: { s: PlayerSummary; me?: boolean }) {
+function PlayerName({ s, me, hideLevel }: { s: PlayerSummary; me?: boolean; hideLevel?: boolean }) {
   return (
     <>
       <span className={`pname${s.isLeader ? " leader" : ""}${me ? " me" : ""}`}>{s.name}</span>
-      <span className="lvl-pill" title={`Level ${s.level}`}>
-        {s.level}
-      </span>
+      {!hideLevel && (
+        <span className="lvl-pill" title={`Level ${s.level}`}>
+          {s.level}
+        </span>
+      )}
       {s.isLeader && (
         <span className="crown" aria-label="Platz 1">
           👑
@@ -451,7 +461,8 @@ function LevelBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null
           {list.map((s, i) => (
             <Link href={`/spieler/${s.id}`} key={s.id} className={`row brow wrow lrow${s.id === myId ? " is-me" : ""}`}>
               <Wreath level={s.level} rank={pl[i]} label={`Platz ${pl[i]}, Level ${s.level}`} />
-              <NameBlock s={s} />
+              {/* Level steht hier schon rechts – kein zusätzlicher Kreis am Namen */}
+              <NameBlock s={s} hideLevel />
               <span className="bval lval">
                 Lvl {s.level}
                 <small>{fmtElo(s.xp)} XP</small>
