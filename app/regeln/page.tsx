@@ -28,6 +28,7 @@ export default function RegelnPage() {
       <h2>Nach dem Anstoß</h2>
       <ul>
         <li>Der Tisch ist offen, auch wenn beim Anstoß Kugeln fallen.</li>
+        <li>Fällt beim Anstoß eine Kugel, bleibt der Anstoßende dran.</li>
         <li>Wer als Erstes nach dem Anstoß regulär eine Kugel versenkt, hat diese Farbe.</li>
         <li>
           Fällt die 8 beim Anstoß, hat der Anstoßende gewonnen. Fällt dabei auch die Weiße, hat er verloren.
@@ -85,13 +86,8 @@ export default function RegelnPage() {
         </li>
       </ul>
 
-      <h2>Im Streitfall</h2>
+      <h2>Nach Spielende</h2>
       <ul>
-        <li>
-          Wer gerade nicht am Stoß ist, schaut zu und darf ein Foul ansprechen, bevor der nächste Stoß gespielt ist.
-        </li>
-        <li>Gibt es einen unbeteiligten Zuschauer, entscheidet der.</li>
-        <li>Lässt es sich nicht klären, wird die strittige Situation wiederholt.</li>
         <li>
           Eingetragen wird das Ergebnis vom Gewinner, und zwar erst nach Spielende. Wer nicht einverstanden ist, kann
           innerhalb von 24 Stunden in der App widersprechen.
