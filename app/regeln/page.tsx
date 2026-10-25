@@ -88,9 +88,11 @@ export default function RegelnPage() {
 
       <h2>Nach Spielende</h2>
       <ul>
+        <li>Eingetragen wird das Ergebnis nach Spielende vom Gewinner.</li>
         <li>
-          Eingetragen wird das Ergebnis vom Gewinner, und zwar erst nach Spielende. Wer nicht einverstanden ist, kann
-          innerhalb von 24 Stunden in der App widersprechen.
+          Wenn es einen Eingabefehler gab, kann der andere Spieler innerhalb von 24 Stunden in der App widersprechen
+          und das Ergebnis löschen. Sollten trotzdem Probleme bestehen, bitte{" "}
+          <a href="mailto:bls.billard@gmail.com">bls.billard@gmail.com</a> schreiben.
         </li>
       </ul>
     </div>
