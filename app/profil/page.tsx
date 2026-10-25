@@ -52,6 +52,9 @@ export default async function MeinPage() {
       <ProfileView s={me} world={world} ov={ov} own viewerId={session.playerId} seenAt={seenAt} />
       <div className="me-foot">
         <LogoutButton />
+        <Link href="/regeln" className="foot-link">
+          Regeln
+        </Link>
         <Link href="/datenschutz" className="foot-link">
           Datenschutz
         </Link>

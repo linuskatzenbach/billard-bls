@@ -2494,6 +2494,13 @@ button.ghost:hover { background: rgba(241, 233, 216, 0.08); }
 .legal a { color: var(--brass-bright); }
 .legal ul { padding-left: 1.2rem; }
 
+/* Regeln */
+.rules h1 { margin-bottom: 0.6rem; }
+.rules-intro { text-align: center; font-style: italic; opacity: 0.75; margin: 0 0 1.6rem; }
+.rules li { margin: 0.25rem 0; }
+.rules li ul { margin-top: 0.25rem; }
+.rules-link { color: var(--brass-bright); text-decoration: none; }
+
 /* Jahrgang unter dem Namen in den Ranglisten */
 .row .name { flex-direction: column; align-items: flex-start; gap: 1px; flex-wrap: nowrap; }
 .nline { display: flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; }

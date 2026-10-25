@@ -158,7 +158,9 @@ export default async function HomePage({
   return (
     <>
       <h1>Billard-Rangliste</h1>
-      <p className="subtitle">Jetzt wird gezockt!</p>
+      <p className="subtitle">
+        Jetzt wird gezockt! · <Link href="/regeln" className="rules-link">Regeln ›</Link>
+      </p>
 
       <nav className="rank-tabs" aria-label="Ranglisten">
         {TABS.map((t) => (
