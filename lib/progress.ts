@@ -257,8 +257,10 @@ export function computeOverview(world: World, now = new Date()): Overview {
   const ranked = visible
     .filter((s) => s.games >= MIN_GAMES_RANKED)
     .sort((a, b) => b.elo - a.elo || b.games - a.games || a.name.localeCompare(b.name, "de"));
+  // Geteilte Plätze bei gleicher Elo („1, 1, 3“) – passend zur Krone.
   ranked.forEach((s, i) => {
-    s.rank = i + 1;
+    const prev = ranked[i - 1];
+    s.rank = prev && prev.elo === s.elo ? prev.rank : i + 1;
   });
   if (ranked.length > 0) {
     const top = ranked[0].elo;
