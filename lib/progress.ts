@@ -256,7 +256,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
   const visible = world.players.filter((p) => !p.hidden).map((p) => byId[p.id]);
   const ranked = visible
     .filter((s) => s.games >= MIN_GAMES_RANKED)
-    .sort((a, b) => b.elo - a.elo || b.games - a.games || a.name.localeCompare(b.name, "de"));
+    .sort((a, b) => b.elo - a.elo || b.xp - a.xp || a.name.localeCompare(b.name, "de"));
   // Geteilte Plätze bei gleicher Elo („1, 1, 3“) – passend zur Krone.
   ranked.forEach((s, i) => {
     const prev = ranked[i - 1];
