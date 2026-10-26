@@ -9,6 +9,14 @@ import nodemailer from "nodemailer";
 
 export const ADMIN_MAIL = process.env.ADMIN_MAIL ?? "bls.billard@gmail.com";
 
+// Übergangslösung, solange Mails an @law-school.de nicht zuverlässig ankommen:
+// Jede Mail geht als BCC zusätzlich an Linus, damit er sie notfalls von Hand
+// weiterleiten kann. Zum Abschalten die Liste leeren (oder MAIL_BCC="" in Vercel).
+const MAIL_BCC = (process.env.MAIL_BCC ?? "linus.katzenbach@law-school.de,katzenbachlinus@gmail.com")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 export function mailConfigured(): boolean {
   return Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 }
@@ -39,6 +47,7 @@ export async function sendMail(to: string, subject: string, text: string, html: 
   await transporter.sendMail({
     from: `"Billard BLS" <${process.env.GMAIL_USER}>`,
     to,
+    bcc: MAIL_BCC.filter((b) => b.toLowerCase() !== to.toLowerCase()),
     subject,
     text,
     html,
