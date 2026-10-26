@@ -41,7 +41,7 @@ export default async function AdminPage() {
       </p>
       {!mailConfigured() && (
         <p className="message error">
-          Mail-Versand ist noch nicht eingerichtet (SMTP_USER / SMTP_PASS bzw. GMAIL_USER / GMAIL_APP_PASSWORD fehlen in Vercel). Anmeldelinks
+          Mail-Versand ist noch nicht eingerichtet (GMAIL_USER / GMAIL_APP_PASSWORD fehlen in Vercel). Anmeldelinks
           werden nicht verschickt.
         </p>
       )}

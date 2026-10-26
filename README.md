@@ -144,10 +144,7 @@ Umgebungsvariablen in Vercel:
 
 | Name | Wofür |
 |---|---|
-| `SMTP_USER` | Uni-Mail, über die die Mails rausgehen (z. B. `vorname.nachname@law-school.de`) |
-| `SMTP_PASS` | Passwort des Uni-Kontos |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_FROM` | optional (Standard `smtp.office365.com`, `587`, Absender = `SMTP_USER`) |
-| `GMAIL_USER` | `bls.billard@gmail.com` – Reserve-Absender, falls der Uni-Versand fehlt oder fehlschlägt |
+| `GMAIL_USER` | `bls.billard@gmail.com` – Absender der Mails |
 | `GMAIL_APP_PASSWORD` | App-Passwort des Gmail-Kontos (16 Zeichen) |
 | `SESSION_SECRET` | optional, Schlüssel für die Login-Cookies (sonst `ADMIN_PASSWORD`) |
 | `ADMIN_PASSWORD` | Notfall-Login für den Admin („Admin-Login“ unter Mein Bereich) |

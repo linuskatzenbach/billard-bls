@@ -1,56 +1,25 @@
 import nodemailer from "nodemailer";
 
-// Mail-Versand. Zwei Wege, in Vercel einstellbar:
-//
-// 1) Uni-Konto (bevorzugt, landet bei @law-school.de zuverlässig im Posteingang):
-//   SMTP_USER  = vorname.nachname@law-school.de
-//   SMTP_PASS  = Passwort des Uni-Kontos
-//   SMTP_HOST  = optional, Standard smtp.office365.com
-//   SMTP_PORT  = optional, Standard 587
-//   SMTP_FROM  = optional, Absenderadresse (Standard = SMTP_USER)
-//
-// 2) Gmail-Konto bls.billard@gmail.com (Reserve, falls 1 fehlt oder fehlschlägt):
+// Mail-Versand über das Gmail-Konto bls.billard@gmail.com.
+// In Vercel setzen:
 //   GMAIL_USER          = bls.billard@gmail.com
 //   GMAIL_APP_PASSWORD  = 16-stelliges App-Passwort von Google
-//
-// Ohne beides werden Mails nur ins Server-Log geschrieben
+// Ohne diese Variablen werden Mails nur ins Server-Log geschrieben
 // (praktisch zum lokalen Testen).
 
 export const ADMIN_MAIL = process.env.ADMIN_MAIL ?? "bls.billard@gmail.com";
 
-const smtpConfigured = () => Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
-const gmailConfigured = () => Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
-
 export function mailConfigured(): boolean {
-  return smtpConfigured() || gmailConfigured();
+  return Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 }
 
 export class MailNotConfigured extends Error {
   constructor() {
-    super("Weder SMTP_USER / SMTP_PASS noch GMAIL_USER / GMAIL_APP_PASSWORD gesetzt");
+    super("GMAIL_USER / GMAIL_APP_PASSWORD fehlen");
   }
 }
 
-type Transporter = ReturnType<typeof nodemailer.createTransport>;
-let smtpTransporter: Transporter | null = null;
-let gmailTransporter: Transporter | null = null;
-
-function smtp(): Transporter {
-  return (smtpTransporter ??= nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.office365.com",
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: Number(process.env.SMTP_PORT || 587) === 465,
-    requireTLS: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  }));
-}
-
-function gmail(): Transporter {
-  return (gmailTransporter ??= nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD!.replace(/\s+/g, "") },
-  }));
-}
+let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 
 export async function sendMail(to: string, subject: string, text: string, html: string): Promise<void> {
   if (!mailConfigured()) {
@@ -63,20 +32,17 @@ export async function sendMail(to: string, subject: string, text: string, html: 
     }
     return;
   }
-  const msg = { to, subject, text, html };
-
-  if (smtpConfigured()) {
-    try {
-      await smtp().sendMail({ ...msg, from: `"Billard BLS" <${process.env.SMTP_FROM || process.env.SMTP_USER}>` });
-      return;
-    } catch (err) {
-      console.error("[mail] Versand über Uni-Konto fehlgeschlagen", err);
-      smtpTransporter = null;
-      if (!gmailConfigured()) throw err;
-      console.error("[mail] versuche es über Gmail");
-    }
-  }
-  await gmail().sendMail({ ...msg, from: `"Billard BLS" <${process.env.GMAIL_USER}>` });
+  transporter ??= nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD!.replace(/\s+/g, "") },
+  });
+  await transporter.sendMail({
+    from: `"Billard BLS" <${process.env.GMAIL_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
 }
 
 const wrap = (inner: string) => `<!doctype html><html><body style="margin:0;background:#f1e9d8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b">
