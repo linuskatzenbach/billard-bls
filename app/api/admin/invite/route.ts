@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("Einladung fehlgeschlagen", err);
     if (err instanceof MailNotConfigured) {
-      return jsonError("Der Mail-Versand ist noch nicht eingerichtet (GMAIL_USER / GMAIL_APP_PASSWORD in Vercel).", 503);
+      return jsonError("Der Mail-Versand ist noch nicht eingerichtet (SMTP_USER / SMTP_PASS oder GMAIL_USER / GMAIL_APP_PASSWORD in Vercel).", 503);
     }
     return jsonError(`Gmail hat die Mail nicht angenommen: ${err instanceof Error ? err.message : "unbekannter Fehler"}`, 502);
   }
