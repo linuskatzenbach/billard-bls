@@ -16,7 +16,7 @@ export const SEED_PLAYERS: SeedPlayer[] = [
   { id: "jannik", name: "Jannik" },
   { id: "benedikt", name: "Benedikt" },
   { id: "philip", name: "Philip" },
-  { id: "tobias", name: "Tobias" },
+  { id: "tobias", name: "Tobi" },
 ];
 
 // Uni-Mails, die von Anfang an mit einem Spieler verknüpft sind. Wer sich

@@ -196,9 +196,25 @@ async function founderCohort(): Promise<void> {
   }
 }
 
+// Einmalig: Tobias heißt in der App jetzt "Tobi".
+async function renameTobi(): Promise<void> {
+  const sql = getSql();
+  const done = await sql`SELECT 1 FROM migrations WHERE name = 'rename-tobi';`;
+  if (done.length > 0) return;
+  try {
+    await sql.transaction([
+      sql`UPDATE players SET name = 'Tobi' WHERE id = 'tobias'`,
+      sql`INSERT INTO migrations (name) VALUES ('rename-tobi')`,
+    ]);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = 'rename-tobi';`;
+    if (again.length === 0) throw err;
+  }
+}
+
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).catch((err) => {
+    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).then(renameTobi).catch((err) => {
       schemaReady = null;
       throw err;
     });
