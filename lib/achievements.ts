@@ -13,7 +13,7 @@ export const QUEST_BONUS = 50;
 
 // XP für Platz 1–3 im Wochenzocker (abgeschlossene Wochen ab QUEST_START).
 // Gleich viele Spiele = gleicher Platz.
-export const PODIUM_XP = [50, 30, 15];
+export const PODIUM_XP = [250, 150, 75];
 
 // ---------------------------------------------------------------------------
 // Abzeichen

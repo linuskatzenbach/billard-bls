@@ -54,7 +54,7 @@ export default async function KraenzePage({
         <b>So gibt es XP</b>
         <span>Jedes Spiel +10 · Sieg +5 · Upset +15</span>
         <span>Wochenaufgaben +40 bis +75, alle drei +50</span>
-        <span>Wochenzocker Platz 1–3: +50 / +30 / +15</span>
+        <span>Wochenzocker Platz 1–3: +250 / +150 / +75</span>
         <span>Abzeichen +25 bis +500</span>
       </div>
     </>
