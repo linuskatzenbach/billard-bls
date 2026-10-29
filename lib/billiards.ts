@@ -384,7 +384,6 @@ export type Script = {
   potted: { ball: number; pocket: number; t: number }[];
   hits: { t: number; x: number; y: number }[];
   aims: { shooter: number; dir: Vec; start: number; strike: number; power: number }[];
-  highFive: { t: number; x: number; y: number } | null;
   restAt: number; // ab hier liegt alles
   shots: Shot[];
 };
@@ -457,35 +456,6 @@ export function buildScript(pairs: 1 | 2, seed = Date.now()): Script {
       hold(PAUSE);
     }
 
-    // Doppel: die beiden Sieger rollen aufeinander zu und klatschen ab.
-    let highFive: Script["highFive"] = null;
-    if (pairs === 2) {
-      const a = sim.balls[0], b = sim.balls[1];
-      const d = dist(a, b);
-      const gap = (d - 2 * R) / 2;
-      if (gap > 0.02) {
-        const u = norm(sub(b, a));
-        const v = speedFor(gap, 0.09);
-        const test = cloneSim(sim);
-        test.balls[0].vx = u.x * v; test.balls[0].vy = u.y * v;
-        test.balls[1].vx = -u.x * v; test.balls[1].vy = -u.y * v;
-        test.follow = test.balls.map(() => 0);
-        runUntilRest(test, null);
-        if (test.balls[0].potted < 0 && test.balls[1].potted < 0 && test.hits.length > 0) {
-          const t0 = frames.length / FPS;
-          const simT0 = sim.t;
-          sim.balls[0].vx = u.x * v; sim.balls[0].vy = u.y * v;
-          sim.balls[1].vx = -u.x * v; sim.balls[1].vy = -u.y * v;
-          sim.follow = sim.balls.map(() => 0);
-          sim.hits = [];
-          runUntilRest(sim, frames);
-          const h = sim.hits[0];
-          if (h) highFive = { t: t0 + (h.t - simT0), x: h.x, y: h.y };
-        }
-      } else {
-        highFive = { t: frames.length / FPS, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      }
-    }
     const restAt = frames.length / FPS;
     return {
       n: pos.length,
@@ -495,7 +465,6 @@ export function buildScript(pairs: 1 | 2, seed = Date.now()): Script {
       potted,
       hits,
       aims,
-      highFive,
       restAt,
       shots,
     };

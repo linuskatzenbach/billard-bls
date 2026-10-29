@@ -10,7 +10,7 @@ import { buildScript, FIELD_H, FIELD_W, FPS, POCKETS, R, type Script, type Vec }
 // Doppel beliebig). Der Queue zielt, stößt, und die Siegerkugel locht die
 // Verliererkugel ein – direkt, mit Schnitt oder über die Bande, mal hart,
 // mal schleicht sie langsam in die Tasche. Im Doppel locht jeder Sieger
-// eine Kugel ein, danach klatschen die beiden ab. Alles, was zu sehen ist,
+// eine Kugel ein. Alles, was zu sehen ist,
 // ist die echte Simulation aus lib/billiards.ts.
 
 export type TablePlayer = { name: string; label: string; color: string; kind: BallKind };
@@ -92,7 +92,6 @@ export default function VictoryTable({ winners, losers, result, onDone, onError,
   const ballRefs = useRef<(HTMLDivElement | null)[]>([]);
   const cueRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
-  const fiveRef = useRef<HTMLDivElement>(null);
   const ringRefs = useRef<(HTMLDivElement | null)[]>([]);
   const winDeltaRef = useRef<HTMLSpanElement>(null);
   const loseDeltaRef = useRef<HTMLSpanElement>(null);
@@ -188,11 +187,6 @@ export default function VictoryTable({ winners, losers, result, onDone, onError,
             scale *= g < 0.62 ? 1 + 0.3 * Math.sin(Math.PI * Math.min(1, g * 1.6)) : 1 + 0.1 * Math.sin((Math.PI * (g - 0.62)) / 0.38);
           }
         }
-        // kleines Abklatschen im Doppel
-        if (script.highFive && script.winners.includes(i) && !reduced) {
-          const g = (t - script.highFive.t) / 0.35;
-          if (g > 0 && g < 1) scale *= 1 + 0.18 * Math.sin(Math.PI * g);
-        }
         el.style.transform = `translate(${p.x - rp}px, ${p.y - rp}px) scale(${scale})`;
         el.style.opacity = String(Math.max(op, 0));
         if (op <= 0.001) el.style.visibility = "hidden";
@@ -258,12 +252,6 @@ export default function VictoryTable({ winners, losers, result, onDone, onError,
         const q = (t - hit.t) / 0.3;
         ring(hitRef.current, px(hit), rp * 0.6 + rp * 2 * q, (1 - q) * 0.8);
       } else hide(hitRef.current);
-
-      if (script.highFive && !reduced) {
-        const q = (t - script.highFive.t) / 0.55;
-        if (q >= 0 && q < 1) ring(fiveRef.current, px(script.highFive), rp + rp * 3.5 * q, (1 - q) * 0.95);
-        else hide(fiveRef.current);
-      }
 
       if (t >= script.restAt && !res && !waitShown) {
         waitShown = true;
@@ -356,7 +344,6 @@ export default function VictoryTable({ winners, losers, result, onDone, onError,
           );
         })}
         <div ref={hitRef} className="victory-ring" style={{ borderColor: "#f1e9d8" }} />
-        <div ref={fiveRef} className="victory-ring" style={{ borderColor: "#e0bc4a" }} />
         {script.winners.flatMap((w, wi) =>
           [0, 1].map((k) => (
             <div
