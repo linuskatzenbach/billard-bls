@@ -212,6 +212,22 @@ async function renameTobi(): Promise<void> {
   }
 }
 
+// Einmalig: den Master gibt es nur als MLB (Master of Law and Business).
+async function masterToMlb(): Promise<void> {
+  const sql = getSql();
+  const done = await sql`SELECT 1 FROM migrations WHERE name = 'cohort-mlb';`;
+  if (done.length > 0) return;
+  try {
+    await sql.transaction([
+      sql`UPDATE players SET cohort = 'MLB' WHERE cohort = 'Master / LL.M.'`,
+      sql`INSERT INTO migrations (name) VALUES ('cohort-mlb')`,
+    ]);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = 'cohort-mlb';`;
+    if (again.length === 0) throw err;
+  }
+}
+
 // Einmalig: Tobis Sieg vom 29.10.2026 um 14:04 war nicht gegen Linus,
 // sondern gegen Jannik. Verlierer tauschen und Elo neu rechnen.
 async function fixTobiJannik(): Promise<void> {
@@ -240,7 +256,7 @@ async function fixTobiJannik(): Promise<void> {
 
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).then(renameTobi).then(fixTobiJannik).catch((err) => {
+    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).then(renameTobi).then(fixTobiJannik).then(masterToMlb).catch((err) => {
       schemaReady = null;
       throw err;
     });

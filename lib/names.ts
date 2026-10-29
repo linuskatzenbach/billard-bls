@@ -10,7 +10,7 @@ export const COHORTS = [
   "2024",
   "2025",
   "2026",
-  "Master / LL.M.",
+  "MLB",
   "WissMit",
 ];
 
