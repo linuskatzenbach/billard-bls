@@ -8,11 +8,87 @@ import { usePathname } from "next/navigation";
 // Die Leiste selbst wird vorab gebaut (ohne Markierung), welcher Tab aktiv
 // ist, kommt im Browser dazu.
 export default function TabBar() {
+  useStickToBottom();
   return (
     <Suspense fallback={<Bar mine={null} />}>
       <ActiveBar />
     </Suspense>
   );
+}
+
+// iOS-26-Fehler: Nachdem die Tastatur offen war, rechnet Safari mit einer
+// zu kleinen Bildschirmhöhe weiter, und die Leiste rutscht beim Hochscrollen
+// ungefähr um eine Tastaturhöhe nach oben (WebKit-Bug 297779). Wir messen
+// nach, wo die Leiste wirklich endet, und schieben sie wieder ganz nach unten.
+function useStickToBottom() {
+  useEffect(() => {
+    let shift = 0;
+    let frame = 0;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+      || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const typing = () => {
+      const el = document.activeElement as HTMLElement | null;
+      return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+    };
+    const fix = () => {
+      frame = 0;
+      const bar = document.querySelector<HTMLElement>(".tabbar");
+      if (!bar) return;
+      // Bei offener Tastatur gehört die Leiste hinter die Tastatur – nichts tun.
+      if (typing()) {
+        if (shift) bar.style.transform = "";
+        shift = 0;
+        return;
+      }
+      const vv = window.visualViewport;
+      let bottom = Math.max(
+        window.innerHeight,
+        document.documentElement.clientHeight,
+        vv ? vv.offsetTop + vv.height : 0,
+      );
+      // Als App auf dem Homescreen gibt es keine Safari-Leisten: der sichtbare
+      // Bereich ist der ganze Bildschirm. Nur eingreifen, wenn die Abweichung
+      // so groß ist wie eine Tastatur – kleine Unterschiede (Statusleiste)
+      // sind kein Fehler.
+      if (standalone) {
+        const portrait = window.matchMedia("(orientation: portrait)").matches;
+        const full = portrait ? screen.height : screen.width;
+        if (full - bottom > 120) bottom = full;
+      }
+      const rect = bar.getBoundingClientRect();
+      const next = Math.max(0, Math.round(shift + bottom - rect.bottom));
+      if (Math.abs(next - shift) < 1) return;
+      shift = next;
+      bar.style.transform = shift ? `translateY(${shift}px)` : "";
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(fix);
+    };
+    // Nach dem Schließen der Tastatur einmal kurz nachrechnen lassen.
+    const onBlur = () => {
+      window.setTimeout(() => {
+        window.scrollTo(window.scrollX, window.scrollY);
+        schedule();
+      }, 300);
+    };
+    const vv = window.visualViewport;
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("orientationchange", schedule);
+    document.addEventListener("focusout", onBlur);
+    vv?.addEventListener("resize", schedule);
+    vv?.addEventListener("scroll", schedule);
+    schedule();
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("orientationchange", schedule);
+      document.removeEventListener("focusout", onBlur);
+      vv?.removeEventListener("resize", schedule);
+      vv?.removeEventListener("scroll", schedule);
+    };
+  }, []);
 }
 
 let lastCheck = 0;
