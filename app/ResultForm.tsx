@@ -124,7 +124,10 @@ export default function ResultForm({
 
   const opponent = opponents.find((p) => p.id === opponentId) ?? null;
   const q = query.trim().toLowerCase();
-  const shown = q ? opponents.filter((p) => p.name.toLowerCase().includes(q)) : opponents;
+  // Suche findet auch den Jahrgang ("2022").
+  const shown = q
+    ? opponents.filter((p) => p.name.toLowerCase().includes(q) || (p.cohort ?? "").toLowerCase().includes(q))
+    : opponents;
 
   // Beim Verlassen alles auf Anfang stellen (Next.js hebt die Seite auf).
   useEffect(() => {
@@ -255,6 +258,7 @@ export default function ResultForm({
             >
               <Wreath level={p.level} rank={p.rank} size="3rem" />
               <span className="opp-name">{p.name}</span>
+              {p.cohort && <span className="opp-cohort">({p.cohort})</span>}
             </button>
           ))}
           {shown.length === 0 && <p className="empty small">Niemand gefunden.</p>}
@@ -283,6 +287,7 @@ export default function ResultForm({
                     {role && <span className="picker-badge">{role === "is-winner" ? "Sieger" : "Verlierer"}</span>}
                     <Ball label={initial(p)} {...ballOf(p)} />
                     <span className="duel-name">{mine ? "Ich" : p.name}</span>
+                    {!mine && p.cohort && <span className="opp-cohort">({p.cohort})</span>}
                   </button>
                 );
               })}
