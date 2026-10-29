@@ -212,9 +212,35 @@ async function renameTobi(): Promise<void> {
   }
 }
 
+// Einmalig: Tobis Sieg vom 29.10.2026 um 14:04 war nicht gegen Linus,
+// sondern gegen Jannik. Verlierer tauschen und Elo neu rechnen.
+async function fixTobiJannik(): Promise<void> {
+  const sql = getSql();
+  const name = "2026-10-29-tobi-gegen-jannik-statt-linus";
+  const done = await sql`SELECT 1 FROM migrations WHERE name = ${name};`;
+  if (done.length > 0) return;
+  const rows = await sql`
+    SELECT id FROM matches
+    WHERE winner_id = 'tobias' AND loser_id = 'linus'
+      AND created_at >= '2026-10-29T13:00:00Z' AND created_at < '2026-10-29T13:10:00Z'
+    ORDER BY created_at ASC, id ASC
+  `;
+  if (rows.length !== 1) {
+    console.error(`[${name}] erwartet genau 1 Spiel, gefunden: ${rows.length} – nichts geändert`);
+    return;
+  }
+  const mark = sql`INSERT INTO migrations (name) VALUES (${name})`;
+  try {
+    await changeLoserRecalc(Number(rows[0].id), "jannik", [mark]);
+  } catch (err) {
+    const again = await sql`SELECT 1 FROM migrations WHERE name = ${name};`;
+    if (again.length === 0) throw err;
+  }
+}
+
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).then(renameTobi).catch((err) => {
+    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).then(renameTobi).then(fixTobiJannik).catch((err) => {
       schemaReady = null;
       throw err;
     });
@@ -513,6 +539,16 @@ export async function getMatch(id: number): Promise<MatchRow | null> {
 // Löscht ein Spiel und rechnet die Elo aller späteren Spiele neu.
 // extra: weitere Abfragen, die in derselben Transaktion laufen sollen.
 async function deleteMatchRecalc(matchId: number, extra: Query[] = []): Promise<boolean> {
+  return recalcAround(matchId, null, extra);
+}
+
+// Wie oben, aber das Spiel bleibt stehen – nur der Verlierer wird getauscht
+// (z. B. falscher Gegner eingetragen). Elo ab diesem Spiel wird neu gerechnet.
+async function changeLoserRecalc(matchId: number, newLoserId: string, extra: Query[] = []): Promise<boolean> {
+  return recalcAround(matchId, newLoserId, extra);
+}
+
+async function recalcAround(matchId: number, newLoserId: string | null, extra: Query[]): Promise<boolean> {
   const sql = getSql();
   const all = (await sql`
     SELECT id, winner_id, loser_id, winner_elo_after, loser_elo_after
@@ -521,14 +557,17 @@ async function deleteMatchRecalc(matchId: number, extra: Query[] = []): Promise<
   const idx = all.findIndex((m) => Number(m.id) === matchId);
   if (idx < 0) return false;
 
-  const queries: Query[] = [...extra, sql`DELETE FROM matches WHERE id = ${matchId}`];
+  const queries: Query[] = [...extra];
+  if (newLoserId === null) queries.push(sql`DELETE FROM matches WHERE id = ${matchId}`);
+  else queries.push(sql`UPDATE matches SET loser_id = ${newLoserId} WHERE id = ${matchId}`);
   const elo: Record<string, number> = {};
   for (const m of all.slice(0, idx)) {
     elo[m.winner_id] = Number(m.winner_elo_after);
     elo[m.loser_id] = Number(m.loser_elo_after);
   }
   const touched = new Set([all[idx].winner_id, all[idx].loser_id]);
-  for (const m of all.slice(idx + 1)) {
+  const rest = newLoserId === null ? all.slice(idx + 1) : [{ ...all[idx], loser_id: newLoserId }, ...all.slice(idx + 1)];
+  for (const m of rest) {
     const w = elo[m.winner_id] ?? START_ELO;
     const l = elo[m.loser_id] ?? START_ELO;
     const { newWinnerElo, newLoserElo } = calculateNewElo(w, l);
