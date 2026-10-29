@@ -13,22 +13,6 @@ const COLORS = [
   "#151515", // 8
 ];
 
-// Fraunces hat Mediävalziffern: 0, 1, 2 sind nur so hoch wie ein "x",
-// 3, 4, 5, 7, 9 reichen unter die Grundlinie, 6 und 8 sind so hoch wie
-// Großbuchstaben. Damit jede Zahl optisch mittig im Kreis sitzt, wird sie
-// je nach Ziffernform ein Stück verschoben (Werte in em, gemessen).
-const CAP = 0.7;
-const X_HEIGHT = 0.49;
-const DESCENDER = 0.25;
-
-function verticalNudge(digits: string): number {
-  const top = /[68]/.test(digits) ? CAP : X_HEIGHT;
-  const bottom = /[34579]/.test(digits) ? -DESCENDER : 0;
-  // Abstand der Ziffernmitte zur Mitte der Großbuchstabenhöhe
-  // (auf die ist die Zeile per text-box beschnitten).
-  return CAP / 2 - (top + bottom) / 2;
-}
-
 export type BallKind = "solid" | "striped" | "cue";
 
 // Billardkugel mit beliebiger Beschriftung (Zahl oder Buchstabe).
@@ -43,8 +27,6 @@ export function Ball({
   kind: BallKind;
   ariaLabel?: string;
 }) {
-  // Buchstaben sind so hoch wie Großbuchstaben und brauchen keine Korrektur.
-  const nudge = /^\d+$/.test(label) ? verticalNudge(label) : 0;
   return (
     <span
       className={`ball ball-${kind}`}
@@ -53,12 +35,10 @@ export function Ball({
       aria-hidden={ariaLabel ? undefined : true}
     >
       <span className="ball-number">
-        <span
-          className="ball-digits"
-          style={{ transform: `translateY(${(-nudge).toFixed(3)}em)` }}
-        >
-          {label}
-        </span>
+        {/* Fraunces hat Versalziffern (so hoch wie Großbuchstaben); per
+            text-box auf Versalhöhe beschnitten sitzt jede Zahl ohne
+            Einzelkorrektur mittig im Kreis. */}
+        <span className="ball-digits">{label}</span>
       </span>
     </span>
   );

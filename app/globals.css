@@ -1906,8 +1906,7 @@ h1.leader {
   font-family: "Fraunces", Georgia, serif;
   font-weight: 700;
   font-size: 0.68rem;
-  /* Ziffern exakt mittig im Kreis: Versalziffern (Fraunces nutzt sonst Mediävalziffern,
-     die nach unten hängen) und Zentrierung per Flexbox statt über die Zeilenhöhe */
+  /* Ziffern exakt mittig im Kreis: Zentrierung per Flexbox statt über die Zeilenhöhe */
   font-variant-numeric: lining-nums tabular-nums;
   display: inline-flex;
   align-items: center;
