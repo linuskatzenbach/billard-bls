@@ -72,8 +72,8 @@ export default function RegelnPage() {
           einer Mitteltasche ist das die andere Mitteltasche.
         </li>
         <li>
-          Hat der Gegner die letzte eigene Kugel versenkt, darf der Spieler die Tasche für die 8 frei wählen und sagt
-          sie an.
+          Hat der Gegner die letzte eigene Kugel versenkt, darf der Spieler die Tasche für die 8 einmalig frei wählen
+          und sagt sie an, nachdem der gegnerische Zug beendet ist.
         </li>
         <li>
           Verloren hat, wer:
