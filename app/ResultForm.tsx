@@ -13,6 +13,11 @@ import type { VictoryProps, VictoryResult } from "./VictoryAnimation";
 // Die Sieges-Animation wird erst geladen, wenn sie gebraucht wird.
 const loadVictory = () => import("./VictoryAnimation");
 const VictoryAnimation = dynamic(loadVictory, { ssr: false });
+// Neue Animation (ganzer Tisch, freie Aufstellung) – vorerst nur im Testspiel,
+// für alle ab dem Samstags-Update.
+const loadTable = () => import("./VictoryTable");
+const VictoryTable = dynamic(loadTable, { ssr: false });
+type TableAnim = import("./VictoryTable").VictoryTableProps;
 
 type AnimSetup = Omit<VictoryProps, "result" | "onDone" | "onError">;
 
@@ -121,6 +126,7 @@ export default function ResultForm({
   const formRef = useRef<HTMLFormElement>(null);
   const duelRef = useRef<HTMLDivElement>(null);
   const [anim, setAnim] = useState<VictoryProps | null>(null);
+  const [tableAnim, setTableAnim] = useState<TableAnim | null>(null);
 
   const opponent = opponents.find((p) => p.id === opponentId) ?? null;
   const q = query.trim().toLowerCase();
@@ -133,6 +139,7 @@ export default function ResultForm({
   useEffect(() => {
     return () => {
       setAnim(null);
+      setTableAnim(null);
       setOpponentId("");
       setIWon(null);
       setQuery("");
@@ -141,7 +148,7 @@ export default function ResultForm({
   }, []);
 
   useEffect(() => {
-    if (opponentId) void loadVictory();
+    if (opponentId) void (test ? loadTable() : loadVictory());
   }, [opponentId]);
 
   function chooseOpponent(id: string) {
@@ -189,6 +196,24 @@ export default function ResultForm({
 
     await settleViewport();
     const [winner, loser] = iWon ? [me, opponent] : [opponent, me];
+    if (test) {
+      const player = (p: Pick) => ({ name: p.name, label: initial(p), ...ballOf(p) });
+      setTableAnim({
+        winners: [player(winner)],
+        losers: [player(loser)],
+        result,
+        onDone: () => {
+          if (reward) showReward(reward, test);
+          router.push(home);
+          router.refresh();
+        },
+        onError: (message) => {
+          setTableAnim(null);
+          setStatus({ type: "error", message });
+        },
+      });
+      return;
+    }
     const setup = formRef.current ? measureAnimation(formRef.current, winner, loser) : null;
     if (setup) {
       setAnim({
@@ -319,6 +344,7 @@ export default function ResultForm({
       </form>
 
       {anim && <VictoryAnimation {...anim} />}
+      {tableAnim && <VictoryTable {...tableAnim} />}
 
       <Link href={home} className="nav-link">
         {test ? "← Zurück zum Admin-Bereich" : "← Zurück zur Rangliste"}

@@ -2828,3 +2828,85 @@ button.badge-btn:hover { background: rgba(241, 233, 216, 0.08); }
 .bd-tier-pct { font-size: 0.72rem; opacity: 0.8; white-space: nowrap; }
 .bd-check { color: #9ed6a3; font-weight: 700; }
 .bd-row { font-size: 0.82rem; padding: 7px 0; border-bottom: 1px solid var(--line); }
+
+/* Sieges-Animation (neu, VictoryTable): Tisch über die ganze Breite */
+.vt-backdrop {
+  background: rgba(8, 20, 16, 0.94);
+}
+.vt-table {
+  border-radius: 14px;
+}
+.vt-felt {
+  overflow: hidden;
+}
+.vt-spot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(241, 233, 216, 0.35);
+}
+.vt-headline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(241, 233, 216, 0.1);
+}
+.vt-diamond {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  transform: rotate(45deg);
+  background: #efe3c4;
+  opacity: 0.75;
+  animation: victory-fade 0.45s ease both;
+}
+.vt-pocket {
+  background: radial-gradient(circle at 50% 45%, #000 0%, #070707 55%, #1a120c 100%);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), 0 0 0 1.5px rgba(0, 0, 0, 0.35);
+}
+.vt-ball .ball {
+  box-shadow:
+    inset -0.12em -0.18em 0.3em rgba(0, 0, 0, 0.45),
+    0.08em 0.16em 0.22em rgba(0, 0, 0, 0.55);
+}
+.vt-ball .ball-number {
+  font-size: 1em;
+  will-change: transform;
+}
+.vt-cue {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 0 50%;
+  filter: drop-shadow(0.25rem 0.35rem 0.25rem rgba(0, 0, 0, 0.45));
+}
+.vt-cue-stick {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 70%);
+  background: linear-gradient(
+    90deg,
+    #4d79b8 0 0.8%,
+    #f3ecdc 0.8% 3.4%,
+    #e3c99a 3.4% 40%,
+    #c99e62 58%,
+    #d9b24a 58% 59.2%,
+    #2a1a10 59.2% 86%,
+    #111 86% 100%
+  );
+}
+.vt-each {
+  margin-top: 0.15rem !important;
+  font-size: 0.8rem !important;
+  opacity: 0.6;
+}
+.anim-preview-btns {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1.5rem;
+}

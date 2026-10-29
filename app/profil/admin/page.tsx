@@ -93,6 +93,9 @@ export default async function AdminPage() {
         </span>
       </Link>
       <p className="me-note">Testspiele laufen mit der kompletten Animation, werden aber nicht gespeichert.</p>
+      <Link href="/profil/animation" className="nav-link">
+        Sieges-Animation ansehen (1 gegen 1 / 2 gegen 2) →
+      </Link>
     </>
   );
 }
