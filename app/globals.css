@@ -2910,3 +2910,143 @@ button.badge-btn:hover { background: rgba(241, 233, 216, 0.08); }
   gap: 0.7rem;
   margin-top: 1.5rem;
 }
+
+/* Umschalter 1 gegen 1 / 2 gegen 2 */
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.mode-switch button {
+  margin: 0;
+  padding: 0.6rem;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--cream);
+  opacity: 0.75;
+  font-weight: 500;
+}
+.mode-switch button:hover { background: rgba(241, 233, 216, 0.06); }
+.mode-switch button.on {
+  opacity: 1;
+  color: var(--brass-bright);
+  background: var(--felt-noise), linear-gradient(180deg, var(--felt-light), var(--felt));
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+/* 2 gegen 2 eintragen */
+.dbl { display: flex; flex-direction: column; gap: 0.9rem; }
+.dbl-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.65;
+  margin-bottom: -0.5rem;
+}
+.dbl-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4rem 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+  scroll-margin: 90px;
+}
+.dbl-vs { text-align: center; font-size: 0.72rem; opacity: 0.5; }
+button.dbl-slot {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 5.2rem;
+  min-width: 0;
+  padding: 8px 2px;
+  background: rgba(241, 233, 216, 0.04);
+  color: var(--cream);
+  border: 1.5px dashed rgba(241, 233, 216, 0.25);
+  border-radius: 11px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+button.dbl-slot.filled { border-style: solid; border-color: rgba(224, 188, 74, 0.55); background: rgba(43, 95, 78, 0.35); }
+button.dbl-slot.active { border-style: solid; border-color: var(--brass-bright); box-shadow: 0 0 0 1px var(--brass-bright) inset; }
+button.dbl-slot:disabled { opacity: 1; cursor: default; border-style: solid; border-color: rgba(224, 188, 74, 0.55); background: rgba(43, 95, 78, 0.35); }
+.dbl-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(241, 233, 216, 0.3);
+  font-size: 1.2rem;
+  opacity: 0.6;
+}
+.dbl-slot-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dbl-prompt { margin: 0.3rem 0 0; text-align: center; font-size: 0.95rem; opacity: 0.85; }
+.dbl-result { scroll-margin: 90px; }
+.dbl-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 6px; }
+button.dbl-team {
+  position: relative;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 6px 12px;
+  min-width: 0;
+  background: rgba(241, 233, 216, 0.04);
+  color: var(--cream);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+}
+button.dbl-team:hover { background: rgba(241, 233, 216, 0.08); }
+button.dbl-team.is-winner { border-color: var(--brass-bright); background: rgba(224, 188, 74, 0.1); }
+button.dbl-team.is-loser { border-color: rgba(224, 123, 102, 0.75); background: rgba(0, 0, 0, 0.18); }
+.dbl-team-balls { display: flex; gap: 2px; }
+.dbl-team-balls .ball { width: 2.5rem; height: 2.5rem; }
+.dbl-team-balls .ball-number { font-size: 0.95rem; }
+.dbl-team-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.dbl-team-avg { font-size: 0.75rem; opacity: 0.55; font-variant-numeric: tabular-nums; }
+.dbl-summary { margin-top: 1.4rem; text-align: center; }
+.dbl-summary p { margin: 0; font-size: 1rem; }
+.dbl-summary b { color: var(--brass-bright); font-weight: 600; }
+button.dbl-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.7rem 0 0;
+  padding: 0.38rem 0.85rem;
+  background: transparent;
+  color: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+button.dbl-change:hover { background: rgba(241, 233, 216, 0.06); }
+button.dbl-change svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+button.dbl-save { margin-top: 0.6rem; border-radius: 10px; padding: 0.95rem; }

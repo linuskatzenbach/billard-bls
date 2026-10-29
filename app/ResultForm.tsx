@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Ball, poolBall } from "./RankBall";
 import Wreath from "./Wreath";
 import { showReward } from "./RewardOverlay";
+import DoublesForm from "./DoublesForm";
 import type { Reward } from "@/lib/reward";
 import type { VictoryProps, VictoryResult } from "./VictoryAnimation";
 
@@ -127,6 +128,8 @@ export default function ResultForm({
   const duelRef = useRef<HTMLDivElement>(null);
   const [anim, setAnim] = useState<VictoryProps | null>(null);
   const [tableAnim, setTableAnim] = useState<TableAnim | null>(null);
+  // 2 gegen 2 gibt es vorerst nur im Testspiel.
+  const [doubles, setDoubles] = useState(false);
 
   const opponent = opponents.find((p) => p.id === opponentId) ?? null;
   const q = query.trim().toLowerCase();
@@ -260,6 +263,20 @@ export default function ResultForm({
       <h1>{test ? "Testspiel" : "Spiel eintragen"}</h1>
       <p className="subtitle">{test ? "Animation wie echt – nichts wird gespeichert" : "Gegen wen hast du gespielt?"}</p>
 
+      {test && (
+        <div className="mode-switch" role="tablist" aria-label="Spielart">
+          <button type="button" role="tab" aria-selected={!doubles} className={!doubles ? "on" : ""} onClick={() => setDoubles(false)}>
+            1 gegen 1
+          </button>
+          <button type="button" role="tab" aria-selected={doubles} className={doubles ? "on" : ""} onClick={() => setDoubles(true)}>
+            2 gegen 2
+          </button>
+        </div>
+      )}
+
+      {doubles ? (
+        <DoublesForm me={me} players={opponents} home={home} />
+      ) : (
       <form ref={formRef} onSubmit={handleSubmit} className="result-form">
         {opponents.length > 8 && (
           <input
@@ -342,6 +359,7 @@ export default function ResultForm({
         {status.type === "error" && <p className="message error">{status.message}</p>}
         {status.type === "success" && <p className="message success">{status.message}</p>}
       </form>
+      )}
 
       {anim && <VictoryAnimation {...anim} />}
       {tableAnim && <VictoryTable {...tableAnim} />}
