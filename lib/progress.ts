@@ -94,6 +94,7 @@ export type PlayerSummary = {
   doubles: number; // davon Doppel
   rank: number | null; // Platz in der Elo-Rangliste (null = vorläufig)
   isLeader: boolean; // aktueller Platz 1 → goldener Name
+  isLast: boolean; // aktuell letzter Platz → rote Laterne
   xp: number;
   gameXp: number;
   badgeXp: number;
@@ -158,6 +159,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
     doubles: 0,
     rank: null,
     isLeader: false,
+    isLast: false,
     xp: 0,
     gameXp: 0,
     badgeXp: 0,
@@ -274,6 +276,10 @@ export function computeOverview(world: World, now = new Date()): Overview {
   if (ranked.length > 0) {
     const top = ranked[0].elo;
     for (const s of ranked) if (s.elo === top) s.isLeader = true;
+    // Rote Laterne für den letzten Platz – erst ab zwei Spielern in der
+    // Rangliste und nie für jemanden, der zugleich vorne steht.
+    const bottom = ranked[ranked.length - 1].elo;
+    if (bottom !== top) for (const s of ranked) if (s.elo === bottom) s.isLast = true;
   }
   const provisional = visible
     .filter((s) => s.games < MIN_GAMES_RANKED)
