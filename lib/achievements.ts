@@ -202,20 +202,29 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     });
   };
 
-  // Rangliste zum jeweiligen Zeitpunkt
-  const ranked = () =>
-    [...visible].filter((id) => S(id).games >= MIN_RANKED).sort((a, b) => S(b).elo - S(a).elo);
+  // Rangliste zum jeweiligen Zeitpunkt. Wird nur neu sortiert, wenn sich
+  // seit der letzten Abfrage eine Elo geändert hat (sonst pro Spiel mehrfach).
+  let rankCache: { list: string[]; rank: Map<string, number> } | null = null;
+  const rankInfo = () => {
+    if (!rankCache) {
+      const list = [...visible].filter((id) => S(id).games >= MIN_RANKED).sort((a, b) => S(b).elo - S(a).elo);
+      const rank = new Map<string, number>();
+      list.forEach((id, i) => {
+        const prev = list[i - 1];
+        rank.set(id, prev !== undefined && S(prev).elo === S(id).elo ? rank.get(prev)! : i + 1);
+      });
+      rankCache = { list, rank };
+    }
+    return rankCache;
+  };
+  const ranked = () => rankInfo().list;
   const leaders = (): Set<string> => {
     const r = ranked();
     if (r.length === 0) return new Set();
     const top = S(r[0]).elo;
     return new Set(r.filter((id) => S(id).elo === top));
   };
-  const rankOf = (id: string): number | null => {
-    if (!visible.has(id) || S(id).games < MIN_RANKED) return null;
-    const e = S(id).elo;
-    return 1 + ranked().filter((o) => S(o).elo > e).length;
-  };
+  const rankOf = (id: string): number | null => rankInfo().rank.get(id) ?? null;
   const THRONE_MS = 28 * DAY;
   const checkThrone = (t: number) => {
     for (const id of visible) {
@@ -460,6 +469,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     ] as const) {
       s.games++;
       s.elo = after;
+      rankCache = null;
       s.peakElo = Math.max(s.peakElo, after);
       s.opponents.add(opp);
       const oc = cohortOf.get(opp);

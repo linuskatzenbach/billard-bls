@@ -21,9 +21,37 @@ export function refreshWorld(): void {
   revalidateTag(WORLD_TAG, { expire: 0 });
 }
 
+// Die Auswertung (Elo, Level, Abzeichen, Wochenaufgaben) läuft über alle
+// Spiele und wird mit jedem Spieler teurer. Deshalb pro Server-Instanz
+// zwischenspeichern: neu gerechnet wird nur, wenn sich die Daten geändert
+// haben oder der Stand älter als zwei Minuten ist (Wochenwechsel, 7-Tage-Trend).
+const OVERVIEW_TTL_MS = 2 * 60 * 1000;
+let overviewMemo: { key: string; at: number; ov: ReturnType<typeof computeOverview> } | null = null;
+
+function worldKey(world: Awaited<ReturnType<typeof getWorld>>): string {
+  let h = 0;
+  const add = (v: string | number | boolean | null) => {
+    const str = String(v);
+    for (let i = 0; i < str.length; i++) h = (Math.imul(h, 31) + str.charCodeAt(i)) | 0;
+    h = (Math.imul(h, 31) + 124) | 0;
+  };
+  for (const p of world.players) {
+    add(p.id); add(p.name); add(p.cohort); add(p.hidden); add(p.founder); add(p.is_admin);
+  }
+  for (const m of world.matches) {
+    add(m.id); add(m.winner_id); add(m.loser_id); add(m.winner_elo_after); add(m.loser_elo_after); add(m.created_at); add(m.entered_by);
+  }
+  return `${world.players.length}:${world.matches.length}:${h}`;
+}
+
 export async function getOverview() {
   const world = await getWorld();
-  const ov = computeOverview(world);
+  const key = worldKey(world);
+  const now = Date.now();
+  if (!overviewMemo || overviewMemo.key !== key || now - overviewMemo.at > OVERVIEW_TTL_MS) {
+    overviewMemo = { key, at: now, ov: computeOverview(world) };
+  }
+  const ov = overviewMemo.ov;
   const nameOf = (id: string) => ov.byId[id]?.name ?? id;
   return { world, ov, nameOf };
 }
