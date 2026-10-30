@@ -1921,7 +1921,8 @@ h1.leader {
   color: var(--brass-bright);
   line-height: 1;
 }
-.crown { font-size: 0.9rem; }
+.crown,
+.lantern { font-size: 0.9rem; }
 .row.is-me {
   /* nach außen ziehen für die Markierung, Inhalt aber exakt wie in den
      anderen Zeilen lassen (deren seitlicher Abstand 0.1rem + die 0.5rem) */

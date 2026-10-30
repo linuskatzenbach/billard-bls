@@ -62,15 +62,17 @@ function NameBlock({
   s,
   children,
   hideLevel,
+  lantern,
 }: {
   s: PlayerSummary;
   children?: React.ReactNode;
   hideLevel?: boolean;
+  lantern?: boolean;
 }) {
   return (
     <span className="name">
       <span className="nline">
-        <PlayerName s={s} hideLevel={hideLevel} />
+        <PlayerName s={s} hideLevel={hideLevel} lantern={lantern} />
         {children}
       </span>
       {s.cohort && <span className="cohort">{cohortShort(s.cohort)}</span>}
@@ -78,8 +80,19 @@ function NameBlock({
   );
 }
 
-// Name mit goldener Farbe und Krone für die aktuelle Nr. 1.
-function PlayerName({ s, me, hideLevel }: { s: PlayerSummary; me?: boolean; hideLevel?: boolean }) {
+// Name mit goldener Farbe und Krone für die aktuelle Nr. 1,
+// rote Laterne für den Letzten (nur wo `lantern` gesetzt ist).
+function PlayerName({
+  s,
+  me,
+  hideLevel,
+  lantern,
+}: {
+  s: PlayerSummary;
+  me?: boolean;
+  hideLevel?: boolean;
+  lantern?: boolean;
+}) {
   return (
     <>
       <span className={`pname${s.isLeader ? " leader" : ""}${me ? " me" : ""}`}>{s.name}</span>
@@ -91,6 +104,11 @@ function PlayerName({ s, me, hideLevel }: { s: PlayerSummary; me?: boolean; hide
       {s.isLeader && (
         <span className="crown" aria-label="Platz 1">
           👑
+        </span>
+      )}
+      {lantern && s.isLast && (
+        <span className="lantern" aria-label="Letzter Platz" title="Rote Laterne – letzter Platz">
+          🏮
         </span>
       )}
     </>
@@ -187,7 +205,7 @@ export default async function HomePage({
                 {ov.ranked.map((s) => (
                   <Link href={`/spieler/${s.id}`} className={`row wrow${s.id === myId ? " is-me" : ""}`} key={s.id}>
                     <Wreath level={s.level} rank={s.rank} label={`Platz ${s.rank}, Level ${s.level}`} />
-                    <NameBlock s={s}>
+                    <NameBlock s={s} lantern>
                       <WinFlame n={s.winStreak} />
                     </NameBlock>
                     <span className="elo">

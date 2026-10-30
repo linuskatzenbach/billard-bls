@@ -131,6 +131,11 @@ export default function ProfileView({
               👑
             </span>
           )}
+          {s.isLast && (
+            <span className="profile-crown" aria-label="Letzter Platz" title="Rote Laterne – letzter Platz">
+              🏮
+            </span>
+          )}
         </h1>
         <p className="profile-chip">
           {s.rank ? `Platz ${s.rank}` : "Vorläufig"} · {wreathName(s.level)}
