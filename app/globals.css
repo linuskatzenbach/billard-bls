@@ -3082,3 +3082,7 @@ button.dbl-save { margin-top: 0.6rem; border-radius: 10px; padding: 0.95rem; }
 
 .dbl-slots { margin-bottom: 0.5rem; }
 .dbl .result-note { margin-top: -0.3rem; }
+
+/* Admin: alle Mail-Adressen */
+.mail-list { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; }
+.mail-list textarea { width: 100%; background: var(--felt); color: var(--cream); border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem; font: inherit; font-size: 0.8rem; resize: vertical; }

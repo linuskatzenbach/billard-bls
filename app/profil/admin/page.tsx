@@ -6,6 +6,7 @@ import { getDisputes, getUnseenSignups } from "@/lib/db";
 import { berlinDateTime, getOverview } from "@/lib/server";
 import { mailConfigured } from "@/lib/mail";
 import AdminPlayers from "./AdminPlayers";
+import MailList from "./MailList";
 import { COHORTS } from "@/lib/names";
 import MarkDisputesSeen from "./MarkDisputesSeen";
 
@@ -88,6 +89,12 @@ export default async function AdminPage() {
         dieser Adresse anmeldet, übernimmt seinen bestehenden Spieler.
       </p>
       <AdminPlayers players={players} cohorts={COHORTS} />
+
+      <div className="section-h">
+        <h2>Mail-Adressen</h2>
+        <span>für BCC · ohne ausgeblendete</span>
+      </div>
+      <MailList emails={world.players.filter((p) => p.email && !p.hidden).map((p) => p.email!)} />
 
       <Link href="/profil/test" className="cta cta-test">
         <span className="cta-felt">
