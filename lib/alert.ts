@@ -5,7 +5,16 @@ import { berlinDateTime } from "./server";
 // Meldet einen Fehler: ins Server-Log, ins Fehlerprotokoll und – höchstens
 // alle 30 Minuten – per Mail an den Admin. Wirft selbst nie einen Fehler.
 export async function reportError(place: string, err: unknown): Promise<void> {
-  const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  // Fehlermeldung plus die ersten Stellen im eigenen Code (zum Nachsehen).
+  let message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  if (err instanceof Error && err.stack) {
+    const frames = err.stack
+      .split("\n")
+      .filter((l) => /^\s+at /.test(l) && !l.includes("node_modules") && !l.includes("node:internal"))
+      .slice(0, 3)
+      .map((l) => l.trim().replace(/^at /, ""));
+    if (frames.length) message += ` [${frames.join(" ← ")}]`;
+  }
   console.error(`[${place}]`, err);
   try {
     const { mail, recent } = await logError(place, message);

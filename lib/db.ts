@@ -319,7 +319,12 @@ async function setup(): Promise<void> {
 
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = setup().catch((err) => {
+    // Ein zweiter Versuch nach kurzer Pause: Laufen direkt nach einem Update
+    // mehrere Server gleichzeitig die Einrichtung, kann einer kurz scheitern
+    // (z. B. zwei legen dieselbe neue Tabelle gleichzeitig an).
+    schemaReady = setup()
+      .catch(() => new Promise((r) => setTimeout(r, 400)).then(setup))
+      .catch((err) => {
       schemaReady = null;
       throw err;
     });

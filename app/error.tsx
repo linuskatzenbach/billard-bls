@@ -14,7 +14,9 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
 
   useEffect(() => {
     console.error(error);
-    // Fehler an den Server melden (Admin-Mail, gedrosselt).
+    // Fehler vom Server (mit "digest") meldet der Server selbst – mit der
+    // echten Ursache. Nur reine Browser-Fehler von hier aus melden.
+    if (error.digest) return;
     fetch("/api/report-error", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

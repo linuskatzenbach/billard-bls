@@ -9,17 +9,15 @@ process.env.LOCAL_MAIL_LOG = join(dir, "mails.jsonl");
 delete process.env.CRON_SECRET;
 
 const { recordMatch } = await import("../lib/db.ts");
-const { buildBackup } = await import("../lib/backup.ts");
-const { GET } = await import("../app/api/cron/backup/route.ts");
+const { buildBackup, runWeeklyBackup } = await import("../lib/backup.ts");
 
 await recordMatch({ winnerIds: ["linus"], loserIds: ["julian"], enteredBy: "linus" });
 await recordMatch({ winnerIds: ["jannik", "tobias"], loserIds: ["linus", "philip"], enteredBy: "jannik" });
 
 const { json, filename } = await buildBackup();
 const data = JSON.parse(json);
-const req = () => new Request("http://localhost/api/cron/backup") as any;
-const first = await (await GET(req())).json();
-const second = await (await GET(req())).json();
+const first: any = await runWeeklyBackup();
+const second: any = await runWeeklyBackup();
 const mails = readFileSync(process.env.LOCAL_MAIL_LOG!, "utf8").trim().split("\n");
 
 const ok =
