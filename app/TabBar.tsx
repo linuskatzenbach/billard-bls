@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 // Leiste unten: Rangliste · Spiel eintragen (+) · persönlicher Bereich.
 // Nur Symbole, die aktuelle Seite liegt auf Filz.
@@ -26,10 +26,39 @@ const tabOf = (path: string): Tab => {
   return "rang";
 };
 
-// Beim Antippen wird sofort nur der neue Tab markiert, auch wenn die Seite
-// noch lädt und die Adresse sich noch nicht geändert hat.
+// Wie lange die App im Hintergrund sein muss, bevor sie beim Zurückkehren
+// die Seite neu lädt (Rangliste, Profil …).
+const RESUME_REFRESH_MS = 10_000;
+
 function ActiveBar() {
   const path = usePathname();
+  const router = useRouter();
+
+  // Die App lag im Hintergrund (Handy gesperrt, andere App offen) oder kommt
+  // per Zurück-Wischen aus dem Speicher des Browsers: Dann zeigt sie sonst den
+  // alten Stand, bis man sie komplett neu startet. Deshalb beim Zurückkehren
+  // die aktuelle Seite frisch vom Server holen – ohne Neuladen, ohne Ladebildschirm.
+  useEffect(() => {
+    let hiddenAt = document.visibilityState === "hidden" ? Date.now() : 0;
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+      } else if (hiddenAt && Date.now() - hiddenAt >= RESUME_REFRESH_MS) {
+        hiddenAt = 0;
+        router.refresh();
+      }
+    };
+    const onPageShow = (e: PageTransitionEvent) => e.persisted && router.refresh();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [router]);
+
+  // Beim Antippen wird sofort nur der neue Tab markiert, auch wenn die Seite
+  // noch lädt und die Adresse sich noch nicht geändert hat.
   const [pending, setPending] = useState<Tab | null>(null);
   const [dot, setDot] = useState(false);
   useEffect(() => setPending(null), [path]);
@@ -63,7 +92,14 @@ function ActiveBar() {
     };
   }, [path]);
   const current = tabOf(path);
-  return <Bar tab={pending ?? current} dot={dot} onPick={(t) => setPending(t === current ? null : t)} />;
+  // Tippt man auf den Tab, auf dem man schon ist: Seite aktualisieren.
+  const onPick = (t: Tab) => {
+    if (t === current) {
+      setPending(null);
+      router.refresh();
+    } else setPending(t);
+  };
+  return <Bar tab={pending ?? current} dot={dot} onPick={onPick} />;
 }
 
 function Bar({ tab, dot = false, onPick }: { tab: Tab | null; dot?: boolean; onPick?: (t: Tab) => void }) {
