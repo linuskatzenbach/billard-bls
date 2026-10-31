@@ -3079,7 +3079,6 @@ button.dbl-save { margin-top: 0.6rem; border-radius: 10px; padding: 0.95rem; }
 .tabbar-rail.three .navtab { min-height: 3rem; }
 .tabbar-rail.three .navtab svg { width: 1.6rem; height: 1.6rem; }
 .tabbar-rail.three .navtab-plus svg { width: 1.9rem; height: 1.9rem; stroke-width: 2.4; }
-.tabbar-rail.three .navtab-plus:not(.active) { opacity: 0.9; color: var(--brass-bright); }
 
 .dbl-slots { margin-bottom: 0.5rem; }
 .dbl .result-note { margin-top: -0.3rem; }
