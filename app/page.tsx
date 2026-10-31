@@ -256,23 +256,23 @@ export default async function HomePage({
                 {dbl ? (
                   <>
                     <span className="player-name winner team">
-                      <span>{nameOf(m.winner_id)}</span>
-                      <span>{nameOf(m.winner2_id!)}</span>
+                      <Link href={`/spieler/${m.winner_id}`}>{nameOf(m.winner_id)}</Link>
+                      <Link href={`/spieler/${m.winner2_id}`}>{nameOf(m.winner2_id!)}</Link>
                     </span>
                     <span className="vs duo">
                       <span className="chip-2v2">2v2</span>
                       <span className="vs-t">vs</span>
                     </span>
                     <span className="player-name loser team">
-                      <span>{nameOf(m.loser_id)}</span>
-                      <span>{nameOf(m.loser2_id!)}</span>
+                      <Link href={`/spieler/${m.loser_id}`}>{nameOf(m.loser_id)}</Link>
+                      <Link href={`/spieler/${m.loser2_id}`}>{nameOf(m.loser2_id!)}</Link>
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="player-name winner">{nameOf(m.winner_id)}</span>
+                    <Link href={`/spieler/${m.winner_id}`} className="player-name winner">{nameOf(m.winner_id)}</Link>
                     <span className="vs">vs</span>
-                    <span className="player-name loser">{nameOf(m.loser_id)}</span>
+                    <Link href={`/spieler/${m.loser_id}`} className="player-name loser">{nameOf(m.loser_id)}</Link>
                   </>
                 )}
 

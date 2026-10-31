@@ -482,7 +482,7 @@ export default function ProfileView({
                       </>
                     )}
                     <span className="when">
-                      {g.doubles && `mit ${nameOf(g.partnerId!)} · `}
+                      {g.doubles && (<>mit <Link href={`/spieler/${g.partnerId}`}>{nameOf(g.partnerId!)}</Link> · </>)}
                       {formatRelativeDay(g.createdAt)}, {time(g.createdAt)}
                       {g.upset && " · Upset!"}
                     </span>
