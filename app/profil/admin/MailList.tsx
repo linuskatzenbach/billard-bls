@@ -5,7 +5,7 @@ import { useState } from "react";
 // Alle Mail-Adressen als ein String (für BCC in Rundmails) – mit Kopierknopf.
 export default function MailList({ emails }: { emails: string[] }) {
   const [copied, setCopied] = useState(false);
-  const text = emails.join(", ");
+  const text = emails.join("; ");
   async function copy() {
     try {
       await navigator.clipboard.writeText(text);
