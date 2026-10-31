@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "tsx tests/race.test.mts && tsx tests/stress.test.mts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
@@ -20,6 +21,7 @@
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "tsx": "^4.20.0"
   }
 }

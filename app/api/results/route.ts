@@ -27,11 +27,17 @@ export async function POST(req: NextRequest) {
   if (players.slice(1).some((p) => !p || p.hidden)) return jsonError(doubles ? "Unbekannter Spieler." : "Unbekannter Gegner.");
 
   const world = await getWorld();
-  const match = await recordMatch({
-    winnerIds: body.won ? myTeam : theirs,
-    loserIds: body.won ? theirs : myTeam,
-    enteredBy: session.playerId,
-  });
+  let match;
+  try {
+    match = await recordMatch({
+      winnerIds: body.won ? myTeam : theirs,
+      loserIds: body.won ? theirs : myTeam,
+      enteredBy: session.playerId,
+    });
+  } catch (err) {
+    console.error("Spiel speichern fehlgeschlagen", err);
+    return jsonError("Das Spiel konnte gerade nicht gespeichert werden. Bitte nochmal versuchen.", 503);
+  }
   refreshWorld();
 
   // Belohnung berechnen (Stand vorher gegen Stand mit dem neuen Spiel)

@@ -522,6 +522,31 @@ export async function consumeCode(email: string, codeHash: string): Promise<bool
 // ---------------------------------------------------------------------------
 // Spiele
 
+// Schutz gegen gleichzeitiges Eintragen. Die Elo wird zuerst gelesen und
+// erst danach geschrieben. Tragen zwei Leute fast zeitgleich ein Spiel mit
+// demselben Spieler ein, würden beide mit derselben alten Elo rechnen und
+// eines der Ergebnisse ginge verloren. Deshalb beginnt jede Elo-Änderung mit
+// (1) einer Sperre, sodass immer nur eine Änderung gleichzeitig schreibt, und
+// (2) einer Prüfung, ob die gelesenen Werte noch stimmen. Stimmen sie nicht,
+// bricht die Transaktion ab (nichts wird geschrieben) und es wird mit den
+// frischen Werten neu gerechnet.
+const ELO_LOCK = 724_001;
+const STALE = "Gerade wurden mehrere Spiele gleichzeitig eingetragen. Bitte nochmal versuchen.";
+
+const lockQuery = () => getSql()`SELECT pg_advisory_xact_lock(${ELO_LOCK})`;
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const stale = /division by zero/i.test(String((err as Error)?.message ?? err));
+      if (!stale || attempt >= 5) throw stale ? new Error(STALE) : err;
+      await new Promise((r) => setTimeout(r, 20 + Math.random() * 80 * attempt));
+    }
+  }
+}
+
 // Einzel: je ein Sieger und Verlierer. Doppel: je zwei; gerechnet wird mit
 // dem Elo-Schnitt der Teams, die Änderung gilt für jeden Spieler voll.
 export async function recordMatch(params: {
@@ -537,6 +562,7 @@ export async function recordMatch(params: {
   if (!doubles && (winnerIds.length !== 1 || loserIds.length !== 1)) throw new Error("Ungültige Teams.");
   if (new Set(all).size !== all.length) throw new Error("Jeder Spieler darf nur einmal vorkommen.");
 
+  return withRetry(async () => {
   const rows = await sql`SELECT id, elo FROM player_elo WHERE id = ANY(${all})`;
   const eloOf = (id: string) => Number(rows.find((r) => r.id === id)?.elo ?? START_ELO);
   const avg = (ids: string[]) => ids.reduce((n, id) => n + eloOf(id), 0) / ids.length;
@@ -546,12 +572,19 @@ export async function recordMatch(params: {
   const [w1, w2] = winnerIds;
   const [l1, l2] = loserIds;
 
-  const queries: Query[] = all.map(
-    (id) => sql`
-      INSERT INTO player_elo (id, elo) VALUES (${id}, ${after(id, winnerIds.includes(id))})
-      ON CONFLICT (id) DO UPDATE SET elo = EXCLUDED.elo
-    `
-  );
+  const queries: Query[] = [
+    lockQuery(),
+    // Division durch 0 (= Abbruch), falls sich eine Elo inzwischen geändert hat.
+    sql`SELECT 1 / (CASE WHEN bool_and(COALESCE(p.elo, ${START_ELO}) = x.elo) THEN 1 ELSE 0 END) AS ok
+      FROM unnest(${all}::text[], ${all.map(eloOf)}::int[]) AS x(id, elo)
+      LEFT JOIN player_elo p ON p.id = x.id`,
+    ...all.map(
+      (id) => sql`
+        INSERT INTO player_elo (id, elo) VALUES (${id}, ${after(id, winnerIds.includes(id))})
+        ON CONFLICT (id) DO UPDATE SET elo = EXCLUDED.elo
+      `
+    ),
+  ];
   queries.push(sql`
     INSERT INTO matches (
       winner_id, loser_id, winner_elo_before, loser_elo_before,
@@ -568,6 +601,7 @@ export async function recordMatch(params: {
   `);
   const res = await sql.transaction(queries);
   return mapMatch(res[res.length - 1][0]);
+  });
 }
 
 export async function getMatch(id: number): Promise<MatchRow | null> {
@@ -589,17 +623,32 @@ async function changeLoserRecalc(matchId: number, newLoserId: string, extra: Que
 }
 
 async function recalcAround(matchId: number, newLoserId: string | null, extra: Query[]): Promise<boolean> {
+  return withRetry(() => recalcOnce(matchId, newLoserId, extra));
+}
+
+async function recalcOnce(matchId: number, newLoserId: string | null, extra: Query[]): Promise<boolean> {
   const sql = getSql();
   type R = { id: number; winner_id: string; loser_id: string; winner2_id: string | null; loser2_id: string | null };
   const all = (await sql`
     SELECT id, winner_id, loser_id, winner2_id, loser2_id, winner_elo_after, loser_elo_after,
-           winner2_elo_after, loser2_elo_after
+           winner2_elo_after, loser2_elo_after,
+           COALESCE((SELECT md5(string_agg(concat_ws(',', id, winner_id, loser_id, winner2_id, loser2_id,
+             winner_elo_after, loser_elo_after, winner2_elo_after, loser2_elo_after), ';' ORDER BY id)) FROM matches), '') AS fp
     FROM matches ORDER BY created_at ASC, id ASC
   `) as (R & { winner_elo_after: number; loser_elo_after: number; winner2_elo_after: number | null; loser2_elo_after: number | null })[];
   const idx = all.findIndex((m) => Number(m.id) === matchId);
   if (idx < 0) return false;
+  const fp = String((all[0] as unknown as { fp: string }).fp);
 
-  const queries: Query[] = [...extra];
+  const queries: Query[] = [
+    lockQuery(),
+    // Division durch 0 (= Abbruch), falls inzwischen ein Spiel dazugekommen ist
+    // oder sich geändert hat.
+    sql`SELECT 1 / (CASE WHEN COALESCE((SELECT md5(string_agg(concat_ws(',', id, winner_id, loser_id, winner2_id, loser2_id,
+      winner_elo_after, loser_elo_after, winner2_elo_after, loser2_elo_after), ';' ORDER BY id)) FROM matches), '') = ${fp}
+      THEN 1 ELSE 0 END) AS ok`,
+    ...extra,
+  ];
   if (newLoserId === null) queries.push(sql`DELETE FROM matches WHERE id = ${matchId}`);
   else queries.push(sql`UPDATE matches SET loser_id = ${newLoserId} WHERE id = ${matchId}`);
   const elo: Record<string, number> = {};
