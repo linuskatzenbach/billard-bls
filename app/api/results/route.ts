@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { getPlayerById, getWorld, recordMatch } from "@/lib/db";
 import { computeReward } from "@/lib/reward";
 import { jsonError, readJson, refreshWorld } from "@/lib/server";
+import { reportError } from "@/lib/alert";
 
 // Spiel eintragen – immer vom eigenen Konto aus, zählt sofort.
 // Die anderen Beteiligten sehen es als roten Punkt und können 24 h lang
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       enteredBy: session.playerId,
     });
   } catch (err) {
-    console.error("Spiel speichern fehlgeschlagen", err);
+    await reportError("Spiel speichern", err);
     return jsonError("Das Spiel konnte gerade nicht gespeichert werden. Bitte nochmal versuchen.", 503);
   }
   refreshWorld();

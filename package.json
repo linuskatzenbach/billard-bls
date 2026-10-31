@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx tests/race.test.mts && tsx tests/stress.test.mts"
+    "test": "node tests/run.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

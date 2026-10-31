@@ -29,11 +29,17 @@ export class MailNotConfigured extends Error {
 
 let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 
-export async function sendMail(to: string, subject: string, text: string, html: string): Promise<void> {
+export type MailOptions = {
+  attachments?: { filename: string; content: string; contentType?: string }[];
+  // false: keine Kopie an die BCC-Adressen (z. B. für Sicherungen und Fehlerberichte)
+  bcc?: boolean;
+};
+
+export async function sendMail(to: string, subject: string, text: string, html: string, opts: MailOptions = {}): Promise<void> {
   if (!mailConfigured()) {
     // Auf Vercel ohne Zugangsdaten: nicht so tun, als wäre die Mail raus.
     if (process.env.VERCEL) throw new MailNotConfigured();
-    console.log(`[mail] an ${to}: ${subject}\n${text}`);
+    console.log(`[mail] an ${to}: ${subject}\n${text}${opts.attachments ? `\n[Anhänge: ${opts.attachments.map((a) => a.filename).join(", ")}]` : ""}`);
     if (process.env.LOCAL_MAIL_LOG) {
       const fs = await import("fs");
       fs.appendFileSync(process.env.LOCAL_MAIL_LOG, JSON.stringify({ to, subject, text }) + "\n");
@@ -47,14 +53,15 @@ export async function sendMail(to: string, subject: string, text: string, html: 
   await transporter.sendMail({
     from: `"Billard BLS" <${process.env.GMAIL_USER}>`,
     to,
-    bcc: MAIL_BCC.filter((b) => b.toLowerCase() !== to.toLowerCase()),
+    bcc: opts.bcc === false ? [] : MAIL_BCC.filter((b) => b.toLowerCase() !== to.toLowerCase()),
     subject,
     text,
     html,
+    attachments: opts.attachments,
   });
 }
 
-const wrap = (inner: string) => `<!doctype html><html><body style="margin:0;background:#f1e9d8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b">
+export const wrapMail = (inner: string) => `<!doctype html><html><body style="margin:0;background:#f1e9d8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b">
 <div style="max-width:440px;margin:0 auto;padding:28px 20px">
 <div style="background:#1f4a3d;border:6px solid #5a3219;border-radius:14px;padding:22px 20px;color:#f1e9d8">
 <div style="font-family:Georgia,serif;font-size:22px;font-weight:bold;margin-bottom:12px">🎱 Billard BLS</div>
@@ -78,7 +85,7 @@ Oder gib diesen Code in der App ein: ${code}
 Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kannst du diese Mail ignorieren.
 
 ${APP_TIP_TEXT}`;
-  const html = wrap(`
+  const html = wrapMail(`
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Tippe auf den Knopf, um dich anzumelden:</p>
 <p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
 <p style="margin:0 0 6px;font-size:14px;opacity:.85">Oder diesen Code in der App eingeben:</p>
@@ -104,7 +111,7 @@ Oder gib in der App unter „Mein Bereich“ deine Uni-Mail ein und dann diesen 
 Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.
 
 ${APP_TIP_TEXT}`;
-  const html = wrap(`
+  const html = wrapMail(`
 <p style="margin:0 0 10px;font-size:16px;line-height:1.5">Hallo <b>${name}</b>!</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Du bist zu Billard BLS eingeladen. Deine bisherigen Spiele, deine Elo und dein Level sind schon da.</p>
 <p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
@@ -132,7 +139,7 @@ Eingetragen am: ${p.playedAt}
 
 Das Spiel wurde gelöscht und die Elo neu berechnet.
 Admin-Bereich: ${p.adminLink}`;
-  const html = wrap(`
+  const html = wrapMail(`
 <p style="margin:0 0 12px;font-size:15px;line-height:1.5"><b>${p.disputedBy}</b> hat bei einem Spiel „Stimmt nicht“ gedrückt.</p>
 <table style="font-size:14px;line-height:1.6;color:#f1e9d8">
 <tr><td style="opacity:.7;padding-right:10px">Spiel</td><td>${p.winner} schlägt ${p.loser}</td></tr>

@@ -136,6 +136,24 @@ async function ensureSchema(): Promise<void> {
     );
   `;
   await sql`ALTER TABLE disputes ADD COLUMN IF NOT EXISTS winner2_id TEXT, ADD COLUMN IF NOT EXISTS loser2_id TEXT;`;
+  // Wann zuletzt eine automatische Sicherung verschickt wurde.
+  await sql`
+    CREATE TABLE IF NOT EXISTS backup_log (
+      id SERIAL PRIMARY KEY,
+      sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      matches INTEGER NOT NULL
+    );
+  `;
+  // Fehler, die in der App aufgetreten sind (für Admin-Mail und Übersicht).
+  await sql`
+    CREATE TABLE IF NOT EXISTS error_log (
+      id SERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      place TEXT NOT NULL,
+      message TEXT NOT NULL,
+      mailed BOOLEAN NOT NULL DEFAULT false
+    );
+  `;
 
   // Testspiel Julian gegen Linus vom 20.10.2026 entfernen (bereits erledigt).
   await deleteMatchOnce("2026-10-20-testspiel-julian-linus", ["julian", "linus"], "2026-10-20T19:40:00Z");
@@ -272,9 +290,36 @@ async function fixTobiJannik(): Promise<void> {
   }
 }
 
+// Stand der Datenbank-Einrichtung. Bei jeder Änderung an Tabellen oder
+// einer neuen einmaligen Korrektur oben diesen Namen erhöhen – dann läuft die
+// volle Einrichtung genau einmal neu.
+const SCHEMA_VERSION = "schema-2026-10-31b";
+
+// Früher liefen bei jedem Kaltstart eines Servers über 20 Prüf- und
+// Korrekturschritte nacheinander, bevor die erste echte Abfrage kam. Jetzt
+// genügt im Normalfall eine einzige Abfrage: Ist der aktuelle Stand schon
+// eingerichtet, geht es sofort los.
+async function setup(): Promise<void> {
+  const sql = getSql();
+  try {
+    const done = await sql`SELECT 1 FROM migrations WHERE name = ${SCHEMA_VERSION}`;
+    if (done.length > 0) return;
+  } catch {
+    // Tabelle "migrations" gibt es noch nicht (neue Datenbank) – volle Einrichtung.
+  }
+  await ensureSchema();
+  await founderCohort();
+  await unhideJulian();
+  await wissMit();
+  await renameTobi();
+  await fixTobiJannik();
+  await masterToMlb();
+  await sql`INSERT INTO migrations (name) VALUES (${SCHEMA_VERSION}) ON CONFLICT (name) DO NOTHING`;
+}
+
 export function ready(): Promise<void> {
   if (!schemaReady) {
-    schemaReady = ensureSchema().then(founderCohort).then(unhideJulian).then(wissMit).then(renameTobi).then(fixTobiJannik).then(masterToMlb).catch((err) => {
+    schemaReady = setup().catch((err) => {
       schemaReady = null;
       throw err;
     });
@@ -781,4 +826,70 @@ export async function countUnseenDisputes(): Promise<number> {
   await ready();
   const rows = await getSql()`SELECT count(*)::int AS n FROM disputes WHERE seen = false`;
   return Number(rows[0]?.n ?? 0);
+}
+
+// ---------------------------------------------------------------------------
+// Sicherung
+
+// Alles, was sich nicht neu berechnen lässt: Spieler, Spiele, Widersprüche.
+// (Elo, Level, Abzeichen usw. ergeben sich aus den Spielen.)
+export async function exportAll(): Promise<{
+  players: Row[];
+  matches: Row[];
+  disputes: Row[];
+  player_elo: Row[];
+}> {
+  await ready();
+  const sql = getSql();
+  const [players, matches, disputes, player_elo] = await Promise.all([
+    sql`SELECT * FROM players ORDER BY created_at, id`,
+    sql`SELECT * FROM matches ORDER BY created_at, id`,
+    sql`SELECT * FROM disputes ORDER BY created_at, id`,
+    sql`SELECT * FROM player_elo ORDER BY id`,
+  ]);
+  return { players, matches, disputes, player_elo };
+}
+
+export async function lastBackupAt(): Promise<string | null> {
+  await ready();
+  const rows = await getSql()`SELECT max(sent_at) AS at FROM backup_log`;
+  return rows[0]?.at ? iso(rows[0].at) : null;
+}
+
+export async function logBackup(matches: number): Promise<void> {
+  await ready();
+  await getSql()`INSERT INTO backup_log (matches) VALUES (${matches})`;
+}
+
+// ---------------------------------------------------------------------------
+// Fehlerprotokoll
+
+// Speichert einen Fehler. Gibt zurück, ob dafür eine Admin-Mail rausgehen
+// soll: höchstens eine alle 30 Minuten (die Mail fasst dann alles seitdem
+// zusammen). Bei mehr als 100 Einträgen pro Stunde wird nichts mehr
+// gespeichert, damit das Protokoll nicht vollläuft.
+export async function logError(place: string, message: string): Promise<{ mail: boolean; recent: { place: string; message: string; at: string }[] }> {
+  await ready();
+  const sql = getSql();
+  const flood = await sql`SELECT count(*)::int AS n FROM error_log WHERE created_at > now() - interval '1 hour'`;
+  if (Number(flood[0].n) >= 100) return { mail: false, recent: [] };
+  await sql`INSERT INTO error_log (place, message) VALUES (${place.slice(0, 200)}, ${message.slice(0, 1000)})`;
+  // Mail nur, wenn in den letzten 30 Minuten keine rausging. Das UPDATE
+  // markiert alle offenen Einträge auf einmal; nur wer etwas markiert, mailt.
+  const claimed = await sql`
+    UPDATE error_log SET mailed = true
+    WHERE mailed = false
+      AND NOT EXISTS (SELECT 1 FROM error_log WHERE mailed = true AND created_at > now() - interval '30 minutes')
+    RETURNING place, message, created_at
+  `;
+  return {
+    mail: claimed.length > 0,
+    recent: claimed.map((r) => ({ place: r.place, message: r.message, at: iso(r.created_at) })),
+  };
+}
+
+export async function countErrors(days: number): Promise<number> {
+  await ready();
+  const rows = await getSql()`SELECT count(*)::int AS n FROM error_log WHERE created_at > now() - make_interval(days => ${days})`;
+  return Number(rows[0].n);
 }

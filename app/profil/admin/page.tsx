@@ -2,9 +2,9 @@ import { connection } from "next/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getDisputes, getUnseenSignups } from "@/lib/db";
+import { countErrors, getDisputes, getUnseenSignups, lastBackupAt } from "@/lib/db";
 import { berlinDateTime, getOverview } from "@/lib/server";
-import { mailConfigured } from "@/lib/mail";
+import { ADMIN_MAIL, mailConfigured } from "@/lib/mail";
 import AdminPlayers from "./AdminPlayers";
 import MailList from "./MailList";
 import { COHORTS } from "@/lib/names";
@@ -14,10 +14,12 @@ export default async function AdminPage() {
   await connection();
   const session = await getSession();
   if (!session?.admin) redirect("/profil");
-  const [{ world, ov, nameOf }, disputes, signups] = await Promise.all([
+  const [{ world, ov, nameOf }, disputes, signups, lastBackup, errors] = await Promise.all([
     getOverview(),
     getDisputes(),
     getUnseenSignups(),
+    lastBackupAt(),
+    countErrors(7),
   ]);
   const unseen = disputes.some((d) => !d.seen) || signups.length > 0;
 
@@ -47,6 +49,11 @@ export default async function AdminPage() {
         </p>
       )}
 
+      {errors > 0 && (
+        <p className="message error">
+          {errors === 1 ? "1 Fehler" : `${errors} Fehler`} in den letzten 7 Tagen – Details kamen per Mail an {ADMIN_MAIL}.
+        </p>
+      )}
       <MarkDisputesSeen needed={unseen} />
       {signups.length > 0 && (
         <p className="message success">
@@ -95,6 +102,18 @@ export default async function AdminPage() {
         <span>für BCC · ohne ausgeblendete</span>
       </div>
       <MailList emails={world.players.filter((p) => p.email && !p.hidden).map((p) => p.email!)} />
+
+      <div className="section-h">
+        <h2>Sicherung</h2>
+        <span>{lastBackup ? `zuletzt per Mail: ${berlinDateTime(lastBackup)}` : "noch keine per Mail"}</span>
+      </div>
+      <p className="hint-left">
+        Jeden Sonntag früh geht automatisch eine Sicherung aller Spieler und Spiele an {ADMIN_MAIL}. Hier kannst du
+        jederzeit eine aktuelle herunterladen.
+      </p>
+      <a href="/api/admin/backup" className="nav-link" download>
+        Sicherung herunterladen →
+      </a>
 
       <Link href="/profil/test" className="cta cta-test">
         <span className="cta-felt">

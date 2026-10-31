@@ -42,5 +42,5 @@ for (const m of matches) {
 }
 const stored = await sql`SELECT id, elo FROM player_elo`;
 for (const r of stored) if (Number(r.elo) !== cur(r.id)) { bad++; console.log("abweichend:", r.id, r.elo, "≠", cur(r.id)); }
-console.log(`${matches.length} Spiele (26 eingetragen, 2 widersprochen), Abweichungen: ${bad}`);
+console.log(`${bad === 0 ? "OK" : "FEHLER"} – ${matches.length} Spiele (26 eingetragen, 2 widersprochen), Abweichungen: ${bad}`);
 process.exit(bad === 0 && matches.length === 22 ? 0 : 1);

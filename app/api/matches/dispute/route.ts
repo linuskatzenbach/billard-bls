@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { disputeMatch, getMatch, getPlayerById } from "@/lib/db";
 import { involves } from "@/lib/match";
 import { ADMIN_MAIL, disputeMail, sendMail } from "@/lib/mail";
+import { reportError } from "@/lib/alert";
 import { DISPUTE_HOURS, berlinDateTime, jsonError, readJson, refreshWorld, siteOrigin } from "@/lib/server";
 
 // "Stimmt nicht": Beteiligte können ein Spiel innerhalb von 24 Stunden
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     });
     await sendMail(ADMIN_MAIL, mail.subject, mail.text, mail.html);
   } catch (err) {
-    console.error("Admin-Mail fehlgeschlagen", err);
+    await reportError("Widerspruch-Mail", err);
   }
   return NextResponse.json({ success: true });
 }

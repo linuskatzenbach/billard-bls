@@ -3,6 +3,7 @@ import { createLoginToken, recentTokenCount } from "@/lib/db";
 import { newCode, newToken, normalizeEmail, sha256, UNI_DOMAIN } from "@/lib/auth";
 import { MailNotConfigured, loginMail, sendMail } from "@/lib/mail";
 import { jsonError, readJson, siteOrigin } from "@/lib/server";
+import { reportError } from "@/lib/alert";
 
 // Schickt einen Anmeldelink plus 6-stelligen Code an eine Uni-Mail.
 export async function POST(req: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
   try {
     await sendMail(email, mail.subject, mail.text, mail.html);
   } catch (err) {
-    console.error("Mail-Versand fehlgeschlagen", err);
+    await reportError("Anmeldemail an " + email, err);
     if (err instanceof MailNotConfigured) {
       return jsonError("Der Mail-Versand ist noch nicht eingerichtet. Bitte gib dem Admin Bescheid.", 503);
     }
