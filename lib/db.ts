@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getSql, type Query, type Row } from "./sql";
 import { SEED_PLAYERS, SEED_EMAILS, SEED_ADMINS } from "./players";
-import { START_ELO, calculateNewElo } from "./elo";
+import { START_ELO, eloDelta } from "./elo";
 
 // Alle Daten, die für Rangliste, Profile und Statistiken gebraucht werden,
 // stecken in einem einzigen zwischengespeicherten Paket ("World"). Es wird
@@ -31,6 +31,13 @@ export type MatchRow = {
   loser_elo_after: number;
   created_at: string; // ISO
   entered_by: string | null;
+  // Nur im Doppel gesetzt (sonst null): jeweils der zweite Spieler je Team.
+  winner2_id: string | null;
+  loser2_id: string | null;
+  winner2_elo_before: number | null;
+  loser2_elo_before: number | null;
+  winner2_elo_after: number | null;
+  loser2_elo_after: number | null;
 };
 
 // Für bestehenden Code, der nur die Elo-Felder braucht.
@@ -69,6 +76,16 @@ async function ensureSchema(): Promise<void> {
     );
   `;
   await sql`ALTER TABLE matches ADD COLUMN IF NOT EXISTS entered_by TEXT;`;
+  // Doppel: zweiter Spieler je Team (im Einzel leer).
+  await sql`
+    ALTER TABLE matches
+      ADD COLUMN IF NOT EXISTS winner2_id TEXT,
+      ADD COLUMN IF NOT EXISTS loser2_id TEXT,
+      ADD COLUMN IF NOT EXISTS winner2_elo_before INTEGER,
+      ADD COLUMN IF NOT EXISTS loser2_elo_before INTEGER,
+      ADD COLUMN IF NOT EXISTS winner2_elo_after INTEGER,
+      ADD COLUMN IF NOT EXISTS loser2_elo_after INTEGER;
+  `;
   await sql`
     CREATE TABLE IF NOT EXISTS migrations (
       name TEXT PRIMARY KEY,
@@ -118,6 +135,7 @@ async function ensureSchema(): Promise<void> {
       seen BOOLEAN NOT NULL DEFAULT false
     );
   `;
+  await sql`ALTER TABLE disputes ADD COLUMN IF NOT EXISTS winner2_id TEXT, ADD COLUMN IF NOT EXISTS loser2_id TEXT;`;
 
   // Testspiel Julian gegen Linus vom 20.10.2026 entfernen (bereits erledigt).
   await deleteMatchOnce("2026-10-20-testspiel-julian-linus", ["julian", "linus"], "2026-10-20T19:40:00Z");
@@ -277,7 +295,9 @@ async function loadWorld(): Promise<World> {
     `,
     sql`
       SELECT id, winner_id, loser_id, winner_elo_before, loser_elo_before,
-             winner_elo_after, loser_elo_after, created_at, entered_by
+             winner_elo_after, loser_elo_after, created_at, entered_by,
+             winner2_id, loser2_id, winner2_elo_before, loser2_elo_before,
+             winner2_elo_after, loser2_elo_after
       FROM matches ORDER BY created_at ASC, id ASC
     `,
   ]);
@@ -292,17 +312,29 @@ async function loadWorld(): Promise<World> {
       is_admin: Boolean(p.is_admin),
       created_at: iso(p.created_at),
     })),
-    matches: matches.map((m) => ({
-      id: Number(m.id),
-      winner_id: m.winner_id,
-      loser_id: m.loser_id,
-      winner_elo_before: Number(m.winner_elo_before),
-      loser_elo_before: Number(m.loser_elo_before),
-      winner_elo_after: Number(m.winner_elo_after),
-      loser_elo_after: Number(m.loser_elo_after),
-      created_at: iso(m.created_at),
-      entered_by: m.entered_by ?? null,
-    })),
+    matches: matches.map(mapMatch),
+  };
+}
+
+const numOrNull = (v: unknown): number | null => (v === null || v === undefined ? null : Number(v));
+
+function mapMatch(m: Row): MatchRow {
+  return {
+    id: Number(m.id),
+    winner_id: m.winner_id,
+    loser_id: m.loser_id,
+    winner_elo_before: Number(m.winner_elo_before),
+    loser_elo_before: Number(m.loser_elo_before),
+    winner_elo_after: Number(m.winner_elo_after),
+    loser_elo_after: Number(m.loser_elo_after),
+    created_at: iso(m.created_at),
+    entered_by: m.entered_by ?? null,
+    winner2_id: m.winner2_id ?? null,
+    loser2_id: m.loser2_id ?? null,
+    winner2_elo_before: numOrNull(m.winner2_elo_before),
+    loser2_elo_before: numOrNull(m.loser2_elo_before),
+    winner2_elo_after: numOrNull(m.winner2_elo_after),
+    loser2_elo_after: numOrNull(m.loser2_elo_after),
   };
 }
 
@@ -419,7 +451,7 @@ export async function countUnread(id: string): Promise<number> {
   const rows = await getSql()`
     SELECT count(*)::int AS n FROM matches m, players p
     WHERE p.id = ${id}
-      AND (m.winner_id = ${id} OR m.loser_id = ${id})
+      AND (m.winner_id = ${id} OR m.loser_id = ${id} OR m.winner2_id = ${id} OR m.loser2_id = ${id})
       AND m.entered_by IS NOT NULL AND m.entered_by <> ${id}
       AND m.created_at > p.seen_at
   `;
@@ -490,66 +522,58 @@ export async function consumeCode(email: string, codeHash: string): Promise<bool
 // ---------------------------------------------------------------------------
 // Spiele
 
+// Einzel: je ein Sieger und Verlierer. Doppel: je zwei; gerechnet wird mit
+// dem Elo-Schnitt der Teams, die Änderung gilt für jeden Spieler voll.
 export async function recordMatch(params: {
-  winnerId: string;
-  loserId: string;
+  winnerIds: string[];
+  loserIds: string[];
   enteredBy: string | null;
 }): Promise<MatchRow> {
   await ready();
   const sql = getSql();
-  const { winnerId, loserId, enteredBy } = params;
-  const rows = await sql`SELECT id, elo FROM player_elo WHERE id = ANY(${[winnerId, loserId]})`;
-  const eloOf = (id: string) => Number(rows.find((r) => r.id === id)?.elo ?? START_ELO);
-  const w = eloOf(winnerId);
-  const l = eloOf(loserId);
-  const { newWinnerElo, newLoserElo } = calculateNewElo(w, l);
+  const { winnerIds, loserIds, enteredBy } = params;
+  const all = [...winnerIds, ...loserIds];
+  const doubles = winnerIds.length === 2 && loserIds.length === 2;
+  if (!doubles && (winnerIds.length !== 1 || loserIds.length !== 1)) throw new Error("Ungültige Teams.");
+  if (new Set(all).size !== all.length) throw new Error("Jeder Spieler darf nur einmal vorkommen.");
 
-  const [, , inserted] = await sql.transaction([
-    sql`
-      INSERT INTO player_elo (id, elo) VALUES (${winnerId}, ${newWinnerElo})
+  const rows = await sql`SELECT id, elo FROM player_elo WHERE id = ANY(${all})`;
+  const eloOf = (id: string) => Number(rows.find((r) => r.id === id)?.elo ?? START_ELO);
+  const avg = (ids: string[]) => ids.reduce((n, id) => n + eloOf(id), 0) / ids.length;
+  const d = eloDelta(avg(winnerIds), avg(loserIds));
+  const before = (id: string) => eloOf(id);
+  const after = (id: string, won: boolean) => eloOf(id) + (won ? d.win : d.lose);
+  const [w1, w2] = winnerIds;
+  const [l1, l2] = loserIds;
+
+  const queries: Query[] = all.map(
+    (id) => sql`
+      INSERT INTO player_elo (id, elo) VALUES (${id}, ${after(id, winnerIds.includes(id))})
       ON CONFLICT (id) DO UPDATE SET elo = EXCLUDED.elo
-    `,
-    sql`
-      INSERT INTO player_elo (id, elo) VALUES (${loserId}, ${newLoserElo})
-      ON CONFLICT (id) DO UPDATE SET elo = EXCLUDED.elo
-    `,
-    sql`
-      INSERT INTO matches (
-        winner_id, loser_id, winner_elo_before, loser_elo_before,
-        winner_elo_after, loser_elo_after, entered_by
-      ) VALUES (${winnerId}, ${loserId}, ${w}, ${l}, ${newWinnerElo}, ${newLoserElo}, ${enteredBy})
-      RETURNING id, created_at
-    `,
-  ]);
-  return {
-    id: Number(inserted[0].id),
-    winner_id: winnerId,
-    loser_id: loserId,
-    winner_elo_before: w,
-    loser_elo_before: l,
-    winner_elo_after: newWinnerElo,
-    loser_elo_after: newLoserElo,
-    created_at: iso(inserted[0].created_at),
-    entered_by: enteredBy,
-  };
+    `
+  );
+  queries.push(sql`
+    INSERT INTO matches (
+      winner_id, loser_id, winner_elo_before, loser_elo_before,
+      winner_elo_after, loser_elo_after, entered_by,
+      winner2_id, loser2_id, winner2_elo_before, loser2_elo_before,
+      winner2_elo_after, loser2_elo_after
+    ) VALUES (
+      ${w1}, ${l1}, ${before(w1)}, ${before(l1)}, ${after(w1, true)}, ${after(l1, false)}, ${enteredBy},
+      ${doubles ? w2 : null}, ${doubles ? l2 : null},
+      ${doubles ? before(w2) : null}, ${doubles ? before(l2) : null},
+      ${doubles ? after(w2, true) : null}, ${doubles ? after(l2, false) : null}
+    )
+    RETURNING *
+  `);
+  const res = await sql.transaction(queries);
+  return mapMatch(res[res.length - 1][0]);
 }
 
 export async function getMatch(id: number): Promise<MatchRow | null> {
   await ready();
   const rows = await getSql()`SELECT * FROM matches WHERE id = ${id}`;
-  const m = rows[0];
-  if (!m) return null;
-  return {
-    id: Number(m.id),
-    winner_id: m.winner_id,
-    loser_id: m.loser_id,
-    winner_elo_before: Number(m.winner_elo_before),
-    loser_elo_before: Number(m.loser_elo_before),
-    winner_elo_after: Number(m.winner_elo_after),
-    loser_elo_after: Number(m.loser_elo_after),
-    created_at: iso(m.created_at),
-    entered_by: m.entered_by ?? null,
-  };
+  return rows[0] ? mapMatch(rows[0]) : null;
 }
 
 // Löscht ein Spiel und rechnet die Elo aller späteren Spiele neu.
@@ -566,10 +590,12 @@ async function changeLoserRecalc(matchId: number, newLoserId: string, extra: Que
 
 async function recalcAround(matchId: number, newLoserId: string | null, extra: Query[]): Promise<boolean> {
   const sql = getSql();
+  type R = { id: number; winner_id: string; loser_id: string; winner2_id: string | null; loser2_id: string | null };
   const all = (await sql`
-    SELECT id, winner_id, loser_id, winner_elo_after, loser_elo_after
+    SELECT id, winner_id, loser_id, winner2_id, loser2_id, winner_elo_after, loser_elo_after,
+           winner2_elo_after, loser2_elo_after
     FROM matches ORDER BY created_at ASC, id ASC
-  `) as { id: number; winner_id: string; loser_id: string; winner_elo_after: number; loser_elo_after: number }[];
+  `) as (R & { winner_elo_after: number; loser_elo_after: number; winner2_elo_after: number | null; loser2_elo_after: number | null })[];
   const idx = all.findIndex((m) => Number(m.id) === matchId);
   if (idx < 0) return false;
 
@@ -580,20 +606,28 @@ async function recalcAround(matchId: number, newLoserId: string | null, extra: Q
   for (const m of all.slice(0, idx)) {
     elo[m.winner_id] = Number(m.winner_elo_after);
     elo[m.loser_id] = Number(m.loser_elo_after);
+    if (m.winner2_id) elo[m.winner2_id] = Number(m.winner2_elo_after);
+    if (m.loser2_id) elo[m.loser2_id] = Number(m.loser2_elo_after);
   }
-  const touched = new Set([all[idx].winner_id, all[idx].loser_id]);
-  const rest = newLoserId === null ? all.slice(idx + 1) : [{ ...all[idx], loser_id: newLoserId }, ...all.slice(idx + 1)];
+  const ids = (m: R) => [m.winner_id, m.loser_id, m.winner2_id, m.loser2_id].filter((x): x is string => Boolean(x));
+  const touched = new Set(ids(all[idx]));
+  const rest: R[] = newLoserId === null ? all.slice(idx + 1) : [{ ...all[idx], loser_id: newLoserId }, ...all.slice(idx + 1)];
   for (const m of rest) {
-    const w = elo[m.winner_id] ?? START_ELO;
-    const l = elo[m.loser_id] ?? START_ELO;
-    const { newWinnerElo, newLoserElo } = calculateNewElo(w, l);
-    elo[m.winner_id] = newWinnerElo;
-    elo[m.loser_id] = newLoserElo;
-    touched.add(m.winner_id).add(m.loser_id);
+    const cur = (id: string | null) => (id ? elo[id] ?? START_ELO : 0);
+    const W = [m.winner_id, m.winner2_id].filter((x): x is string => Boolean(x));
+    const L = [m.loser_id, m.loser2_id].filter((x): x is string => Boolean(x));
+    const avg = (xs: string[]) => xs.reduce((n, id) => n + cur(id), 0) / xs.length;
+    const d = eloDelta(avg(W), avg(L));
+    const b = { w1: cur(m.winner_id), l1: cur(m.loser_id), w2: cur(m.winner2_id), l2: cur(m.loser2_id) };
+    for (const id of W) elo[id] = cur(id) + d.win;
+    for (const id of L) elo[id] = cur(id) + d.lose;
+    ids(m).forEach((id) => touched.add(id));
     queries.push(sql`
       UPDATE matches SET
-        winner_elo_before = ${w}, loser_elo_before = ${l},
-        winner_elo_after = ${newWinnerElo}, loser_elo_after = ${newLoserElo}
+        winner_elo_before = ${b.w1}, loser_elo_before = ${b.l1},
+        winner_elo_after = ${b.w1 + d.win}, loser_elo_after = ${b.l1 + d.lose},
+        winner2_elo_before = ${m.winner2_id ? b.w2 : null}, loser2_elo_before = ${m.loser2_id ? b.l2 : null},
+        winner2_elo_after = ${m.winner2_id ? b.w2 + d.win : null}, loser2_elo_after = ${m.loser2_id ? b.l2 + d.lose : null}
       WHERE id = ${m.id}
     `);
   }
@@ -632,8 +666,8 @@ export async function disputeMatch(matchId: number, disputedBy: string): Promise
   if (!m) return null;
   const ok = await deleteMatchRecalc(matchId, [
     sql`
-      INSERT INTO disputes (match_id, winner_id, loser_id, entered_by, played_at, disputed_by)
-      VALUES (${m.id}, ${m.winner_id}, ${m.loser_id}, ${m.entered_by}, ${m.created_at}, ${disputedBy})
+      INSERT INTO disputes (match_id, winner_id, loser_id, entered_by, played_at, disputed_by, winner2_id, loser2_id)
+      VALUES (${m.id}, ${m.winner_id}, ${m.loser_id}, ${m.entered_by}, ${m.created_at}, ${disputedBy}, ${m.winner2_id}, ${m.loser2_id})
     `,
   ]);
   return ok ? m : null;
@@ -644,6 +678,8 @@ export type DisputeRow = {
   match_id: number;
   winner_id: string;
   loser_id: string;
+  winner2_id: string | null;
+  loser2_id: string | null;
   entered_by: string | null;
   played_at: string;
   disputed_by: string;
@@ -659,6 +695,8 @@ export async function getDisputes(): Promise<DisputeRow[]> {
     match_id: Number(d.match_id),
     winner_id: d.winner_id,
     loser_id: d.loser_id,
+    winner2_id: d.winner2_id ?? null,
+    loser2_id: d.loser2_id ?? null,
     entered_by: d.entered_by ?? null,
     played_at: iso(d.played_at),
     disputed_by: d.disputed_by,

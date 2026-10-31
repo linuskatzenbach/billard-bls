@@ -4,12 +4,14 @@ import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Ball, poolBall } from "./RankBall";
+import { showReward } from "./RewardOverlay";
+import type { Reward } from "@/lib/reward";
 import Wreath from "./Wreath";
 import type { Pick } from "@/lib/picks";
 import type { VictoryResult, VictoryTableProps } from "./VictoryTable";
 
-// 2 gegen 2 eintragen – vorerst nur im Admin-Testspiel (nichts wird gespeichert).
-// Ablauf: Partner wählen, dann zwei Gegner, dann das Siegerteam antippen.
+// 2 gegen 2 eintragen. Ablauf: Partner wählen, dann zwei Gegner, dann das
+// Siegerteam antippen. "test": Admin-Testspiel, nichts wird gespeichert.
 
 const VictoryTable = dynamic(() => import("./VictoryTable"), { ssr: false });
 
@@ -18,7 +20,18 @@ const initial = (p: Pick) => p.name.charAt(0).toUpperCase();
 
 type Slot = 0 | 1 | 2; // Partner, Gegner 1, Gegner 2
 
-export default function DoublesForm({ me, players, home }: { me: Pick; players: Pick[]; home: string }) {
+export default function DoublesForm({
+  me,
+  players,
+  home,
+  mode = "live",
+}: {
+  me: Pick;
+  players: Pick[];
+  home: string;
+  mode?: "live" | "test";
+}) {
+  const test = mode === "test";
   const router = useRouter();
   const [picked, setPicked] = useState<(string | null)[]>([null, null, null]);
   const [active, setActive] = useState<Slot>(0);
@@ -70,10 +83,10 @@ export default function DoublesForm({ me, players, home }: { me: Pick; players: 
     if (!partner || !opp1 || !opp2 || weWon === null) return;
     setBusy(true);
     setError("");
-    const result: Promise<VictoryResult> = (async () => {
+    const result: Promise<VictoryResult & { reward: Reward | null }> = (async () => {
       let res: Response;
       try {
-        res = await fetch("/api/test-result", {
+        res = await fetch(test ? "/api/test-result" : "/api/results", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ partnerId: partner.id, opponentIds: [opp1.id, opp2.id], won: weWon }),
@@ -83,8 +96,10 @@ export default function DoublesForm({ me, players, home }: { me: Pick; players: 
       }
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Etwas ist schiefgelaufen.");
-      return { winnerDelta: data.winnerDelta ?? 0, loserDelta: data.loserDelta ?? 0 };
+      return { winnerDelta: data.winnerDelta ?? 0, loserDelta: data.loserDelta ?? 0, reward: (data.reward as Reward) ?? null };
     })();
+    let reward: Reward | null = null;
+    result.then((r) => (reward = r.reward)).catch(() => {});
     const player = (p: Pick) => ({ name: p.name, label: initial(p), ...ballOf(p) });
     const ours = [player(me), player(partner)];
     const theirs = [player(opp1), player(opp2)];
@@ -93,6 +108,7 @@ export default function DoublesForm({ me, players, home }: { me: Pick; players: 
       losers: weWon ? theirs : ours,
       result,
       onDone: () => {
+        if (reward) showReward(reward, test);
         router.push(home);
         router.refresh();
       },
@@ -223,8 +239,13 @@ export default function DoublesForm({ me, players, home }: { me: Pick; players: 
       )}
 
       <button type="button" className="dbl-save" disabled={!complete || weWon === null || busy} onClick={start}>
-        {busy ? "Läuft…" : "Testspiel starten"}
+        {busy ? (test ? "Läuft…" : "Speichert…") : test ? "Testspiel starten" : "Ergebnis speichern"}
       </button>
+      {!test && complete && (
+        <p className="result-note">
+          Zählt sofort für die Elo von allen vier. Die anderen drei sehen das Spiel und können 24 h lang widersprechen.
+        </p>
+      )}
       {error && <p className="message error">{error}</p>}
 
       {anim && <VictoryTable {...anim} />}

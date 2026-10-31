@@ -1,6 +1,7 @@
 import type { MatchRow, PlayerRow, World } from "./db";
 import { START_ELO } from "./elo";
 import { computeAchievements, type PlayerAchievements } from "./achievements";
+import { isDoubles, seatOf, seats, underdogGap } from "./match";
 
 // Alles, was sich aus den Spielen ableiten lässt: Rangliste, XP, Level,
 // Aktivität, Wochenwertung. Wird bei jedem Seitenaufruf aus dem
@@ -90,6 +91,7 @@ export type PlayerSummary = {
   games: number;
   wins: number;
   losses: number;
+  doubles: number; // davon Doppel
   rank: number | null; // Platz in der Elo-Rangliste (null = vorläufig)
   isLeader: boolean; // aktueller Platz 1 → goldener Name
   xp: number;
@@ -123,12 +125,14 @@ export type Overview = {
   ach: Record<string, PlayerAchievements>;
 };
 
+// Doppel geben gleich viel XP wie ein Einzel; der Upset-Bonus zählt im
+// Doppel nach dem Elo-Schnitt der Teams.
 export function gameXp(m: MatchRow, playerId: string): number {
-  const won = m.winner_id === playerId;
+  const won = seatOf(m, playerId)?.won ?? false;
   let xp = XP.game;
   if (won) {
     xp += XP.win;
-    if (m.loser_elo_before - m.winner_elo_before >= UPSET_GAP) xp += XP.upset;
+    if (underdogGap(m) >= UPSET_GAP) xp += XP.upset;
   }
   return xp;
 }
@@ -149,6 +153,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
     games: 0,
     wins: 0,
     losses: 0,
+    doubles: 0,
     rank: null,
     isLeader: false,
     xp: 0,
@@ -175,13 +180,12 @@ export function computeOverview(world: World, now = new Date()): Overview {
   for (const m of world.matches) {
     const wk = weekKey(m.created_at);
     const t = new Date(m.created_at).getTime();
-    for (const [id, won, before, after] of [
-      [m.winner_id, true, m.winner_elo_before, m.winner_elo_after],
-      [m.loser_id, false, m.loser_elo_before, m.loser_elo_after],
-    ] as const) {
+    const dbl = isDoubles(m);
+    for (const { id, won, before, after } of seats(m)) {
       const s = byId[id];
       if (!s) continue;
       s.games++;
+      if (dbl) s.doubles++;
       s.elo = after;
       s.peakElo = Math.max(s.peakElo, after);
       const xp = gameXp(m, id);
@@ -276,7 +280,10 @@ export function computeOverview(world: World, now = new Date()): Overview {
 // Spiele eines Spielers (älteste zuerst) aus Sicht dieses Spielers.
 export type PlayerGame = {
   id: number;
-  opponentId: string;
+  opponentId: string; // im Doppel: der erste Gegner
+  opponentIds: string[];
+  partnerId: string | null; // nur im Doppel
+  doubles: boolean;
   won: boolean;
   eloBefore: number;
   eloAfter: number;
@@ -287,20 +294,24 @@ export type PlayerGame = {
 };
 
 export function gamesOf(world: World, playerId: string): PlayerGame[] {
-  return world.matches
-    .filter((m) => m.winner_id === playerId || m.loser_id === playerId)
-    .map((m) => {
-      const won = m.winner_id === playerId;
-      return {
-        id: m.id,
-        opponentId: won ? m.loser_id : m.winner_id,
-        won,
-        eloBefore: won ? m.winner_elo_before : m.loser_elo_before,
-        eloAfter: won ? m.winner_elo_after : m.loser_elo_after,
-        createdAt: m.created_at,
-        enteredBy: m.entered_by,
-        xp: gameXp(m, playerId),
-        upset: won && m.loser_elo_before - m.winner_elo_before >= UPSET_GAP,
-      };
+  const out: PlayerGame[] = [];
+  for (const m of world.matches) {
+    const seat = seatOf(m, playerId);
+    if (!seat) continue;
+    out.push({
+      id: m.id,
+      opponentId: seat.opps[0],
+      opponentIds: seat.opps,
+      partnerId: seat.partner,
+      doubles: isDoubles(m),
+      won: seat.won,
+      eloBefore: seat.before,
+      eloAfter: seat.after,
+      createdAt: m.created_at,
+      enteredBy: m.entered_by,
+      xp: gameXp(m, playerId),
+      upset: seat.won && underdogGap(m) >= UPSET_GAP,
     });
+  }
+  return out;
 }

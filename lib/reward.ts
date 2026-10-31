@@ -1,6 +1,7 @@
 import type { MatchRow, World } from "./db";
 import { computeOverview, gameXp, UPSET_GAP, XP } from "./progress";
 import { badgeLabel, QUEST_BONUS, type Metal } from "./achievements";
+import { seatOf, underdogGap } from "./match";
 
 // Was ein Spiel einem Spieler gebracht hat – für den Belohnungsbildschirm.
 export type Reward = {
@@ -24,13 +25,14 @@ export function computeReward(world: World, match: MatchRow, playerId: string): 
   const after = computeOverview({ players: world.players, matches: [...world.matches, match] });
   const b = before.byId[playerId];
   const a = after.byId[playerId];
-  const won = match.winner_id === playerId;
-  const oppId = won ? match.loser_id : match.winner_id;
+  const seat = seatOf(match, playerId)!;
+  const won = seat.won;
+  const oppName = seat.opps.map((id) => after.byId[id]?.name ?? "").join(" und ");
+  const gap = underdogGap(match);
 
   const lines: Reward["lines"] = [{ label: "Spiel gespielt", xp: XP.game }];
   if (won) lines.push({ label: "Sieg", xp: XP.win });
-  if (won && match.loser_elo_before - match.winner_elo_before >= UPSET_GAP)
-    lines.push({ label: `Upset-Bonus (${after.byId[oppId]?.name ?? ""} +${match.loser_elo_before - match.winner_elo_before})`, xp: XP.upset });
+  if (won && gap >= UPSET_GAP) lines.push({ label: `Upset-Bonus (${oppName} +${gap})`, xp: XP.upset });
 
   // neu geschaffte Wochenaufgaben
   const doneBefore = new Set(before.ach[playerId]?.quests.filter((q) => q.done).map((q) => q.key));
@@ -53,9 +55,9 @@ export function computeReward(world: World, match: MatchRow, playerId: string): 
   void gameXp;
   return {
     won,
-    opponent: after.byId[oppId]?.name ?? "",
-    eloBefore: won ? match.winner_elo_before : match.loser_elo_before,
-    eloAfter: won ? match.winner_elo_after : match.loser_elo_after,
+    opponent: oppName,
+    eloBefore: seat.before,
+    eloAfter: seat.after,
     rankBefore: b?.rank ?? null,
     rankAfter: a?.rank ?? null,
     passed,

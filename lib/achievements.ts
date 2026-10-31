@@ -1,6 +1,7 @@
 import type { MatchRow, World } from "./db";
 import { START_ELO } from "./elo";
 import { DAY, addWeeks, berlinHour, dayKey, weekEndIso, weekKey } from "./time";
+import { isDoubles, seats, sidesBefore } from "./match";
 
 // Abzeichen und Wochenaufgaben. Alles wird aus den gespeicherten Spielen
 // berechnet (auch rückwirkend) – es gibt dafür keine eigene Tabelle.
@@ -9,6 +10,9 @@ const MIN_RANKED = 3; // wie in progress.ts: erst ab 3 Spielen in der Elo-Rangli
 
 // Wochenaufgaben gibt es ab dieser Woche (Montag der Uni-Öffnung).
 export const QUEST_START = "2026-10-19";
+// Doppel-Aufgaben gibt es ab der ersten Woche nach dem 2v2-Update (vorher
+// würden sich sonst die bereits verteilten Aufgaben der laufenden Woche ändern).
+export const DOUBLES_QUEST_START = "2026-11-02";
 export const QUEST_BONUS = 50;
 
 // XP für Platz 1–3 im Wochenzocker (abgeschlossene Wochen ab QUEST_START).
@@ -44,6 +48,9 @@ export const BADGES: BadgeDef[] = [
   { id: "netzwerker", name: "Netzwerker", icon: "🤝", desc: "gegen {n} verschiedene Gegner", tiers: [5, 10, 20], unit: "Gegner" },
   { id: "aufsteiger", name: "Aufsteiger", icon: "📈", desc: "Elo {n} erreicht", tiers: [1600, 1700, 1800], unit: "Elo" },
   { id: "buce-spirit", name: "Buce-Spirit", icon: "🎓", desc: "Spiel gegen Spieler aus {n} verschiedenen Jahrgängen", tiers: [3, 4, 5], unit: "Jahrgänge" },
+  { id: "teamplayer", name: "Teamplayer", icon: "👥", desc: "{n} Doppel gespielt", tiers: [10, 30, 75], unit: "Doppel" },
+  { id: "eingespielt", name: "Eingespielt", icon: "🔗", desc: "{n} Doppel-Siege mit demselben Partner", tiers: [3, 10, 25], unit: "Siege" },
+  { id: "partnerboerse", name: "Partnerbörse", icon: "🔀", desc: "Doppel mit {n} verschiedenen Partnern", tiers: [3, 6, 12], unit: "Partner" },
 
   { id: "erster-sieg", name: "Erster Sieg", icon: "✨", desc: "Der allererste Sieg", metal: "bronze", xp: 25 },
   { id: "revanche", name: "Revanche", icon: "🔁", desc: "Jemanden direkt nach einer Niederlage gegen ihn geschlagen", metal: "bronze", xp: 75 },
@@ -53,6 +60,7 @@ export const BADGES: BadgeDef[] = [
   { id: "koenigstoeter", name: "Königstöter", icon: "👑", desc: "Die aktuelle Nr. 1 geschlagen", metal: "gold", xp: 150 },
   { id: "gipfelsturm", name: "Gipfelsturm", icon: "⛰️", desc: "Platz 1 erreicht", metal: "gold", xp: 200 },
   { id: "thronhalter", name: "Thronhalter", icon: "🏰", desc: "4 Wochen am Stück auf Platz 1", metal: "gold", xp: 300 },
+  { id: "doppelschlag", name: "Doppelschlag", icon: "⚔️", desc: "Zwei Doppel nacheinander gegen ein Team mit mindestens 100 Elo mehr im Schnitt gewonnen", metal: "gold", xp: 150 },
 
   { id: "suechtiger", name: "Süchtiger", icon: "🤯", desc: "5 Spiele an einem Tag", secret: true, metal: "secret", xp: 100 },
   { id: "nachteule", name: "Nachteule", icon: "🦉", desc: "Spiel nach Mitternacht", secret: true, metal: "secret", xp: 100 },
@@ -60,9 +68,11 @@ export const BADGES: BadgeDef[] = [
   { id: "wochenzocker", name: "Wochenzocker", icon: "📊", desc: "Einmal die meisten Spiele einer Woche", secret: true, metal: "secret", xp: 100 },
   { id: "perfekte-woche", name: "Perfekte Woche", icon: "💯", desc: "Mindestens 5 Siege in einer Woche ohne Niederlage", secret: true, metal: "secret", xp: 100 },
   { id: "sechs-sieben", name: "6?-7!", icon: "♟️", desc: "Mindestens 6 Niederlagen in Folge, direkt danach mindestens 7 Siege in Folge", secret: true, metal: "secret", xp: 500 },
+  { id: "seitenwechsel", name: "Seitenwechsel", icon: "🎭", desc: "Am selben Tag mit jemandem und gegen ihn gewonnen", secret: true, metal: "secret", xp: 100 },
+  { id: "brueckenbauer", name: "Brückenbauer", icon: "🌉", desc: "Mit einem Partner aus einem anderen Jahrgang gegen zwei aus dem eigenen Jahrgang gewonnen", secret: true, metal: "secret", xp: 100 },
 ];
 
-export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 35
+export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 47
 
 export type EarnedBadge = {
   key: string; // "stammgast:1" bzw. "underdog"
@@ -104,7 +114,12 @@ type QuestKind =
   | "beatTop3"
   | "beat100"
   | "distinctWins"
-  | "beatNemesis";
+  | "beatNemesis"
+  | "dblGames"
+  | "dblWins"
+  | "dblPartners"
+  | "dblWinPartners"
+  | "dblBeatStronger";
 
 export type Quest = {
   key: string;
@@ -143,8 +158,15 @@ type PlayerState = {
   peakElo: number;
   opponents: Set<string>;
   oppCohorts: Set<string>; // Jahrgänge der Gegner
-  // Bilanz gegen einzelne Gegner
+  // Bilanz gegen einzelne Gegner (nur Einzel)
   vs: Map<string, { w: number; l: number; last: "w" | "l" }>;
+  // Doppel
+  dGames: number;
+  partners: Set<string>;
+  winsWith: Map<string, number>; // Siege je Partner
+  strongWinRun: number; // Doppel-Siege in Folge gegen ein Team mit 100+ Elo mehr
+  dayWinsWith: Map<string, Set<string>>; // Tag → Partner, mit denen gewonnen
+  dayBeaten: Map<string, Set<string>>; // Tag → geschlagene Gegner
   days: Map<string, number>;
   weeks: Set<string>;
   leaderSince: number | null;
@@ -179,6 +201,12 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       opponents: new Set(),
       oppCohorts: new Set(),
       vs: new Map(),
+      dGames: 0,
+      partners: new Set(),
+      winsWith: new Map(),
+      strongWinRun: 0,
+      dayWinsWith: new Map(),
+      dayBeaten: new Map(),
       days: new Map(),
       weeks: new Set(),
       leaderSince: null,
@@ -251,6 +279,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     leaders: Set<string>;
     rankedCount: number;
     vs: Record<string, Map<string, { w: number; l: number; last: "w" | "l" }>>;
+    met: Record<string, Set<string>>; // je schon mal gegen gespielt (Einzel oder Doppel)
     active: Set<string>; // in den 4 Wochen davor gespielt
   };
   const snaps: Record<string, Snap> = {};
@@ -260,17 +289,22 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     const elo: Record<string, number> = {};
     const rank: Record<string, number | null> = {};
     const vs: Snap["vs"] = {};
+    const met: Snap["met"] = {};
     for (const id of visible) {
       elo[id] = S(id).elo;
       rank[id] = rankOf(id);
       vs[id] = new Map([...S(id).vs].map(([k, v]) => [k, { ...v }]));
+      met[id] = new Set(S(id).opponents);
     }
     const active = new Set([...visible].filter((id) => (lastPlayed[id] ?? -Infinity) >= startMs - 28 * DAY));
-    snaps[wk] = { elo, rank, leaders: leaders(), rankedCount: ranked().length, vs, active };
+    snaps[wk] = { elo, rank, leaders: leaders(), rankedCount: ranked().length, vs, met, active };
   };
 
   const quests: Record<string, Quest[]> = {}; // key: `${id}|${wk}`
-  const questState: Record<string, { opp: Set<string>; days: Set<string>; beaten: Set<string>; streak: number; games: number; wins: number }> = {};
+  const questState: Record<
+    string,
+    { opp: Set<string>; days: Set<string>; beaten: Set<string>; streak: number; games: number; wins: number; dGames: number; dWins: number; dPartners: Set<string>; dWinPartners: Set<string> }
+  > = {};
 
   const nameOf = (id: string) => world.players.find((p) => p.id === id)?.name ?? id;
 
@@ -304,25 +338,36 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     pools.mittel.push(mk("wins", "mittel", "Gewinne 2 Spiele", 2));
     pools.mittel.push(mk("days", "mittel", "Spiel an 3 verschiedenen Tagen", 3));
     if ([...myVs.values()].some((r) => r.last === "l"))
-      pools.mittel.push(mk("beatLastLoss", "mittel", "Schlag jemanden, gegen den du zuletzt verloren hast"));
+      pools.mittel.push(mk("beatLastLoss", "mittel", "Schlag jemanden im Einzel, gegen den du zuletzt verloren hast"));
 
     if (sn.leaders.has(id)) pools.schwer.push(mk("defendTop", "schwer", "Verteidige Platz 1 bis Sonntag"));
-    else if (sn.rankedCount > 0) pools.schwer.push(mk("beatAbove", "schwer", "Schlag jemanden, der über dir steht"));
+    else if (sn.rankedCount > 0) pools.schwer.push(mk("beatAbove", "schwer", "Schlag jemanden im Einzel, der über dir steht"));
     pools.schwer.push(mk("winStreak", "schwer", "Gewinne 3 Spiele in Folge", 3));
     if (Object.values(sn.rank).some((r, i) => r !== null && r <= 3 && Object.keys(sn.rank)[i] !== id))
-      pools.schwer.push(mk("beatTop3", "schwer", "Schlag jemanden aus den Top 3"));
+      pools.schwer.push(mk("beatTop3", "schwer", "Schlag jemanden aus den Top 3 im Einzel"));
     if (Object.entries(sn.elo).some(([o, e]) => o !== id && e >= myElo + 100))
-      pools.schwer.push(mk("beat100", "schwer", "Schlag jemanden mit mindestens 100 Elo mehr"));
+      pools.schwer.push(mk("beat100", "schwer", "Schlag jemanden mit mindestens 100 Elo mehr im Einzel"));
     if (others.length >= 3) pools.schwer.push(mk("distinctWins", "schwer", "Gewinne gegen 3 verschiedene Gegner", 3));
     // Angstgegner: schlechteste Bilanz ab 3 Spielen (unter 50 %)
     const nemesis = [...myVs.entries()]
       .filter(([o, r]) => visible.has(o) && r.w + r.l >= 3 && r.w / (r.w + r.l) < 0.5)
       .sort((a, b) => a[1].w / (a[1].w + a[1].l) - b[1].w / (b[1].w + b[1].l) || b[1].w + b[1].l - (a[1].w + a[1].l))[0];
     if (nemesis)
-      pools.schwer.push(mk("beatNemesis", "schwer", `Schlage deinen Angstgegner ${nameOf(nemesis[0])}`, 1, { target: nemesis[0] }));
+      pools.schwer.push(mk("beatNemesis", "schwer", `Schlage deinen Angstgegner ${nameOf(nemesis[0])} im Einzel`, 1, { target: nemesis[0] }));
+
+    // Doppel-Aufgaben (erst ab der Woche nach dem 2v2-Update)
+    if (wk >= DOUBLES_QUEST_START && others.length >= 3) {
+      pools.leicht.push(mk("dblGames", "leicht", "Spiel 2 Doppel", 2));
+      pools.mittel.push(mk("dblWins", "mittel", "Gewinne ein Doppel"));
+      pools.mittel.push(mk("dblPartners", "mittel", "Spiel Doppel mit 2 verschiedenen Partnern", 2));
+      pools.schwer.push(mk("dblWinPartners", "schwer", "Gewinne 2 Doppel mit verschiedenen Partnern", 2));
+      pools.schwer.push(mk("dblBeatStronger", "schwer", "Gewinne ein Doppel gegen ein Team mit höherem Elo-Schnitt"));
+    }
 
     // Neuer Gegner: Schwierigkeit je nach Anteil unbekannter aktiver Spieler
-    const unknown = others.filter((o) => !myVs.has(o));
+    // (Einzel oder Doppel – im Doppel zählen beide Gegner, nicht der Partner)
+    const known = sn.met[id] ?? new Set<string>();
+    const unknown = others.filter((o) => !known.has(o));
     if (unknown.length > 0 && others.length > 0) {
       const share = unknown.length / others.length;
       const tier: QuestTier = share > 0.5 ? "leicht" : share >= 0.2 ? "mittel" : "schwer";
@@ -339,26 +384,46 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     const list = [pick("leicht"), pick("mittel"), pick("schwer")].filter(Boolean);
     list.forEach((q, i) => (q.key = `${wk}:${i}:${q.kind}`));
     quests[k] = list;
-    questState[k] = { opp: new Set(), days: new Set(), beaten: new Set(), streak: 0, games: 0, wins: 0 };
+    questState[k] = { opp: new Set(), days: new Set(), beaten: new Set(), streak: 0, games: 0, wins: 0, dGames: 0, dWins: 0, dPartners: new Set(), dWinPartners: new Set() };
     return list;
   };
 
-  // Fortschritt einer Aufgabe nach einem Spiel
-  const advance = (id: string, wk: string, m: MatchRow, ctx: { oppRankBefore: number | null; myRankBefore: number | null; lastVsBefore: "w" | "l" | undefined; knewBefore: boolean }) => {
+  // Fortschritt einer Aufgabe nach einem Spiel. Aufgaben gegen einen
+  // bestimmten Gegner zählen nur im Einzel; Mengen, Tage, Serien und
+  // "verschiedene Gegner" zählen Doppel mit (dort beide Gegner, nicht der Partner).
+  type Ctx = {
+    won: boolean;
+    opps: string[];
+    partner: string | null;
+    myElo: number; // Einzel: eigene Elo, Doppel: eigener Team-Schnitt
+    oppElo: number; // Einzel: Elo des Gegners, Doppel: Schnitt der Gegner
+    oppRankBefore: number | null; // nur Einzel
+    myRankBefore: number | null;
+    lastVsBefore: "w" | "l" | undefined; // nur Einzel
+    newOppMet: boolean; // mindestens einer der Gegner war neu
+  };
+  const advance = (id: string, wk: string, m: MatchRow, ctx: Ctx) => {
     const qs = assign(id, wk);
     const q = questState[`${id}|${wk}`];
-    const won = m.winner_id === id;
-    const opp = won ? m.loser_id : m.winner_id;
-    const myElo = won ? m.winner_elo_before : m.loser_elo_before;
-    const oppElo = won ? m.loser_elo_before : m.winner_elo_before;
+    const dbl = ctx.partner !== null;
+    const { won } = ctx;
+    const opp = ctx.opps[0];
     q.games++;
-    q.opp.add(opp);
+    for (const o of ctx.opps) q.opp.add(o);
     q.days.add(dayKey(m.created_at));
     if (won) {
       q.wins++;
       q.streak++;
-      q.beaten.add(opp);
+      for (const o of ctx.opps) q.beaten.add(o);
     } else q.streak = 0;
+    if (dbl) {
+      q.dGames++;
+      q.dPartners.add(ctx.partner!);
+      if (won) {
+        q.dWins++;
+        q.dWinPartners.add(ctx.partner!);
+      }
+    }
     for (const quest of qs) {
       if (quest.done) continue;
       switch (quest.kind) {
@@ -381,23 +446,38 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
           quest.progress = q.beaten.size;
           break;
         case "newOpp":
-          if (!ctx.knewBefore) quest.progress = 1;
+          if (ctx.newOppMet) quest.progress = 1;
           break;
         case "beatLastLoss":
-          if (won && ctx.lastVsBefore === "l") quest.progress = 1;
+          if (!dbl && won && ctx.lastVsBefore === "l") quest.progress = 1;
           break;
         case "beatAbove":
-          if (won && ctx.oppRankBefore !== null && (ctx.myRankBefore === null || ctx.oppRankBefore < ctx.myRankBefore))
+          if (!dbl && won && ctx.oppRankBefore !== null && (ctx.myRankBefore === null || ctx.oppRankBefore < ctx.myRankBefore))
             quest.progress = 1;
           break;
         case "beatTop3":
-          if (won && ctx.oppRankBefore !== null && ctx.oppRankBefore <= 3) quest.progress = 1;
+          if (!dbl && won && ctx.oppRankBefore !== null && ctx.oppRankBefore <= 3) quest.progress = 1;
           break;
         case "beat100":
-          if (won && oppElo - myElo >= 100) quest.progress = 1;
+          if (!dbl && won && ctx.oppElo - ctx.myElo >= 100) quest.progress = 1;
           break;
         case "beatNemesis":
-          if (won && opp === quest.target) quest.progress = 1;
+          if (!dbl && won && opp === quest.target) quest.progress = 1;
+          break;
+        case "dblGames":
+          quest.progress = q.dGames;
+          break;
+        case "dblWins":
+          quest.progress = q.dWins;
+          break;
+        case "dblPartners":
+          quest.progress = q.dPartners.size;
+          break;
+        case "dblWinPartners":
+          quest.progress = q.dWinPartners.size;
+          break;
+        case "dblBeatStronger":
+          if (dbl && won && ctx.oppElo > ctx.myElo) quest.progress = 1;
           break;
         case "defendTop":
           break;
@@ -438,59 +518,85 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
   for (const m of world.matches) {
     const t = new Date(m.created_at).getTime();
     const wk = weekKey(m.created_at);
+    const day = dayKey(m.created_at);
     checkThrone(t);
     flushWeeksUntil(wk);
 
-    const w = S(m.winner_id);
-    const l = S(m.loser_id);
+    const dbl = isDoubles(m);
+    const sides = sidesBefore(m);
+    const all = seats(m);
     const beforeLeaders = L;
-    const ctxFor = (id: string, opp: string) => ({
-      oppRankBefore: rankOf(opp),
-      myRankBefore: rankOf(id),
-      lastVsBefore: S(id).vs.get(opp)?.last,
-      knewBefore: S(id).vs.has(opp),
-    });
-    const ctxW = ctxFor(m.winner_id, m.loser_id);
-    const ctxL = ctxFor(m.loser_id, m.winner_id);
+
+    // Kontext für die Wochenaufgaben (Stand vor dem Spiel)
+    const ctx: Record<string, Ctx> = {};
+    for (const seat of all) {
+      const me = S(seat.id);
+      const single = !dbl ? seat.opps[0] : null;
+      ctx[seat.id] = {
+        won: seat.won,
+        opps: seat.opps,
+        partner: seat.partner,
+        myElo: seat.won ? sides.win : sides.lose,
+        oppElo: seat.won ? sides.lose : sides.win,
+        oppRankBefore: single ? rankOf(single) : null,
+        myRankBefore: rankOf(seat.id),
+        lastVsBefore: single ? me.vs.get(single)?.last : undefined,
+        newOppMet: seat.opps.some((o) => !me.opponents.has(o)),
+      };
+    }
 
     // --- Abzeichen, die den Zustand vor dem Spiel brauchen
-    const recW = w.vs.get(m.loser_id);
-    if (w.wins === 0) give(m.winner_id, "erster-sieg", null, m.created_at);
-    if (recW?.last === "l") give(m.winner_id, "revanche", null, m.created_at);
-    if (recW && recW.w === 0 && recW.l >= 3) give(m.winner_id, "fluch-gebrochen", null, m.created_at);
-    if (m.loser_elo_before - m.winner_elo_before >= 200) give(m.winner_id, "underdog", null, m.created_at);
-    if (w.lossStreak >= 5) give(m.winner_id, "comeback", null, m.created_at);
-    if (beforeLeaders.has(m.loser_id) && !beforeLeaders.has(m.winner_id)) give(m.winner_id, "koenigstoeter", null, m.created_at);
+    for (const seat of all) {
+      if (!seat.won) continue;
+      const me = S(seat.id);
+      if (me.wins === 0) give(seat.id, "erster-sieg", null, m.created_at);
+      if (me.lossStreak >= 5) give(seat.id, "comeback", null, m.created_at);
+      if (!dbl) {
+        // gegen einen bestimmten Gegner: nur im Einzel
+        const opp = seat.opps[0];
+        const rec = me.vs.get(opp);
+        if (rec?.last === "l") give(seat.id, "revanche", null, m.created_at);
+        if (rec && rec.w === 0 && rec.l >= 3) give(seat.id, "fluch-gebrochen", null, m.created_at);
+        if (m.loser_elo_before - m.winner_elo_before >= 200) give(seat.id, "underdog", null, m.created_at);
+        if (beforeLeaders.has(opp) && !beforeLeaders.has(seat.id)) give(seat.id, "koenigstoeter", null, m.created_at);
+      }
+    }
 
     // --- Zustand aktualisieren
-    for (const [s, id, opp, won, after] of [
-      [w, m.winner_id, m.loser_id, true, m.winner_elo_after],
-      [l, m.loser_id, m.winner_id, false, m.loser_elo_after],
-    ] as const) {
+    for (const seat of all) {
+      const { id, won, after } = seat;
+      const s = S(id);
       s.games++;
       s.elo = after;
       rankCache = null;
       s.peakElo = Math.max(s.peakElo, after);
-      s.opponents.add(opp);
-      const oc = cohortOf.get(opp);
-      if (oc) s.oppCohorts.add(oc);
-      const r = s.vs.get(opp) ?? { w: 0, l: 0, last: "w" as const };
+      for (const opp of seat.opps) {
+        s.opponents.add(opp);
+        const oc = cohortOf.get(opp);
+        if (oc) s.oppCohorts.add(oc);
+      }
+      if (!dbl) {
+        const opp = seat.opps[0];
+        const r = s.vs.get(opp) ?? { w: 0, l: 0, last: "w" as const };
+        if (won) {
+          r.w++;
+          r.last = "w";
+        } else {
+          r.l++;
+          r.last = "l";
+        }
+        s.vs.set(opp, r);
+      }
       if (won) {
-        r.w++;
-        r.last = "w";
         s.wins++;
         if (s.winStreak === 0) s.lossRunBeforeWins = s.lossStreak;
         s.winStreak++;
         s.lossStreak = 0;
         s.bestWinStreak = Math.max(s.bestWinStreak, s.winStreak);
       } else {
-        r.l++;
-        r.last = "l";
         s.lossStreak++;
         s.winStreak = 0;
       }
-      s.vs.set(opp, r);
-      const day = dayKey(m.created_at);
       s.days.set(day, (s.days.get(day) ?? 0) + 1);
       s.weeks.add(wk);
       lastPlayed[id] = t;
@@ -498,6 +604,41 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       ws.g++;
       if (won) ws.w++;
       else ws.l++;
+
+      // Doppel
+      if (dbl && seat.partner) {
+        const partner = seat.partner;
+        s.dGames++;
+        s.partners.add(partner);
+        const c = ctx[id];
+        if (won) {
+          s.winsWith.set(partner, (s.winsWith.get(partner) ?? 0) + 1);
+          s.strongWinRun = c.oppElo - c.myElo >= 100 ? s.strongWinRun + 1 : 0;
+          if (s.strongWinRun >= 2) give(id, "doppelschlag", null, m.created_at);
+          const mine = cohortOf.get(id);
+          const pc = cohortOf.get(partner);
+          if (mine && pc && pc !== mine && seat.opps.every((o) => cohortOf.get(o) === mine))
+            give(id, "brueckenbauer", null, m.created_at);
+          let ww = s.dayWinsWith.get(day);
+          if (!ww) s.dayWinsWith.set(day, (ww = new Set()));
+          ww.add(partner);
+        } else {
+          s.strongWinRun = 0;
+        }
+        giveTiers(id, "teamplayer", s.dGames, m.created_at);
+        giveTiers(id, "eingespielt", Math.max(0, ...s.winsWith.values()), m.created_at);
+        giveTiers(id, "partnerboerse", s.partners.size, m.created_at);
+      }
+      // Seitenwechsel: am selben Tag mit jemandem gewonnen und gegen ihn gewonnen
+      if (won) {
+        if (!dbl || seat.partner) {
+          let bt = s.dayBeaten.get(day);
+          if (!bt) s.dayBeaten.set(day, (bt = new Set()));
+          for (const o of seat.opps) bt.add(o);
+          const ww = s.dayWinsWith.get(day);
+          if (ww && [...ww].some((p) => bt!.has(p))) give(id, "seitenwechsel", null, m.created_at);
+        }
+      }
 
       // Abzeichen nach dem Spiel
       giveTiers(id, "stammgast", s.games, m.created_at);
@@ -514,12 +655,11 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     }
 
     L = updateLeaders(t);
-    for (const id of [m.winner_id, m.loser_id]) if (L.has(id)) give(id, "gipfelsturm", null, m.created_at);
+    for (const seat of all) if (L.has(seat.id)) give(seat.id, "gipfelsturm", null, m.created_at);
 
     // Wochenaufgaben
     if (wk >= QUEST_START) {
-      if (visible.has(m.winner_id)) advance(m.winner_id, wk, m, ctxW);
-      if (visible.has(m.loser_id)) advance(m.loser_id, wk, m, ctxL);
+      for (const seat of all) if (visible.has(seat.id)) advance(seat.id, wk, m, ctx[seat.id]);
     }
   }
   checkThrone(now.getTime());
@@ -591,6 +731,9 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       netzwerker: s.opponents.size,
       aufsteiger: s.peakElo,
       "buce-spirit": s.oppCohorts.size,
+      teamplayer: s.dGames,
+      eingespielt: Math.max(0, ...s.winsWith.values()),
+      partnerboerse: s.partners.size,
     };
     const progress: PlayerAchievements["progress"] = {};
     for (const def of BADGES) {

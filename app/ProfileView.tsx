@@ -55,9 +55,10 @@ export default function ProfileView({
   let bestDay: { gain: number; label: string } | null = null;
   for (const e of perDay.values()) if (e.gain > 0 && (!bestDay || e.gain >= bestDay.gain)) bestDay = e;
 
-  // Kopf an Kopf
+  // Kopf an Kopf: nur Einzel (im Doppel hängt das Ergebnis am Partner)
   const rec = new Map<string, { w: number; l: number }>();
   for (const g of games) {
+    if (g.doubles) continue;
     const r = rec.get(g.opponentId) ?? { w: 0, l: 0 };
     if (g.won) r.w++;
     else r.l++;
@@ -69,6 +70,22 @@ export default function ProfileView({
   const qualified = opps.filter((o) => o.n >= 3);
   const fav = [...qualified].filter((o) => o.rate > 0.5).sort((a, b) => b.rate - a.rate || b.n - a.n)[0];
   const nemesis = [...qualified].filter((o) => o.rate < 0.5).sort((a, b) => a.rate - b.rate || b.n - a.n)[0];
+
+  // Doppel: Bilanz und Partner
+  const dbl = games.filter((g) => g.doubles);
+  const dblWins = dbl.filter((g) => g.won).length;
+  const prec = new Map<string, { w: number; l: number }>();
+  for (const g of dbl) {
+    const r = prec.get(g.partnerId!) ?? { w: 0, l: 0 };
+    if (g.won) r.w++;
+    else r.l++;
+    prec.set(g.partnerId!, r);
+  }
+  const partners = [...prec.entries()]
+    .filter(([id]) => !ov.byId[id]?.hidden)
+    .map(([id, r]) => ({ id, ...r, n: r.w + r.l, rate: r.w / (r.w + r.l) }));
+  const bestPartner = partners.filter((o) => o.n >= 3).sort((a, b) => b.rate - a.rate || b.n - a.n)[0];
+  const both = (a: string, b: string) => `${nameOf(a)} und ${nameOf(b)}`;
 
   const recent = games.slice(-10).reverse();
   const ach = ov.ach[s.id];
@@ -109,7 +126,14 @@ export default function ProfileView({
                 {isNew && <span className="news-dot" aria-label="neu" />}
                 <span className="news-text">
                   <b>{nameOf(g.enteredBy!)}</b> hat eingetragen:{" "}
-                  {g.won ? `Du hast gegen ${nameOf(g.opponentId)} gewonnen` : `${nameOf(g.opponentId)} hat gegen dich gewonnen`} ·{" "}
+                  {g.doubles
+                    ? g.won
+                      ? `Du hast mit ${nameOf(g.partnerId!)} gegen ${both(g.opponentIds[0], g.opponentIds[1])} gewonnen`
+                      : `${both(g.opponentIds[0], g.opponentIds[1])} haben gegen dich und ${nameOf(g.partnerId!)} gewonnen`
+                    : g.won
+                      ? `Du hast gegen ${nameOf(g.opponentId)} gewonnen`
+                      : `${nameOf(g.opponentId)} hat gegen dich gewonnen`}{" "}
+                  ·{" "}
                   {formatRelativeDay(g.createdAt)}, {time(g.createdAt)}
                 </span>
                 <DisputeButton matchId={g.id} own={false} />
@@ -279,6 +303,7 @@ export default function ProfileView({
             <h2>Bilanz</h2>
             <span>
               {s.games} {s.games === 1 ? "Spiel" : "Spiele"}
+              {s.doubles > 0 && <span className="muted"> · davon {s.doubles} Doppel</span>}
             </span>
           </div>
           <div className="wl">
@@ -318,7 +343,7 @@ export default function ProfileView({
             <>
               <div className="section-h">
                 <h2>Kopf an Kopf</h2>
-                <span>ab 3 Spielen</span>
+                <span>Einzel · ab 3 Spielen</span>
               </div>
               <div className="h2h">
                 <div className="card">
@@ -379,6 +404,61 @@ export default function ProfileView({
             </details>
           )}
 
+          {dbl.length > 0 && (
+            <>
+              <div className="section-h">
+                <h2>Doppel</h2>
+                <span>
+                  {dbl.length} {dbl.length === 1 ? "Spiel" : "Spiele"}
+                </span>
+              </div>
+              <div className="h2h">
+                <div className="card">
+                  <span className="kpi-l">⚖️ Doppel-Bilanz</span>
+                  <span className="h2h-name">
+                    {dblWins} : {dbl.length - dblWins}
+                  </span>
+                  <span className="h2h-rec">{Math.round((dblWins / dbl.length) * 100)} % Siege</span>
+                </div>
+                <div className="card">
+                  <span className="kpi-l">🤝 Bester Partner</span>
+                  {bestPartner ? (
+                    <>
+                      <Link href={`/spieler/${bestPartner.id}`} className="h2h-name">
+                        {nameOf(bestPartner.id)}
+                      </Link>
+                      <span className="h2h-rec">
+                        <span className="up">
+                          {bestPartner.w} : {bestPartner.l}
+                        </span>{" "}
+                        · {Math.round(bestPartner.rate * 100)} %
+                      </span>
+                    </>
+                  ) : (
+                    <span className="h2h-rec muted">ab 3 gemeinsamen Spielen</span>
+                  )}
+                </div>
+              </div>
+              {partners.length > 0 && (
+                <details className="all-opps">
+                  <summary>Mit allen Partnern ({partners.length})</summary>
+                  {[...partners]
+                    .sort((a, b) => b.n - a.n)
+                    .map((o) => (
+                      <Link href={`/spieler/${o.id}`} className="opponent-row" key={o.id}>
+                        <span className="opponent-name">{nameOf(o.id)}</span>
+                        <span className="opponent-record">
+                          <span className="rec-win">{o.w} S</span>
+                          <span className="rec-sep">–</span>
+                          <span className="rec-loss">{o.l} N</span>
+                        </span>
+                      </Link>
+                    ))}
+                </details>
+              )}
+            </>
+          )}
+
           <div className="section-h">
             <h2>Letzte Spiele</h2>
           </div>
@@ -392,8 +472,16 @@ export default function ProfileView({
                 <div className="game" key={g.id}>
                   <span className={`res ${g.won ? "s" : "n"}`}>{g.won ? "S" : "N"}</span>
                   <span className="game-main">
+                    {g.doubles && <span className="chip-2v2">2v2</span>}
                     vs. <Link href={`/spieler/${g.opponentId}`}>{nameOf(g.opponentId)}</Link>
+                    {g.doubles && (
+                      <>
+                        {" "}
+                        &amp; <Link href={`/spieler/${g.opponentIds[1]}`}>{nameOf(g.opponentIds[1])}</Link>
+                      </>
+                    )}
                     <span className="when">
+                      {g.doubles && `mit ${nameOf(g.partnerId!)} · `}
                       {formatRelativeDay(g.createdAt)}, {time(g.createdAt)}
                       {g.upset && " · Upset!"}
                     </span>

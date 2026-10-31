@@ -21,3 +21,12 @@ export function calculateNewElo(
 
   return { newWinnerElo, newLoserElo };
 }
+
+// Elo-Änderung für Sieger und Verlierer (ganze Zahlen). Im Doppel wird mit
+// dem Schnitt der beiden Teams gerechnet; die Änderung gilt für jeden
+// Spieler des Teams voll.
+export function eloDelta(winnerElo: number, loserElo: number): { win: number; lose: number } {
+  const ew = expectedScore(winnerElo, loserElo);
+  const el = expectedScore(loserElo, winnerElo);
+  return { win: Math.round(K_FACTOR * (1 - ew)), lose: Math.round(K_FACTOR * (0 - el)) };
+}

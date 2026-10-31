@@ -39,7 +39,7 @@ function worldKey(world: Awaited<ReturnType<typeof getWorld>>): string {
     add(p.id); add(p.name); add(p.cohort); add(p.hidden); add(p.founder); add(p.is_admin);
   }
   for (const m of world.matches) {
-    add(m.id); add(m.winner_id); add(m.loser_id); add(m.winner_elo_after); add(m.loser_elo_after); add(m.created_at); add(m.entered_by);
+    add(m.id); add(m.winner_id); add(m.loser_id); add(m.winner_elo_after); add(m.loser_elo_after); add(m.created_at); add(m.entered_by); add(m.winner2_id); add(m.loser2_id); add(m.winner2_elo_after); add(m.loser2_elo_after);
   }
   return `${world.players.length}:${world.matches.length}:${h}`;
 }

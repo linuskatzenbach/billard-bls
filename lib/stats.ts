@@ -1,4 +1,5 @@
 import type { MatchRecord } from "./db";
+import { seats } from "./match";
 import { START_ELO } from "./elo";
 
 // Wer weniger Spiele hat, zählt bei der Siegesquote nicht mit –
@@ -186,13 +187,9 @@ export function computeStats(
     if (lastDay && day !== lastDay) creditDays(daysBetween(lastDay, day));
     lastDay = day;
 
-    for (const [id, after, won] of [
-      [m.winner_id, m.winner_elo_after, true],
-      [m.loser_id, m.loser_elo_after, false],
-    ] as const) {
+    for (const { id, after, won, before } of seats(m)) {
       if (!visibleSet.has(id)) continue;
       games[id] += 1;
-      const before = id === m.winner_id ? m.winner_elo_before : m.loser_elo_before;
       recent[id].push({ won, delta: after - before });
       if (recent[id].length > FORM_GAMES) recent[id].shift();
       elo[id] = after;
@@ -281,8 +278,7 @@ export function eloTrend(
   const before: Record<string, number> = {};
   for (const m of matches) {
     if (new Date(m.created_at).getTime() < cutoff) continue;
-    if (!(m.winner_id in before)) before[m.winner_id] = m.winner_elo_before;
-    if (!(m.loser_id in before)) before[m.loser_id] = m.loser_elo_before;
+    for (const seat of seats(m)) if (!(seat.id in before)) before[seat.id] = seat.before;
   }
   const trend: Record<string, number> = {};
   for (const [id, elo] of Object.entries(currentElo)) {

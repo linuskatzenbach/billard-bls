@@ -3050,3 +3050,36 @@ button.dbl-change svg {
   stroke-linejoin: round;
 }
 button.dbl-save { margin-top: 0.6rem; border-radius: 10px; padding: 0.95rem; }
+
+/* ---- Doppel (2v2) ---------------------------------------------------- */
+.chip-2v2 {
+  display: inline-block;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  padding: 1px 5px;
+  margin-right: 0.35rem;
+  border-radius: 5px;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  color: var(--brass-bright);
+  background: rgba(201, 162, 39, 0.12);
+  vertical-align: 1px;
+  font-weight: 600;
+}
+.player-name.team { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.player-name.loser.team { align-items: flex-end; }
+.player-name.team span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs.duo { display: flex; flex-direction: column; align-items: center; gap: 3px; opacity: 1; }
+.vs.duo .chip-2v2 { margin-right: 0; text-transform: none; }
+.vs.duo .vs-t { opacity: 0.4; }
+.avg { font-size: 0.7rem; opacity: 0.5; margin-right: -0.15rem; }
+
+/* Leiste mit drei Symbolen: Rangliste · + · Mein Bereich */
+.tabbar-rail.three { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.tabbar-rail.three .navtab { min-height: 3rem; }
+.tabbar-rail.three .navtab svg { width: 1.6rem; height: 1.6rem; }
+.tabbar-rail.three .navtab-plus svg { width: 1.9rem; height: 1.9rem; stroke-width: 2.4; }
+.tabbar-rail.three .navtab-plus:not(.active) { opacity: 0.9; color: var(--brass-bright); }
+
+.dbl-slots { margin-bottom: 0.5rem; }
+.dbl .result-note { margin-top: -0.3rem; }

@@ -12,6 +12,7 @@ import {
 import { MIN_GAMES_RANKED, type PlayerSummary } from "@/lib/progress";
 import { getOverview } from "@/lib/server";
 import { getSession } from "@/lib/auth";
+import { isDoubles, sidesBefore } from "@/lib/match";
 import { cohortShort } from "@/lib/names";
 import StatTile, { type TopRow } from "./StatTile";
 import RankBall from "./RankBall";
@@ -246,20 +247,43 @@ export default async function HomePage({
           {matches.map((m, i) => {
             const winnerGain = m.winner_elo_after - m.winner_elo_before;
             const loserLoss = m.loser_elo_after - m.loser_elo_before;
-            const winnerHidden = hiddenOf(m.winner_id);
-            const loserHidden = hiddenOf(m.loser_id);
+            const dbl = isDoubles(m);
+            const sides = sidesBefore(m);
+            // Im Doppel: Team-Schnitt statt einzelner Elo; ausgeblendete Spieler verraten nichts.
+            const winnerHidden = hiddenOf(m.winner_id) || (dbl && hiddenOf(m.winner2_id!));
+            const loserHidden = hiddenOf(m.loser_id) || (dbl && hiddenOf(m.loser2_id!));
             return (
               <div className="history-row" key={i}>
-                <span className="player-name winner">{nameOf(m.winner_id)}</span>
-                <span className="vs">vs</span>
-                <span className="player-name loser">{nameOf(m.loser_id)}</span>
+                {dbl ? (
+                  <>
+                    <span className="player-name winner team">
+                      <span>{nameOf(m.winner_id)}</span>
+                      <span>{nameOf(m.winner2_id!)}</span>
+                    </span>
+                    <span className="vs duo">
+                      <span className="chip-2v2">2v2</span>
+                      <span className="vs-t">vs</span>
+                    </span>
+                    <span className="player-name loser team">
+                      <span>{nameOf(m.loser_id)}</span>
+                      <span>{nameOf(m.loser2_id!)}</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="player-name winner">{nameOf(m.winner_id)}</span>
+                    <span className="vs">vs</span>
+                    <span className="player-name loser">{nameOf(m.loser_id)}</span>
+                  </>
+                )}
 
                 <span className="player-meta winner">
                   {winnerHidden ? (
                     <span className="elo-before">???</span>
                   ) : (
                     <>
-                      <span className="elo-before">{m.winner_elo_before}</span>
+                      {dbl && <span className="avg">Ø</span>}
+                      <span className="elo-before">{Math.round(sides.win)}</span>
                       <span className="delta win">▲{Math.abs(winnerGain)}</span>
                     </>
                   )}
@@ -271,7 +295,8 @@ export default async function HomePage({
                   ) : (
                     <>
                       <span className="delta loss">▼{Math.abs(loserLoss)}</span>
-                      <span className="elo-before">{m.loser_elo_before}</span>
+                      {dbl && <span className="avg">Ø</span>}
+                      <span className="elo-before">{Math.round(sides.lose)}</span>
                     </>
                   )}
                 </span>

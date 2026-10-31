@@ -4,12 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Leiste unten: links zur Rangliste, rechts in den persönlichen Bereich.
+// Leiste unten: Rangliste · Spiel eintragen (+) · persönlicher Bereich.
+// Nur Symbole, die aktuelle Seite liegt auf Filz.
 // Die Leiste selbst wird vorab gebaut (ohne Markierung), welcher Tab aktiv
 // ist, kommt im Browser dazu.
 export default function TabBar() {
   return (
-    <Suspense fallback={<Bar mine={null} />}>
+    <Suspense fallback={<Bar tab={null} />}>
       <ActiveBar />
     </Suspense>
   );
@@ -18,13 +19,18 @@ export default function TabBar() {
 let lastCheck = 0;
 let lastDot = false;
 
-const isMine = (path: string) => path === "/profil" || path.startsWith("/profil/");
+type Tab = "rang" | "plus" | "mein";
+const tabOf = (path: string): Tab => {
+  if (path === "/eintragen" || path.startsWith("/eintragen/")) return "plus";
+  if (/^\/(profil|abzeichen|kraenze)(\/|$)/.test(path)) return "mein";
+  return "rang";
+};
 
 // Beim Antippen wird sofort nur der neue Tab markiert, auch wenn die Seite
 // noch lädt und die Adresse sich noch nicht geändert hat.
 function ActiveBar() {
   const path = usePathname();
-  const [pending, setPending] = useState<boolean | null>(null);
+  const [pending, setPending] = useState<Tab | null>(null);
   const [dot, setDot] = useState(false);
   useEffect(() => setPending(null), [path]);
   // Roter Punkt: jemand hat ein Spiel mit dir eingetragen (bzw. für den
@@ -56,29 +62,33 @@ function ActiveBar() {
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [path]);
-  const current = isMine(path);
-  return (
-    <Bar
-      mine={pending ?? current}
-      dot={dot}
-      onPick={(mine) => setPending(mine === current ? null : mine)}
-    />
-  );
+  const current = tabOf(path);
+  return <Bar tab={pending ?? current} dot={dot} onPick={(t) => setPending(t === current ? null : t)} />;
 }
 
-function Bar({ mine, dot = false, onPick }: { mine: boolean | null; dot?: boolean; onPick?: (mine: boolean) => void }) {
-  const left = mine === false;
+function Bar({ tab, dot = false, onPick }: { tab: Tab | null; dot?: boolean; onPick?: (t: Tab) => void }) {
+  const cls = (t: Tab) => `navtab${tab === t ? " active" : ""}`;
+  const cur = (t: Tab) => (tab === t ? ("page" as const) : undefined);
   return (
     <nav className="tabbar" aria-label="Hauptnavigation">
-      <div className="tabbar-rail">
-        <Link href="/" onClick={() => onPick?.(false)} className={`navtab${left ? " active" : ""}`} aria-current={left ? "page" : undefined}>
+      <div className="tabbar-rail three">
+        <Link href="/" onClick={() => onPick?.("rang")} className={cls("rang")} aria-current={cur("rang")} aria-label="Rangliste">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6" />
           </svg>
-          <span>Rangliste</span>
         </Link>
-        <span className="navtab-divider" aria-hidden="true" />
-        <Link href="/profil" onClick={() => onPick?.(true)} className={`navtab${mine ? " active" : ""}`} aria-current={mine ? "page" : undefined}>
+        <Link
+          href="/eintragen"
+          onClick={() => onPick?.("plus")}
+          className={`${cls("plus")} navtab-plus`}
+          aria-current={cur("plus")}
+          aria-label="Spiel eintragen"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </Link>
+        <Link href="/profil" onClick={() => onPick?.("mein")} className={cls("mein")} aria-current={cur("mein")} aria-label="Mein Bereich">
           <span className="navtab-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="8" r="3.6" />
@@ -86,7 +96,6 @@ function Bar({ mine, dot = false, onPick }: { mine: boolean | null; dot?: boolea
             </svg>
             {dot && <span className="navtab-dot" aria-label="Neues" />}
           </span>
-          <span>Mein Bereich</span>
         </Link>
       </div>
     </nav>

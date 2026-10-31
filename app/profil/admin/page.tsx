@@ -63,7 +63,9 @@ export default async function AdminPage() {
           {disputes.map((d) => (
             <div className={`dispute-row${d.seen ? "" : " new"}`} key={d.id}>
               <div>
-                <b>{nameOf(d.winner_id)}</b> schlägt <b>{nameOf(d.loser_id)}</b>
+                <b>{nameOf(d.winner_id)}{d.winner2_id && ` & ${nameOf(d.winner2_id)}`}</b> schlägt{" "}
+                <b>{nameOf(d.loser_id)}{d.loser2_id && ` & ${nameOf(d.loser2_id)}`}</b>
+                {d.winner2_id && <span className="muted small"> (Doppel)</span>}
               </div>
               <div className="muted small">
                 eingetragen von {d.entered_by ? nameOf(d.entered_by) : "–"} am {berlinDateTime(d.played_at)}

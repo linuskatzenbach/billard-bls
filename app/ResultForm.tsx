@@ -9,18 +9,14 @@ import Wreath from "./Wreath";
 import { showReward } from "./RewardOverlay";
 import DoublesForm from "./DoublesForm";
 import type { Reward } from "@/lib/reward";
-import type { VictoryProps, VictoryResult } from "./VictoryAnimation";
+import type { VictoryResult, VictoryTableProps } from "./VictoryTable";
 
-// Die Sieges-Animation wird erst geladen, wenn sie gebraucht wird.
-const loadVictory = () => import("./VictoryAnimation");
-const VictoryAnimation = dynamic(loadVictory, { ssr: false });
-// Neue Animation (ganzer Tisch, freie Aufstellung) – vorerst nur im Testspiel,
-// für alle ab dem Samstags-Update.
+// Die Sieges-Animation (ganzer Tisch) wird erst geladen, wenn sie gebraucht wird.
 const loadTable = () => import("./VictoryTable");
 const VictoryTable = dynamic(loadTable, { ssr: false });
-type TableAnim = import("./VictoryTable").VictoryTableProps;
 
-type AnimSetup = Omit<VictoryProps, "result" | "onDone" | "onError">;
+// Zuletzt genutzte Spielart merken (1 gegen 1 / 2 gegen 2).
+const MODE_KEY = "bs-mode";
 
 // Nach dem Absenden ist auf dem Handy meist noch die Tastatur vom
 // Passwortfeld offen. Schließt sie sich erst, nachdem der Tisch vermessen
@@ -60,50 +56,6 @@ export type { Pick };
 const ballOf = (p: Pick) => (p.rank ? poolBall(p.rank) : { color: "#f4efe4", kind: "cue" as const });
 const initial = (p: Pick) => p.name.charAt(0).toUpperCase();
 
-// Misst die beiden Kugeln im Duell-Feld und den Tisch, der sich darunter
-// einblendet. Liegt das Feld nicht ganz im Bild, wird vorher gescrollt.
-function measureAnimation(form: HTMLFormElement, winner: Pick, loser: Pick): AnimSetup | null {
-  const grid = form.querySelector<HTMLElement>(".duel");
-  const wEl = form.querySelector<HTMLElement>(".duel-ball.is-winner .ball");
-  const lEl = form.querySelector<HTMLElement>(".duel-ball.is-loser .ball");
-  if (!grid || !wEl || !lEl) return null;
-
-  const vh = window.visualViewport?.height ?? window.innerHeight;
-  const vw = window.visualViewport?.width ?? window.innerWidth;
-  const padX = 12;
-  const padY = 34;
-
-  const g0 = grid.getBoundingClientRect();
-  const margin = padY + 8;
-  let shift = 0;
-  if (g0.height + 2 * margin <= vh) {
-    if (g0.top < margin) shift = g0.top - margin;
-    else if (g0.bottom > vh - margin) shift = g0.bottom - (vh - margin);
-  } else {
-    shift = (g0.top + g0.bottom) / 2 - vh / 2;
-  }
-  if (Math.abs(shift) > 1) window.scrollBy({ top: shift, behavior: "instant" as ScrollBehavior });
-
-  const g = grid.getBoundingClientRect();
-  const wr = wEl.getBoundingClientRect();
-  const lr = lEl.getBoundingClientRect();
-  const R = wr.width / 2;
-  const wc = { x: wr.left + R, y: wr.top + R };
-  const lc = { x: lr.left + R, y: lr.top + R };
-  const left = Math.max(6, g.left - padX);
-  const right = Math.min(vw - 6, g.right + padX);
-  const tTop = Math.max(6, Math.min(g.top - padY, Math.min(wc.y, lc.y) - R - 40));
-  const tBottom = Math.min(vh - 6, Math.max(g.bottom + padY, Math.max(wc.y, lc.y) + R + 40));
-
-  const ball = (p: Pick, c: { x: number; y: number }) => ({ name: p.name, label: initial(p), ...ballOf(p), ...c });
-  return {
-    winner: ball(winner, wc),
-    loser: ball(loser, lc),
-    radius: R,
-    table: { left, top: tTop, width: right - left, height: tBottom - tTop },
-  };
-}
-
 // "live": echtes Spiel, zählt sofort.
 // "test": nur im Admin-Bereich – volle Animation, aber nichts wird gespeichert.
 export default function ResultForm({
@@ -124,12 +76,20 @@ export default function ResultForm({
   const [status, setStatus] = useState<
     { type: "idle" } | { type: "loading" } | { type: "error"; message: string } | { type: "success"; message: string }
   >({ type: "idle" });
-  const formRef = useRef<HTMLFormElement>(null);
   const duelRef = useRef<HTMLDivElement>(null);
-  const [anim, setAnim] = useState<VictoryProps | null>(null);
-  const [tableAnim, setTableAnim] = useState<TableAnim | null>(null);
-  // 2 gegen 2 gibt es vorerst nur im Testspiel.
-  const [doubles, setDoubles] = useState(false);
+  const [tableAnim, setTableAnim] = useState<VictoryTableProps | null>(null);
+  const [doubles, setDoublesState] = useState(false);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(MODE_KEY) === "2") setDoublesState(true);
+    } catch {}
+  }, []);
+  const setDoubles = (on: boolean) => {
+    setDoublesState(on);
+    try {
+      window.localStorage.setItem(MODE_KEY, on ? "2" : "1");
+    } catch {}
+  };
 
   const opponent = opponents.find((p) => p.id === opponentId) ?? null;
   const q = query.trim().toLowerCase();
@@ -141,7 +101,6 @@ export default function ResultForm({
   // Beim Verlassen alles auf Anfang stellen (Next.js hebt die Seite auf).
   useEffect(() => {
     return () => {
-      setAnim(null);
       setTableAnim(null);
       setOpponentId("");
       setIWon(null);
@@ -151,7 +110,7 @@ export default function ResultForm({
   }, []);
 
   useEffect(() => {
-    if (opponentId) void (test ? loadTable() : loadVictory());
+    if (opponentId) void loadTable();
   }, [opponentId]);
 
   function chooseOpponent(id: string) {
@@ -199,55 +158,21 @@ export default function ResultForm({
 
     await settleViewport();
     const [winner, loser] = iWon ? [me, opponent] : [opponent, me];
-    if (test) {
-      const player = (p: Pick) => ({ name: p.name, label: initial(p), ...ballOf(p) });
-      setTableAnim({
-        winners: [player(winner)],
-        losers: [player(loser)],
-        result,
-        onDone: () => {
-          if (reward) showReward(reward, test);
-          router.push(home);
-          router.refresh();
-        },
-        onError: (message) => {
-          setTableAnim(null);
-          setStatus({ type: "error", message });
-        },
-      });
-      return;
-    }
-    const setup = formRef.current ? measureAnimation(formRef.current, winner, loser) : null;
-    if (setup) {
-      setAnim({
-        ...setup,
-        result,
-        onDone: () => {
-          if (reward) showReward(reward, test);
-          router.push(home);
-          router.refresh();
-        },
-        onError: (message) => {
-          setAnim(null);
-          setStatus({ type: "error", message });
-        },
-      });
-      return;
-    }
-
-    try {
-      const r = await result;
-      if (r.reward) showReward(r.reward, test);
-      setStatus({
-        type: "success",
-        message: `${test ? "Testspiel durchgespielt, nichts gespeichert" : "Ergebnis gespeichert!"} (+${r.winnerDelta} / −${Math.abs(r.loserDelta)} Elo)`,
-      });
-      setOpponentId("");
-      setIWon(null);
-      router.refresh();
-    } catch (err) {
-      setStatus({ type: "error", message: err instanceof Error ? err.message : "Etwas ist schiefgelaufen." });
-    }
+    const player = (p: Pick) => ({ name: p.name, label: initial(p), ...ballOf(p) });
+    setTableAnim({
+      winners: [player(winner)],
+      losers: [player(loser)],
+      result,
+      onDone: () => {
+        if (reward) showReward(reward, test);
+        router.push(home);
+        router.refresh();
+      },
+      onError: (message) => {
+        setTableAnim(null);
+        setStatus({ type: "error", message });
+      },
+    });
   }
 
   const hint = !opponent
@@ -261,23 +186,23 @@ export default function ResultForm({
   return (
     <>
       <h1>{test ? "Testspiel" : "Spiel eintragen"}</h1>
-      <p className="subtitle">{test ? "Animation wie echt – nichts wird gespeichert" : "Gegen wen hast du gespielt?"}</p>
+      <p className="subtitle">
+        {test ? "Animation wie echt – nichts wird gespeichert" : doubles ? "Mit wem und gegen wen hast du gespielt?" : "Gegen wen hast du gespielt?"}
+      </p>
 
-      {test && (
-        <div className="mode-switch" role="tablist" aria-label="Spielart">
-          <button type="button" role="tab" aria-selected={!doubles} className={!doubles ? "on" : ""} onClick={() => setDoubles(false)}>
-            1 gegen 1
-          </button>
-          <button type="button" role="tab" aria-selected={doubles} className={doubles ? "on" : ""} onClick={() => setDoubles(true)}>
-            2 gegen 2
-          </button>
-        </div>
-      )}
+      <div className="mode-switch" role="tablist" aria-label="Spielart">
+        <button type="button" role="tab" aria-selected={!doubles} className={!doubles ? "on" : ""} onClick={() => setDoubles(false)}>
+          1 gegen 1
+        </button>
+        <button type="button" role="tab" aria-selected={doubles} className={doubles ? "on" : ""} onClick={() => setDoubles(true)}>
+          2 gegen 2
+        </button>
+      </div>
 
       {doubles ? (
-        <DoublesForm me={me} players={opponents} home={home} />
+        <DoublesForm me={me} players={opponents} home={home} mode={mode} />
       ) : (
-      <form ref={formRef} onSubmit={handleSubmit} className="result-form">
+      <form onSubmit={handleSubmit} className="result-form">
         {opponents.length > 8 && (
           <input
             type="search"
@@ -340,12 +265,6 @@ export default function ResultForm({
           </div>
         )}
 
-        {!test && opponent && (
-          <p className="result-note">
-            Zählt sofort. {opponent.name} sieht das Spiel und kann bei einem Fehler 24 h lang widersprechen.
-          </p>
-        )}
-
         <button type="submit" disabled={status.type === "loading" || !opponent || iWon === null}>
           {status.type === "loading"
             ? test
@@ -355,13 +274,17 @@ export default function ResultForm({
               ? "Testspiel starten"
               : "Ergebnis speichern"}
         </button>
+        {!test && opponent && (
+          <p className="result-note">
+            Zählt sofort. {opponent.name} sieht das Spiel und kann bei einem Fehler 24 h lang widersprechen.
+          </p>
+        )}
 
         {status.type === "error" && <p className="message error">{status.message}</p>}
         {status.type === "success" && <p className="message success">{status.message}</p>}
       </form>
       )}
 
-      {anim && <VictoryAnimation {...anim} />}
       {tableAnim && <VictoryTable {...tableAnim} />}
 
       <Link href={home} className="nav-link">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { disputeMatch, getMatch, getPlayerById } from "@/lib/db";
+import { involves } from "@/lib/match";
 import { ADMIN_MAIL, disputeMail, sendMail } from "@/lib/mail";
 import { DISPUTE_HOURS, berlinDateTime, jsonError, readJson, refreshWorld, siteOrigin } from "@/lib/server";
 
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
   const matchId = Number(body.matchId);
   const m = await getMatch(matchId);
   if (!m) return jsonError("Dieses Spiel gibt es nicht mehr.", 404);
-  if (m.winner_id !== session.playerId && m.loser_id !== session.playerId && !session.admin) {
+  // Im Doppel dürfen alle vier Beteiligten widersprechen.
+  if (!involves(m, session.playerId) && !session.admin) {
     return jsonError("Nur Beteiligte können widersprechen.", 403);
   }
   const age = Date.now() - new Date(m.created_at).getTime();
@@ -28,8 +30,8 @@ export async function POST(req: NextRequest) {
   try {
     const name = async (id: string | null) => (id ? (await getPlayerById(id))?.name ?? id : "unbekannt");
     const mail = disputeMail({
-      winner: await name(m.winner_id),
-      loser: await name(m.loser_id),
+      winner: m.winner2_id ? `${await name(m.winner_id)} und ${await name(m.winner2_id)}` : await name(m.winner_id),
+      loser: m.loser2_id ? `${await name(m.loser_id)} und ${await name(m.loser2_id)}` : await name(m.loser_id),
       enteredBy: await name(m.entered_by),
       disputedBy: await name(session.playerId),
       playedAt: berlinDateTime(m.created_at),
