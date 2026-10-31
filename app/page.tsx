@@ -12,6 +12,7 @@ import {
 import { MIN_GAMES_RANKED, type PlayerSummary } from "@/lib/progress";
 import { getOverview } from "@/lib/server";
 import { getSession } from "@/lib/auth";
+import { weekKey, weekLastDay, weekdayShort } from "@/lib/time";
 import { isDoubles, sidesBefore } from "@/lib/match";
 import { cohortShort } from "@/lib/names";
 import StatTile, { type TopRow } from "./StatTile";
@@ -47,11 +48,9 @@ const TABS = [
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
-// Sonntag einer Woche (wk = Montag)
-const weekEnd = (wk: string) => {
-  const [y, m, d] = wk.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d + 6)).toISOString().slice(0, 10);
-};
+// Letzter Tag der Woche und sein Kürzel ("So" bzw. ab 7.11.2026 "Fr").
+const weekEnd = (wk: string) => weekLastDay(wk);
+const endsShort = () => weekdayShort(weekLastDay(weekKey(new Date())));
 
 const shortDate = (wk: string) => {
   const [, m, d] = wk.split("-").map(Number);
@@ -435,7 +434,7 @@ function WeekBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null 
   const podium = list.slice(0, 3);
   return (
     <section>
-      <p className="board-hint">Wer diese Woche am meisten spielt · Wertung endet So, 23:59 · Platz 1–3: +250 / +150 / +75 XP</p>
+      <p className="board-hint">Wer diese Woche am meisten spielt · Wertung endet {endsShort()}, 23:59 · Platz 1–3: +250 / +150 / +75 XP</p>
       {list.length === 0 ? (
         <p className="empty">Diese Woche wurde noch nicht gespielt. Sei der Erste!</p>
       ) : (
@@ -563,7 +562,7 @@ function ActivityBoard({
                   {s.cohort && <span className="cohort inline">{cohortShort(s.cohort)}</span>}
                 </span>
                 <WeekBars weeks={s.activity.weeks8} open={s.activity.atRisk} />
-                {s.activity.atRisk && <span className="risk">⏳ diese Woche noch offen – läuft So ab</span>}
+                {s.activity.atRisk && <span className="risk">⏳ diese Woche noch offen – läuft {endsShort()} ab</span>}
               </span>
               <span className="bval">
                 <span className={`wflame${s.activity.atRisk ? " dim" : ""}`} aria-hidden="true">

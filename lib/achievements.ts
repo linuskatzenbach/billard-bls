@@ -1,6 +1,6 @@
 import type { MatchRow, World } from "./db";
 import { START_ELO } from "./elo";
-import { DAY, addWeeks, berlinHour, dayKey, weekEndIso, weekKey } from "./time";
+import { DAY, addWeeks, berlinHour, dayKey, weekEndIso, weekKey, weekLastDay, weekdayName } from "./time";
 import { isDoubles, seats, sidesBefore } from "./match";
 
 // Abzeichen und Wochenaufgaben. Alles wird aus den gespeicherten Spielen
@@ -8,7 +8,7 @@ import { isDoubles, seats, sidesBefore } from "./match";
 
 const MIN_RANKED = 3; // wie in progress.ts: erst ab 3 Spielen in der Elo-Rangliste
 
-// Wochenaufgaben gibt es ab dieser Woche (Montag der Uni-Öffnung).
+// Wochenaufgaben gibt es ab dieser Woche (Woche der Uni-Öffnung).
 export const QUEST_START = "2026-10-19";
 // Doppel-Aufgaben gibt es ab der ersten Woche nach dem 2v2-Update (vorher
 // würden sich sonst die bereits verteilten Aufgaben der laufenden Woche ändern).
@@ -340,7 +340,7 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     if ([...myVs.values()].some((r) => r.last === "l"))
       pools.mittel.push(mk("beatLastLoss", "mittel", "Schlag jemanden im Einzel, gegen den du zuletzt verloren hast"));
 
-    if (sn.leaders.has(id)) pools.schwer.push(mk("defendTop", "schwer", "Verteidige Platz 1 bis Sonntag"));
+    if (sn.leaders.has(id)) pools.schwer.push(mk("defendTop", "schwer", `Verteidige Platz 1 bis ${weekdayName(weekLastDay(wk))}`));
     else if (sn.rankedCount > 0) pools.schwer.push(mk("beatAbove", "schwer", "Schlag jemanden im Einzel, der über dir steht"));
     pools.schwer.push(mk("winStreak", "schwer", "Gewinne 3 Spiele in Folge", 3));
     if (Object.values(sn.rank).some((r, i) => r !== null && r <= 3 && Object.keys(sn.rank)[i] !== id))

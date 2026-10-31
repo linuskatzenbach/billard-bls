@@ -4,6 +4,7 @@ import { MIN_GAMES_RANKED, gamesOf, wreathName, type Overview, type PlayerSummar
 import { START_ELO } from "@/lib/elo";
 import { formatRelativeDay } from "@/lib/stats";
 import { DISPUTE_HOURS } from "@/lib/server";
+import { daysUntilNextWeek, weekLastDay, weekdayShort } from "@/lib/time";
 import EloChart, { type EloPoint } from "./spieler/[id]/EloChart";
 import Wreath from "./Wreath";
 import CtaTrack from "./CtaTrack";
@@ -93,9 +94,9 @@ export default function ProfileView({
   const shownDefs = BADGES.filter((d) => own || !d.secret);
   const shownBadges = ach.badges.filter((b) => shownDefs.some((d) => d.id === b.id));
   const badgeTotal = shownDefs.reduce((n, d) => n + (d.tiers ? d.tiers.length : 1), 0);
-  // Tage bis zu den neuen Aufgaben (Montag)
-  const berlinDow = (new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Berlin" })).getDay() + 6) % 7;
-  const daysLeft = 7 - berlinDow;
+  // Tage bis zu den neuen Aufgaben (Beginn der nächsten Woche)
+  const daysLeft = daysUntilNextWeek();
+  const weekEndsShort = weekdayShort(weekLastDay(ov.week));
   const ranked = ov.ranked.length;
   const missing = Math.max(0, MIN_GAMES_RANKED - s.games);
 
@@ -211,7 +212,7 @@ export default function ProfileView({
             {s.activity.thisWeek
               ? "Diese Woche gespielt ✓"
               : s.activity.atRisk
-                ? "⏳ Diese Woche noch offen – läuft So ab"
+                ? `⏳ Diese Woche noch offen – läuft ${weekEndsShort} ab`
                 : "Diese Woche noch nicht gespielt"}{" "}
             · letzte 8 Wochen
           </div>
