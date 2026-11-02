@@ -149,7 +149,7 @@ export default function ProfileView({
           <Wreath level={s.level} rank={s.rank} size="132px" label={`Level ${s.level}`} />
           <span className="lvl-plaque">{s.level}</span>
         </Link>
-        <h1 className={`profile-name${s.isLeader ? " leader" : ""}`}>
+        <h1 className={`profile-name${s.isLeader ? " leader" : ""}${s.isLast ? " last" : ""}`}>
           {s.name}
           {s.isLeader && (
             <span className="profile-crown" aria-label="Platz 1">

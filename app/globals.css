@@ -1902,6 +1902,12 @@ h1.leader {
   color: var(--brass-bright);
   text-shadow: 0 0 10px rgba(224, 188, 74, 0.45);
 }
+/* Spiegelbild zur goldenen Nr. 1: roter Name für den Letzten (rote Laterne) */
+.pname.last,
+h1.last {
+  color: #e8634c;
+  text-shadow: 0 0 10px rgba(232, 99, 76, 0.45);
+}
 .lvl-pill {
   font-family: "Fraunces", Georgia, serif;
   font-weight: 700;

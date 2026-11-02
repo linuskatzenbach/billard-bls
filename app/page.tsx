@@ -96,7 +96,7 @@ function PlayerName({
 }) {
   return (
     <>
-      <span className={`pname${s.isLeader ? " leader" : ""}${me ? " me" : ""}`}>{s.name}</span>
+      <span className={`pname${s.isLeader ? " leader" : ""}${lantern && s.isLast ? " last" : ""}${me ? " me" : ""}`}>{s.name}</span>
       {!hideLevel && (
         <span className="lvl-pill" title={`Level ${s.level}`}>
           {s.level}
