@@ -12,7 +12,8 @@ import {
 import { MIN_GAMES_RANKED, type PlayerSummary } from "@/lib/progress";
 import { getOverview } from "@/lib/server";
 import { getSession } from "@/lib/auth";
-import { weekKey, weekLastDay, weekdayShort } from "@/lib/time";
+import { addWeeks, weekKey, weekLastDay, weekdayShort } from "@/lib/time";
+import { PODIUM_XP } from "@/lib/achievements";
 import { isDoubles, sidesBefore } from "@/lib/match";
 import { cohortShort } from "@/lib/names";
 import StatTile, { type TopRow } from "./StatTile";
@@ -224,7 +225,7 @@ export default async function HomePage({
         </>
       )}
 
-      {tab === "woche" && <WeekBoard rows={ov.visible} myId={myId} />}
+      {tab === "woche" && <WeekBoard rows={ov.visible} myId={myId} week={ov.week} />}
       {tab === "level" && <LevelBoard rows={ov.visible} myId={myId} />}
       {tab === "aktiv" && (
         <ActivityBoard rows={ov.visible} myId={myId} record={ov.activityRecord} nameOf={nameOf} />
@@ -426,7 +427,38 @@ function places<T>(rows: T[], value: (r: T) => number): number[] {
   return out;
 }
 
-function WeekBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null }) {
+// Podest der abgeschlossenen Vorwoche (Platz 1–3, gleiche Spielzahl = gleicher Platz).
+function LastWeekPodium({ rows, week, myId }: { rows: PlayerSummary[]; week: string; myId: string | null }) {
+  const prev = addWeeks(week, -1);
+  const list = rows
+    .filter((s) => s.lastWeekGames > 0)
+    .sort((a, b) => b.lastWeekGames - a.lastWeekGames || a.name.localeCompare(b.name, "de"));
+  const pl = list.map((s) => 1 + list.filter((o) => o.lastWeekGames > s.lastWeekGames).length);
+  const top = list.filter((_, i) => pl[i] <= PODIUM_XP.length);
+  if (top.length === 0) return null;
+  const medals = ["🥇", "🥈", "🥉"];
+  return (
+    <div className="lastweek card">
+      <div className="lastweek-title">
+        Letzte Woche <span>· {shortDate(prev)} – {shortDate(weekEnd(prev))}</span>
+      </div>
+      {top.map((s, i) => (
+        <Link href={`/spieler/${s.id}`} key={s.id} className={`lw-row${s.id === myId ? " is-me" : ""}`}>
+          <span className="lw-medal" aria-label={`Platz ${pl[i]}`}>
+            {medals[pl[i] - 1]}
+          </span>
+          <span className="lw-name">{s.name}</span>
+          <span className="lw-val">
+            {gamesText(s.lastWeekGames)}
+            <small>+{PODIUM_XP[pl[i] - 1]} XP</small>
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function WeekBoard({ rows, myId, week }: { rows: PlayerSummary[]; myId: string | null; week: string }) {
   const list = rows
     .filter((s) => s.weekGames > 0)
     .sort((a, b) => b.weekGames - a.weekGames || b.weekXp - a.weekXp || a.name.localeCompare(b.name, "de"));
@@ -468,6 +500,7 @@ function WeekBoard({ rows, myId }: { rows: PlayerSummary[]; myId: string | null 
           </div>
         </>
       )}
+      <LastWeekPodium rows={rows} week={week} myId={myId} />
     </section>
   );
 }
