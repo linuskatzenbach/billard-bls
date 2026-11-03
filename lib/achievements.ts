@@ -67,7 +67,7 @@ export const BADGES: BadgeDef[] = [
   { id: "fruehaufsteher", name: "Frühaufsteher", icon: "🌅", desc: "Spiel vor 9 Uhr", secret: true, metal: "secret", xp: 100 },
   { id: "wochenzocker", name: "Wochenzocker", icon: "📊", desc: "Einmal die meisten Spiele einer Woche", secret: true, metal: "secret", xp: 100 },
   { id: "perfekte-woche", name: "Perfekte Woche", icon: "💯", desc: "Mindestens 5 Siege in einer Woche ohne Niederlage", secret: true, metal: "secret", xp: 100 },
-  { id: "sechs-sieben", name: "6?-7!", icon: "♟️", desc: "Mindestens 6 Niederlagen in Folge, direkt danach mindestens 7 Siege in Folge", secret: true, metal: "secret", xp: 500 },
+  { id: "sechs-sieben", name: "6?-7!", icon: "♟️", desc: "Mindestens 6 Niederlagen in Folge, direkt danach mindestens 7 Siege in Folge", secret: true, metal: "secret", xp: 670 },
   { id: "seitenwechsel", name: "Seitenwechsel", icon: "🎭", desc: "Am selben Tag mit jemandem und gegen ihn gewonnen", secret: true, metal: "secret", xp: 100 },
   { id: "brueckenbauer", name: "Brückenbauer", icon: "🌉", desc: "Mit einem Partner aus einem anderen Jahrgang gegen zwei aus dem eigenen Jahrgang gewonnen", secret: true, metal: "secret", xp: 100 },
 ];
