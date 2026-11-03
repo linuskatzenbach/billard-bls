@@ -123,6 +123,11 @@ export default function EmailLogin() {
             Andere Adresse
           </button>
         </p>
+        <p className="auth-small" style={{ marginTop: "0.6rem" }}>
+          Ist die Mail nach 5 Minuten noch nicht da? Schreib an{" "}
+          <a href="mailto:billard@law-school.de?subject=Anmeldelink%20Billard%20BLS">billard@law-school.de</a> – dann
+          schicken wir dir den Link von Hand.
+        </p>
       </div>
     );
   }
