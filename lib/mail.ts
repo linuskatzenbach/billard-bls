@@ -61,17 +61,24 @@ export async function sendMail(to: string, subject: string, text: string, html: 
   });
 }
 
-export const wrapMail = (inner: string) => `<!doctype html><html><body style="margin:0;background:#f1e9d8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b">
-<div style="max-width:440px;margin:0 auto;padding:28px 20px">
-<div style="background:#1f4a3d;border:6px solid #5a3219;border-radius:14px;padding:22px 20px;color:#f1e9d8">
-<div style="font-family:Georgia,serif;font-size:22px;font-weight:bold;margin-bottom:12px">🎱 Billard BLS</div>
+// Tabellen + bgcolor statt <div>-Hintergründen: Outlook/Exchange (Weiterleitung
+// über billard@law-school.de) entfernt die CSS-Kurzform „background:“, dann
+// fehlt der grüne Filz. bgcolor + background-color überlebt überall.
+export const wrapMail = (inner: string) => `<!doctype html><html><body style="margin:0;background-color:#f1e9d8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b1b1b">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f1e9d8" style="background-color:#f1e9d8"><tr><td align="center" style="padding:28px 20px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#1f4a3d" style="max-width:440px;background-color:#1f4a3d;border:6px solid #5a3219;border-radius:14px"><tr><td bgcolor="#1f4a3d" style="background-color:#1f4a3d;padding:22px 20px;color:#f1e9d8;border-radius:8px;text-align:left">
+<div style="font-family:Georgia,serif;font-size:22px;font-weight:bold;margin-bottom:12px;color:#f1e9d8">🎱 Billard BLS</div>
 ${inner}
-</div>
-</div></body></html>`;
+</td></tr></table>
+</td></tr></table></body></html>`;
+
+// Knopf als Tabellenzelle mit bgcolor, damit die gelbe Fläche auch in Outlook bleibt.
+const mailButton = (link: string, label: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px"><tr><td bgcolor="#e0bc4a" style="background-color:#e0bc4a;border-radius:10px"><a href="${link}" style="display:inline-block;background-color:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">${label}</a></td></tr></table>`;
 
 // Tipp in den Anmelde-Mails: Website als App auf den Home-Bildschirm legen.
 const APP_TIP_TEXT = `📱 Tipp: Als App starten: in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.`;
-const APP_TIP_HTML = `<p style="margin:18px 0 0;padding:12px 14px;background:rgba(241,233,216,.08);border-radius:10px;font-size:13px;line-height:1.5">📱 <b>Tipp: Als App starten:</b> in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.</p>`;
+const APP_TIP_HTML = `<p style="margin:18px 0 0;padding:12px 14px;background-color:#305749;border-radius:10px;font-size:13px;line-height:1.5">📱 <b>Tipp: Als App starten:</b> in Safari auf „Teilen“ → „Zum Home-Bildschirm“. Dann öffnet sich Billard BLS wie eine App, aber ohne Speicherplatz wegzunehmen.</p>`;
 
 export function loginMail(link: string, code: string) {
   const subject = `Dein Anmeldelink für Billard BLS (Code ${code})`;
@@ -87,7 +94,7 @@ Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kanns
 ${APP_TIP_TEXT}`;
   const html = wrapMail(`
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Tippe auf den Knopf, um dich anzumelden:</p>
-<p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
+${mailButton(link, "Jetzt anmelden")}
 <p style="margin:0 0 6px;font-size:14px;opacity:.85">Oder diesen Code in der App eingeben:</p>
 <p style="margin:0 0 18px;font-family:Menlo,Consolas,monospace;font-size:30px;letter-spacing:6px;font-weight:bold;color:#e0bc4a">${code}</p>
 <p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind 15 Minuten gültig. Wenn du das nicht angefordert hast, kannst du diese Mail ignorieren.</p>
@@ -114,7 +121,7 @@ ${APP_TIP_TEXT}`;
   const html = wrapMail(`
 <p style="margin:0 0 10px;font-size:16px;line-height:1.5">Hallo <b>${name}</b>!</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.5">Du bist zu Billard BLS eingeladen. Deine bisherigen Spiele, deine Elo und dein Level sind schon da.</p>
-<p style="margin:0 0 20px"><a href="${link}" style="display:inline-block;background:#e0bc4a;color:#1b1405;text-decoration:none;font-weight:bold;padding:13px 22px;border-radius:10px;font-size:16px">Jetzt anmelden</a></p>
+${mailButton(link, "Jetzt anmelden")}
 <p style="margin:0 0 6px;font-size:14px;opacity:.85">Oder in der App unter „Mein Bereich“ deine Uni-Mail und dann diesen Code eingeben:</p>
 <p style="margin:0 0 18px;font-family:Menlo,Consolas,monospace;font-size:30px;letter-spacing:6px;font-weight:bold;color:#e0bc4a">${code}</p>
 <p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Link und Code sind ${days} Tage gültig. Danach kannst du dir jederzeit selbst unter „Mein Bereich“ einen neuen Link schicken.</p>

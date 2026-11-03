@@ -101,7 +101,6 @@ export default function EmailLogin() {
           {error && <p className="message error">{error}</p>}
         </form>
         <p className="auth-small">
-          Nichts angekommen? Schau auch im Spam-Ordner.{" "}
           <button
             type="button"
             className="linkish"
@@ -124,9 +123,9 @@ export default function EmailLogin() {
           </button>
         </p>
         <p className="auth-small" style={{ marginTop: "0.6rem" }}>
-          Ist die Mail nach 5 Minuten noch nicht da? Schreib an{" "}
-          <a href="mailto:billard@law-school.de?subject=Anmeldelink%20Billard%20BLS">billard@law-school.de</a> – dann
-          schicken wir dir den Link von Hand.
+          Mail nach 5 Minuten nicht da (auch nicht im Spam-Ordner)? Schreib an{" "}
+          <a href="mailto:billard@law-school.de?subject=Anmeldelink%20Billard%20BLS">billard@law-school.de</a>, dann wird
+          der Link händisch geschickt.
         </p>
       </div>
     );
