@@ -123,7 +123,7 @@ export default function EmailLogin() {
           </button>
         </p>
         <p className="auth-small" style={{ marginTop: "0.6rem" }}>
-          Mail nach 5 Minuten nicht da (auch nicht im Spam-Ordner)? Schreib an{" "}
+          Der Versand sollte etwa 3–5 Minuten dauern. Ist die Mail dann immer noch nicht da, schreib bitte eine Mail an{" "}
           <a href="mailto:billard@law-school.de?subject=Anmeldelink%20Billard%20BLS">billard@law-school.de</a>, dann wird
           der Link händisch geschickt.
         </p>
