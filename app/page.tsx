@@ -63,17 +63,15 @@ function NameBlock({
   s,
   children,
   hideLevel,
-  lantern,
 }: {
   s: PlayerSummary;
   children?: React.ReactNode;
   hideLevel?: boolean;
-  lantern?: boolean;
 }) {
   return (
     <span className="name">
       <span className="nline">
-        <PlayerName s={s} hideLevel={hideLevel} lantern={lantern} />
+        <PlayerName s={s} hideLevel={hideLevel} />
         {children}
       </span>
       {s.cohort && <span className="cohort">{cohortShort(s.cohort)}</span>}
@@ -82,21 +80,20 @@ function NameBlock({
 }
 
 // Name mit goldener Farbe und Krone für die aktuelle Nr. 1,
-// rote Laterne für den Letzten (nur wo `lantern` gesetzt ist).
+// spiegelbildlich rote Laterne und roter Name für den Letzten der Elo-Rangliste
+// (in allen Tabs, wie die Krone).
 function PlayerName({
   s,
   me,
   hideLevel,
-  lantern,
 }: {
   s: PlayerSummary;
   me?: boolean;
   hideLevel?: boolean;
-  lantern?: boolean;
 }) {
   return (
     <>
-      <span className={`pname${s.isLeader ? " leader" : ""}${lantern && s.isLast ? " last" : ""}${me ? " me" : ""}`}>{s.name}</span>
+      <span className={`pname${s.isLeader ? " leader" : ""}${s.isLast ? " last" : ""}${me ? " me" : ""}`}>{s.name}</span>
       {!hideLevel && (
         <span className="lvl-pill" title={`Level ${s.level}`}>
           {s.level}
@@ -107,7 +104,7 @@ function PlayerName({
           👑
         </span>
       )}
-      {lantern && s.isLast && (
+      {s.isLast && (
         <span className="lantern" aria-label="Letzter Platz" title="Rote Laterne – letzter Platz">
           🏮
         </span>
@@ -206,7 +203,7 @@ export default async function HomePage({
                 {ov.ranked.map((s) => (
                   <Link href={`/spieler/${s.id}`} className={`row wrow${s.id === myId ? " is-me" : ""}`} key={s.id}>
                     <Wreath level={s.level} rank={s.rank} label={`Platz ${s.rank}, Level ${s.level}`} />
-                    <NameBlock s={s} lantern>
+                    <NameBlock s={s}>
                       <WinFlame n={s.winStreak} />
                     </NameBlock>
                     <span className="elo">
