@@ -10,9 +10,10 @@ import nodemailer from "nodemailer";
 export const ADMIN_MAIL = process.env.ADMIN_MAIL ?? "bls.billard@gmail.com";
 
 // Übergangslösung, solange Mails an @law-school.de nicht zuverlässig ankommen:
-// Jede Mail geht als BCC zusätzlich an Linus, damit er sie notfalls von Hand
-// weiterleiten kann. Zum Abschalten die Liste leeren (oder MAIL_BCC="" in Vercel).
-const MAIL_BCC = (process.env.MAIL_BCC ?? "linus.katzenbach@law-school.de,katzenbachlinus@gmail.com")
+// Jede Mail geht als BCC zusätzlich an das Postfach billard@law-school.de,
+// damit sie notfalls von dort weitergeleitet werden kann. Zum Abschalten die
+// Liste leeren (oder MAIL_BCC="" in Vercel).
+const MAIL_BCC = (process.env.MAIL_BCC ?? "billard@law-school.de")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
