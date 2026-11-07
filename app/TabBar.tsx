@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-// Leiste unten: Rangliste · Spiel eintragen (+) · persönlicher Bereich.
+// Leiste unten: Rangliste · 2v2-Turnier · Spiel eintragen (+) · persönlicher Bereich.
 // Nur Symbole, die aktuelle Seite liegt auf Filz.
 // Die Leiste selbst wird vorab gebaut (ohne Markierung), welcher Tab aktiv
 // ist, kommt im Browser dazu.
@@ -18,10 +18,12 @@ export default function TabBar() {
 
 let lastCheck = 0;
 let lastDot = false;
+let lastTurnierDot = false;
 
-type Tab = "rang" | "plus" | "mein";
+type Tab = "rang" | "turnier" | "plus" | "mein";
 const tabOf = (path: string): Tab => {
   if (path === "/eintragen" || path.startsWith("/eintragen/")) return "plus";
+  if (path === "/turnier" || path.startsWith("/turnier/")) return "turnier";
   if (/^\/(profil|abzeichen|kraenze)(\/|$)/.test(path)) return "mein";
   return "rang";
 };
@@ -61,6 +63,7 @@ function ActiveBar() {
   // noch lädt und die Adresse sich noch nicht geändert hat.
   const [pending, setPending] = useState<Tab | null>(null);
   const [dot, setDot] = useState(false);
+  const [turnierDot, setTurnierDot] = useState(false);
   useEffect(() => setPending(null), [path]);
   // Roter Punkt: jemand hat ein Spiel mit dir eingetragen (bzw. für den
   // Admin: es gibt einen neuen Widerspruch). Wird bei jedem Seitenwechsel
@@ -75,11 +78,16 @@ function ActiveBar() {
         .then((r) => r.json())
         .then((d) => {
           lastDot = Boolean(d.unread);
-          if (alive) setDot(lastDot);
+          lastTurnierDot = Boolean(d.turnier);
+          if (alive) {
+            setDot(lastDot);
+            setTurnierDot(lastTurnierDot);
+          }
         })
         .catch(() => {});
     };
     setDot(lastDot);
+    setTurnierDot(lastTurnierDot);
     check();
     const forced = () => check(true);
     window.addEventListener("billard:seen", forced);
@@ -99,19 +107,39 @@ function ActiveBar() {
       router.refresh();
     } else setPending(t);
   };
-  return <Bar tab={pending ?? current} dot={dot} onPick={onPick} />;
+  return <Bar tab={pending ?? current} dot={dot} turnierDot={turnierDot} onPick={onPick} />;
 }
 
-function Bar({ tab, dot = false, onPick }: { tab: Tab | null; dot?: boolean; onPick?: (t: Tab) => void }) {
+function Bar({
+  tab,
+  dot = false,
+  turnierDot = false,
+  onPick,
+}: {
+  tab: Tab | null;
+  dot?: boolean;
+  turnierDot?: boolean;
+  onPick?: (t: Tab) => void;
+}) {
   const cls = (t: Tab) => `navtab${tab === t ? " active" : ""}`;
   const cur = (t: Tab) => (tab === t ? ("page" as const) : undefined);
   return (
     <nav className="tabbar" aria-label="Hauptnavigation">
-      <div className="tabbar-rail three">
+      <div className="tabbar-rail four">
         <Link href="/" onClick={() => onPick?.("rang")} className={cls("rang")} aria-current={cur("rang")} aria-label="Rangliste">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 20V11h4v9M10 20V5h4v15M16 20v-6h4v6" />
           </svg>
+        </Link>
+        <Link href="/turnier" onClick={() => onPick?.("turnier")} className={cls("turnier")} aria-current={cur("turnier")} aria-label="2v2-Turnier">
+          <span className="navtab-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+              <path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3" />
+              <path d="M12 13v3.5M8.5 20h7M9.5 20l.8-3.5h3.4l.8 3.5" />
+            </svg>
+            {turnierDot && <span className="navtab-dot" aria-label="Neue Team-Anfrage" />}
+          </span>
         </Link>
         <Link
           href="/eintragen"

@@ -155,6 +155,39 @@ async function ensureSchema(): Promise<void> {
     );
   `;
 
+  // 2v2-Turnier: Team-Anfragen und feste Teams. Jeder Spieler kann pro
+  // Turnier nur in einem Team sein (Primärschlüssel der Mitglieder) und nur
+  // eine offene Anfrage verschickt haben (eindeutiger Index).
+  await sql`
+    CREATE TABLE IF NOT EXISTS tournament_requests (
+      id SERIAL PRIMARY KEY,
+      tournament TEXT NOT NULL,
+      from_id TEXT NOT NULL,
+      to_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      decided_at TIMESTAMPTZ
+    );
+  `;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS tournament_requests_one_open ON tournament_requests (tournament, from_id) WHERE status = 'pending';`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS tournament_teams (
+      id SERIAL PRIMARY KEY,
+      tournament TEXT NOT NULL,
+      player1_id TEXT NOT NULL,
+      player2_id TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS tournament_members (
+      tournament TEXT NOT NULL,
+      player_id TEXT NOT NULL,
+      team_id INTEGER NOT NULL,
+      PRIMARY KEY (tournament, player_id)
+    );
+  `;
+
   // Testspiel Julian gegen Linus vom 20.10.2026 entfernen (bereits erledigt).
   await deleteMatchOnce("2026-10-20-testspiel-julian-linus", ["julian", "linus"], "2026-10-20T19:40:00Z");
 
@@ -293,7 +326,7 @@ async function fixTobiJannik(): Promise<void> {
 // Stand der Datenbank-Einrichtung. Bei jeder Änderung an Tabellen oder
 // einer neuen einmaligen Korrektur oben diesen Namen erhöhen – dann läuft die
 // volle Einrichtung genau einmal neu.
-const SCHEMA_VERSION = "schema-2026-10-31b";
+const SCHEMA_VERSION = "schema-2026-11-07-turnier";
 
 // Früher liefen bei jedem Kaltstart eines Servers über 20 Prüf- und
 // Korrekturschritte nacheinander, bevor die erste echte Abfrage kam. Jetzt

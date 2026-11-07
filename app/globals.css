@@ -3164,3 +3164,89 @@ a.player-name { color: inherit; text-decoration: none; }
 .oops-link:hover {
   background: var(--brass-bright);
 }
+
+/* ---- Leiste unten mit vier Tabs (Rangliste · Turnier · + · Mein Bereich) ---- */
+.tabbar-rail.four { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tabbar-rail.four .navtab { min-height: 3rem; }
+.tabbar-rail.four .navtab svg { width: 1.6rem; height: 1.6rem; }
+.tabbar-rail.four .navtab-plus svg { width: 1.9rem; height: 1.9rem; stroke-width: 2.4; }
+
+/* ---- 2v2-Turnier --------------------------------------------------- */
+.tn-phases {
+  list-style: none;
+  margin: 1rem 0 1.2rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr;
+  gap: 6px;
+}
+.tn-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(241, 233, 216, 0.04);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+.tn-phase-label { font-weight: 600; }
+.tn-phase-when { opacity: 0.65; }
+.tn-phase.now {
+  border-color: var(--brass);
+  background: rgba(201, 162, 39, 0.12);
+}
+.tn-phase.now .tn-phase-label { color: var(--brass-bright); }
+.tn-phase.done { opacity: 0.45; }
+
+.tn-box { padding: 0.9rem 1rem; margin: 0 0 1rem; }
+.tn-box p { margin: 0.4rem 0; line-height: 1.45; }
+.tn-box-title { font-weight: 600; font-size: 0.95rem; color: var(--brass-bright); margin-top: 0 !important; }
+.tn-incoming { border-color: var(--brass); }
+.tn-request {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.35rem 0;
+}
+.tn-request-name { flex: 1; min-width: 8rem; font-size: 0.92rem; }
+.tn-request-actions { display: flex; align-items: center; gap: 1rem; flex: none; margin-left: auto; }
+.tn-confirm-who { display: flex; align-items: center; gap: 0.7rem; font-size: 1.1rem; margin-bottom: 0.3rem; }
+.tn-buttons { display: flex; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; }
+.tn-btn {
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(241, 233, 216, 0.06);
+  color: var(--cream);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tn-btn.primary { background: var(--brass); border-color: var(--brass); color: var(--felt-dark); }
+.tn-btn.small { padding: 0.45rem 0.75rem; font-size: 0.85rem; }
+.tn-btn:disabled { opacity: 0.6; }
+.tn-hint { margin-top: 0.7rem; text-align: center; }
+.tn-mine { padding: 0.9rem 1rem; margin: 0 0 1rem; border-color: var(--brass); }
+.tn-mine p { margin: 0.3rem 0; }
+.tn-mine-title { font-weight: 600; color: var(--brass-bright); font-size: 1.05rem; }
+
+.tn-teams { list-style: none; margin: 0; padding: 0; }
+.tn-team {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.2rem;
+  border-bottom: 1px solid var(--line);
+}
+.tn-team.mine { background: rgba(201, 162, 39, 0.1); border-radius: 8px; }
+.tn-team-no { width: 1.4rem; text-align: right; opacity: 0.55; font-size: 0.85rem; flex: none; }
+.tn-team-balls { display: flex; flex: none; }
+.tn-team-balls > * + * { margin-left: -0.5rem; }
+.tn-team-names { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 0.95rem; }
+.tn-team-names a { color: inherit; text-decoration: none; font-weight: 600; }
+.tn-team-cohort { font-size: 0.75rem; opacity: 0.55; }
+.tn-team-avg { font-size: 0.8rem; opacity: 0.7; flex: none; }
+.tn-foot { margin-top: 1.4rem; text-align: center; line-height: 1.45; }

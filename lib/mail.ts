@@ -157,3 +157,22 @@ Admin-Bereich: ${p.adminLink}`;
 <p style="margin:0"><a href="${p.adminLink}" style="color:#e0bc4a">Zum Admin-Bereich</a></p>`);
   return { subject, text, html };
 }
+
+// 2v2-Turnier: jemand möchte mit dir ein Team bilden.
+export function teamRequestMail(p: { to: string; from: string; link: string; deadline: string }) {
+  const subject = `${p.from} will mit dir beim 2v2-Turnier spielen`;
+  const text = `Hallo ${p.to}!
+
+${p.from} möchte mit dir ein Team für das 2v2-Turnier von Billard BLS bilden.
+
+Anfrage ansehen und annehmen oder ablehnen:
+${p.link}
+
+Anmeldeschluss: ${p.deadline}. Sobald du annimmst, steht euer Team fest und kann nicht mehr geändert werden.`;
+  const html = wrapMail(`
+<p style="margin:0 0 10px;font-size:16px;line-height:1.5">Hallo <b>${p.to}</b>!</p>
+<p style="margin:0 0 16px;font-size:15px;line-height:1.5"><b>${p.from}</b> möchte mit dir ein Team für das <b>2v2-Turnier</b> bilden. 🏆</p>
+${mailButton(p.link, "Anfrage ansehen")}
+<p style="margin:0;font-size:12px;opacity:.7;line-height:1.5">Anmeldeschluss: ${p.deadline}. Sobald du annimmst, steht euer Team fest und kann nicht mehr geändert werden.</p>`);
+  return { subject, text, html };
+}
