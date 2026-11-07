@@ -65,13 +65,23 @@ export default async function TurnierPage() {
         {open ? <>Such dir einen Partner – Anmeldung bis {TOURNAMENT.deadlineLabel}.</> : <>Die Anmeldung ist geschlossen, die Teams stehen fest.</>}
       </p>
 
-      <ol className="tn-phases">
-        {TOURNAMENT.phases.map((p) => (
-          <li key={p.key} className={`tn-phase${p.key === current ? " now" : ""}${current && p.until < today ? " done" : ""}`}>
-            <span className="tn-phase-label">{p.label}</span>
-            <span className="tn-phase-when">{p.when}</span>
-          </li>
-        ))}
+      {/* Ablauf als Zeitstrahl (nur Anzeige): jede Phase eine Kugel auf der Linie. */}
+      <ol className="tn-road" aria-label="Ablauf">
+        {TOURNAMENT.phases.map((p, i) => {
+          const done = Boolean(current) && p.until < today;
+          const now = p.key === current;
+          return (
+            <li key={p.key} className={`tn-step${now ? " now" : ""}${done ? " done" : ""}`} aria-current={now ? "step" : undefined}>
+              <span className={`tn-ball b${i + 1}`} aria-hidden="true">
+                <span>{done ? "✓" : i + 1}</span>
+              </span>
+              {now && <span className="tn-live">läuft</span>}
+              <span className="tn-step-label">{p.label}</span>
+              <span className="tn-step-detail">{p.detail}</span>
+              <span className="tn-step-when">{p.when}</span>
+            </li>
+          );
+        })}
       </ol>
 
       {!session && open && (

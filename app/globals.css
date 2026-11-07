@@ -3172,33 +3172,88 @@ a.player-name { color: inherit; text-decoration: none; }
 .tabbar-rail.four .navtab-plus svg { width: 1.9rem; height: 1.9rem; stroke-width: 2.4; }
 
 /* ---- 2v2-Turnier --------------------------------------------------- */
-.tn-phases {
+/* Ablauf als Zeitstrahl: drei Kugeln auf einer Linie, nur Anzeige. */
+.tn-road {
+  --ball: 2.3rem;
+  position: relative;
   list-style: none;
-  margin: 1rem 0 1.2rem;
+  margin: 1.4rem 0 1.6rem;
   padding: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
-  gap: 6px;
+  grid-template-columns: repeat(3, 1fr);
 }
-.tn-phase {
+.tn-road::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--ball) / 2 - 1.5px);
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--brass) 0 var(--road-fill, 0%), rgba(241, 233, 216, 0.16) var(--road-fill, 0%));
+}
+.tn-road:has(.tn-step:nth-child(2).now) { --road-fill: 50%; }
+.tn-road:has(.tn-step:nth-child(3).now) { --road-fill: 100%; }
+.tn-step {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.55rem 0.6rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(241, 233, 216, 0.04);
-  font-size: 0.78rem;
+  align-items: center;
+  text-align: center;
+  padding: 0 0.2rem;
   line-height: 1.25;
 }
-.tn-phase-label { font-weight: 600; }
-.tn-phase-when { opacity: 0.65; }
-.tn-phase.now {
-  border-color: var(--brass);
-  background: rgba(201, 162, 39, 0.12);
+.tn-ball {
+  position: relative;
+  z-index: 1;
+  width: var(--ball);
+  height: var(--ball);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.55rem;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.55), transparent 45%), var(--c, #888);
+  box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.45), inset 0 -0.2rem 0.35rem rgba(0, 0, 0, 0.3);
 }
-.tn-phase.now .tn-phase-label { color: var(--brass-bright); }
-.tn-phase.done { opacity: 0.45; }
+.tn-ball > span {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: #f4efe4;
+  color: #1b1b1b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.tn-ball.b1 { --c: #e0bc4a; }
+.tn-ball.b2 { --c: #2f5fb3; }
+.tn-ball.b3 { --c: #c1543c; }
+.tn-step:not(.now):not(.done) .tn-ball { filter: saturate(0.35) brightness(0.75); }
+.tn-step.done .tn-ball { filter: saturate(0.2) brightness(0.6); }
+.tn-step.now .tn-ball {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 3px rgba(224, 188, 74, 0.35), 0 0 1.1rem rgba(224, 188, 74, 0.55), inset 0 -0.2rem 0.35rem rgba(0, 0, 0, 0.3);
+  animation: tn-pulse 2.4s ease-in-out infinite;
+}
+@keyframes tn-pulse {
+  50% { box-shadow: 0 0 0 6px rgba(224, 188, 74, 0.12), 0 0 1.4rem rgba(224, 188, 74, 0.7), inset 0 -0.2rem 0.35rem rgba(0, 0, 0, 0.3); }
+}
+@media (prefers-reduced-motion: reduce) { .tn-step.now .tn-ball { animation: none; } }
+.tn-live {
+  position: absolute;
+  top: -1.15rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+}
+.tn-step-label { font-weight: 600; font-size: 0.88rem; }
+.tn-step-detail { font-size: 0.7rem; opacity: 0.6; margin-top: 0.1rem; }
+.tn-step-when { font-size: 0.72rem; opacity: 0.85; margin-top: 0.25rem; font-variant-numeric: tabular-nums; }
+.tn-step.now .tn-step-label { color: var(--brass-bright); }
+.tn-step.done { opacity: 0.55; }
 
 .tn-box { padding: 0.9rem 1rem; margin: 0 0 1rem; }
 .tn-box p { margin: 0.4rem 0; line-height: 1.45; }
