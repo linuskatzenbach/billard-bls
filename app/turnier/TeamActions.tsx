@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import Wreath from "../Wreath";
 import type { Pick } from "@/lib/picks";
 
+export type Candidate = Pick & { status: "free" | "team" | "noaccount" | "asked"; requestId?: number };
+
+const NOTE: Record<Candidate["status"], string | null> = {
+  free: null,
+  team: "hat schon ein Team",
+  noaccount: "noch nicht angemeldet",
+  asked: "hat dich angefragt",
+};
+
 // Eigene Team-Anfragen fürs 2v2-Turnier: eingehende annehmen/ablehnen,
 // eigene zurückziehen oder einen Partner anfragen (immer nur eine offen).
 export default function TeamActions({
@@ -15,7 +24,7 @@ export default function TeamActions({
 }: {
   incoming: { id: number; from: Pick }[];
   outgoing: { id: number; to: Pick } | null;
-  candidates: Pick[];
+  candidates: Candidate[];
   deadline: string;
 }) {
   const router = useRouter();
@@ -130,7 +139,7 @@ export default function TeamActions({
         </div>
       ) : (
         <div className="tn-pick">
-          <p className="dbl-prompt">Mit wem hast du Lust zu spielen?</p>
+          <p className="dbl-prompt">Wen möchtest du als Partner anfragen?</p>
           {candidates.length > 8 && (
             <input
               type="search"
@@ -142,14 +151,30 @@ export default function TeamActions({
             />
           )}
           <div className="opp-grid" role="listbox" aria-label="Partner wählen">
-            {shown.map((p) => (
-              <button key={p.id} type="button" role="option" aria-selected={false} className="opp" onClick={() => setConfirm({ kind: "invite", pick: p })}>
-                <Wreath level={p.level} rank={p.rank} size="3rem" />
-                <span className="opp-name">{p.name}</span>
-                {p.cohort && <span className="opp-cohort">({p.cohort})</span>}
-              </button>
-            ))}
-            {shown.length === 0 && <p className="empty small">{candidates.length === 0 ? "Gerade ist niemand mehr frei." : "Niemand gefunden."}</p>}
+            {shown.map((p) => {
+              const note = NOTE[p.status];
+              const off = p.status === "team" || p.status === "noaccount";
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  aria-disabled={off}
+                  disabled={off}
+                  className={`opp${off ? " tn-off" : ""}${p.status === "asked" ? " tn-asked" : ""}`}
+                  onClick={() =>
+                    setConfirm(p.status === "asked" ? { kind: "accept", pick: p, requestId: p.requestId } : { kind: "invite", pick: p })
+                  }
+                >
+                  <Wreath level={p.level} rank={p.rank} size="3rem" />
+                  <span className="opp-name">{p.name}</span>
+                  {p.cohort && <span className="opp-cohort">({p.cohort})</span>}
+                  {note && <span className="tn-note">{note}</span>}
+                </button>
+              );
+            })}
+            {shown.length === 0 && <p className="empty small">Niemand gefunden.</p>}
           </div>
           <p className="small muted tn-hint">Anmeldung bis {deadline}. Die Person muss deine Anfrage annehmen – danach ist das Team fest.</p>
         </div>

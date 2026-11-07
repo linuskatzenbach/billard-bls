@@ -6,7 +6,7 @@ import { picksFor, type Pick } from "@/lib/picks";
 import { dayKey } from "@/lib/time";
 import { TOURNAMENT, getOpenRequests, getTeams, registrationOpen } from "@/lib/tournament";
 import Wreath from "../Wreath";
-import TeamActions from "./TeamActions";
+import TeamActions, { type Candidate } from "./TeamActions";
 
 // 2v2-Turnier: Ablauf, eigene Team-Anfragen und alle angemeldeten Teams.
 export default async function TurnierPage() {
@@ -28,13 +28,18 @@ export default async function TurnierPage() {
   const inTeam = new Set(teams.flatMap((t) => [t.player1, t.player2]));
   const myTeam = session ? teams.find((t) => t.player1 === session.playerId || t.player2 === session.playerId) : undefined;
 
-  // Anfragen gehen nur an Spieler mit Konto (sonst können sie nicht annehmen).
+  // Alle Spieler werden angezeigt. Anfragen gehen aber nur an Spieler mit
+  // Konto (sonst können sie nicht annehmen) und ohne Team; wer dich schon
+  // angefragt hat, kann direkt angenommen werden.
   const withAccount = new Set(world.players.filter((p) => p.email && !p.hidden).map((p) => p.id));
-  const candidates = session
-    ? picksFor(ov, session.playerId).opponents.filter(
-        // Wer dich schon angefragt hat, steht oben bei den Anfragen.
-        (p) => withAccount.has(p.id) && !inTeam.has(p.id) && !requests?.incoming.some((r) => r.from === p.id)
-      )
+  const candidates: Candidate[] = session
+    ? picksFor(ov, session.playerId).opponents.map((p) => {
+        const asked = requests?.incoming.find((r) => r.from === p.id);
+        if (inTeam.has(p.id)) return { ...p, status: "team" as const };
+        if (asked) return { ...p, status: "asked" as const, requestId: asked.id };
+        if (!withAccount.has(p.id)) return { ...p, status: "noaccount" as const };
+        return { ...p, status: "free" as const };
+      })
     : [];
 
   const today = dayKey(new Date());
