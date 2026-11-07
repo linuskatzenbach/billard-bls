@@ -109,6 +109,7 @@ export type PlayerSummary = {
   weekGames: number; // Spiele in der laufenden Woche
   weekXp: number;
   lastWeekGames: number; // Spiele in der abgeschlossenen Vorwoche
+  prevWeekGames: number; // Spiele in der Woche davor (vorletzte Woche)
   activity: {
     streak: number; // Wochen in Folge mit mindestens einem Spiel
     thisWeek: boolean; // in der laufenden Woche schon gespielt
@@ -142,6 +143,7 @@ export function gameXp(m: MatchRow, playerId: string): number {
 export function computeOverview(world: World, now = new Date()): Overview {
   const thisWeek = weekKey(now);
   const lastWeek = addWeeks(thisWeek, -1);
+  const prevWeek = addWeeks(thisWeek, -2);
   const cutoff7 = now.getTime() - 7 * DAY;
 
   const base = (p: PlayerRow): PlayerSummary => ({
@@ -174,6 +176,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
     weekGames: 0,
     weekXp: 0,
     lastWeekGames: 0,
+    prevWeekGames: 0,
     activity: { streak: 0, thisWeek: false, atRisk: false, weeks8: [] },
   });
 
@@ -209,6 +212,8 @@ export function computeOverview(world: World, now = new Date()): Overview {
         s.weekXp += xp;
       } else if (wk === lastWeek) {
         s.lastWeekGames++;
+      } else if (wk === prevWeek) {
+        s.prevWeekGames++;
       }
       if (t >= cutoff7 && !(id in eloBefore7)) eloBefore7[id] = before;
     }

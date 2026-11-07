@@ -442,20 +442,22 @@ function places<T>(rows: T[], value: (r: T) => number): number[] {
   return out;
 }
 
-// Podest der abgeschlossenen Vorwoche (Platz 1–3, gleiche Spielzahl = gleicher Platz).
-function LastWeekPodium({ rows, week, myId }: { rows: PlayerSummary[]; week: string; myId: string | null }) {
-  const prev = addWeeks(week, -1);
+// Podest einer abgeschlossenen Woche (Platz 1–3, gleiche Spielzahl = gleicher Platz).
+// back = 1: letzte Woche, back = 2: vorletzte Woche.
+function PastWeekPodium({ rows, week, myId, back }: { rows: PlayerSummary[]; week: string; myId: string | null; back: 1 | 2 }) {
+  const wk = addWeeks(week, -back);
+  const games = (s: PlayerSummary) => (back === 1 ? s.lastWeekGames : s.prevWeekGames);
   const list = rows
-    .filter((s) => s.lastWeekGames > 0)
-    .sort((a, b) => b.lastWeekGames - a.lastWeekGames || a.name.localeCompare(b.name, "de"));
-  const pl = list.map((s) => 1 + list.filter((o) => o.lastWeekGames > s.lastWeekGames).length);
+    .filter((s) => games(s) > 0)
+    .sort((a, b) => games(b) - games(a) || a.name.localeCompare(b.name, "de"));
+  const pl = list.map((s) => 1 + list.filter((o) => games(o) > games(s)).length);
   const top = list.filter((_, i) => pl[i] <= PODIUM_XP.length);
   if (top.length === 0) return null;
   const medals = ["🥇", "🥈", "🥉"];
   return (
     <div className="lastweek card">
       <div className="lastweek-title">
-        Letzte Woche <span>· {shortDate(prev)} – {shortDate(weekEnd(prev))}</span>
+        {back === 1 ? "Letzte Woche" : "Vorletzte Woche"} <span>· {shortDate(wk)} – {shortDate(weekEnd(wk))}</span>
       </div>
       {top.map((s, i) => (
         <Link href={`/spieler/${s.id}`} key={s.id} className={`lw-row${s.id === myId ? " is-me" : ""}`}>
@@ -464,7 +466,7 @@ function LastWeekPodium({ rows, week, myId }: { rows: PlayerSummary[]; week: str
           </span>
           <span className="lw-name">{s.name}</span>
           <span className="lw-val">
-            {gamesText(s.lastWeekGames)}
+            {gamesText(games(s))}
             <small>+{PODIUM_XP[pl[i] - 1]} XP</small>
           </span>
         </Link>
@@ -515,7 +517,8 @@ function WeekBoard({ rows, myId, week }: { rows: PlayerSummary[]; myId: string |
           </div>
         </>
       )}
-      <LastWeekPodium rows={rows} week={week} myId={myId} />
+      <PastWeekPodium rows={rows} week={week} myId={myId} back={1} />
+      <PastWeekPodium rows={rows} week={week} myId={myId} back={2} />
     </section>
   );
 }

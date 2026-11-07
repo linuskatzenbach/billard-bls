@@ -2042,6 +2042,7 @@ h1.last {
 
 /* Podest der Vorwoche im Wochenzocker-Tab */
 .lastweek { margin-top: 1.4rem; padding: 10px 13px 4px; }
+.lastweek + .lastweek { margin-top: 0.7rem; }
 .lastweek-title { font-family: "Fraunces", Georgia, serif; font-weight: 700; margin-bottom: 4px; }
 .lastweek-title span { font-family: inherit; font-weight: 400; font-size: 0.78rem; opacity: 0.7; }
 .lw-row {
