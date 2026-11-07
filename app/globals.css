@@ -3284,6 +3284,9 @@ a.player-name { color: inherit; text-decoration: none; }
 .tn-btn.small { padding: 0.45rem 0.75rem; font-size: 0.85rem; }
 .tn-btn:disabled { opacity: 0.6; }
 .tn-hint { margin-top: 0.7rem; text-align: center; }
+.tn-pick { margin-top: 1.6rem; }
+.tn-pick .dbl-prompt { margin: 0 0 0.75rem; }
+.tn-pick .opp-search { margin-bottom: 0.75rem; }
 .tn-mine { padding: 0.9rem 1rem; margin: 0 0 1rem; border-color: var(--brass); }
 .tn-mine p { margin: 0.3rem 0; }
 .tn-mine-title { font-weight: 600; color: var(--brass-bright); font-size: 1.05rem; }

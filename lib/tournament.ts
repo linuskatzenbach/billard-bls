@@ -16,7 +16,7 @@ export const TOURNAMENT = {
   phases: [
     { key: "anmeldung", label: "Anmeldung", detail: "im 2er-Team", when: "bis Fr 13.11.", until: "2026-11-13" },
     { key: "gruppen", label: "Gruppenphase", detail: "Spiele in Gruppen", when: "14.–20.11.", until: "2026-11-20" },
-    { key: "ko", label: "K.-o.-Runde", detail: "Viertel-, Halbfinale, Finale", when: "21.11. – ca. 2.12.", until: "2026-12-02" },
+    { key: "ko", label: "K.O.-Runde", detail: "Viertel-, Halbfinale, Finale", when: "21.11. – ca. 2.12.", until: "2026-12-02" },
   ],
 } as const;
 
