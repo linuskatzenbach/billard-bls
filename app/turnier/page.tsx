@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { getOverview } from "@/lib/server";
 import { picksFor, type Pick } from "@/lib/picks";
 import { dayKey } from "@/lib/time";
+import { seats } from "@/lib/match";
 import { TOURNAMENT, getOpenRequests, getTeams, registrationOpen } from "@/lib/tournament";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
@@ -41,6 +42,18 @@ export default async function TurnierPage() {
         return { ...p, status: "free" as const };
       })
     : [];
+  // Sortierung: zuerst die, gegen die man am meisten gespielt hat (Einzel und
+  // Doppel). Wer gar nicht angefragt werden kann, steht am Ende. Bei
+  // Gleichstand bleibt die Reihenfolge der Rangliste.
+  if (session) {
+    const vs = new Map<string, number>();
+    for (const m of world.matches) {
+      const mine = seats(m).find((x) => x.id === session.playerId);
+      for (const o of mine?.opps ?? []) vs.set(o, (vs.get(o) ?? 0) + 1);
+    }
+    const off = (c: Candidate) => (c.status === "team" || c.status === "noaccount" ? 1 : 0);
+    candidates.sort((a, b) => off(a) - off(b) || (vs.get(b.id) ?? 0) - (vs.get(a.id) ?? 0));
+  }
 
   const today = dayKey(new Date());
   const current = TOURNAMENT.phases.find((p) => today <= p.until)?.key ?? null;
