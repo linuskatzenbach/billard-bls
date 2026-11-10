@@ -19,7 +19,7 @@ export const TOURNAMENT = {
     // liegen Pausentage – dann „läuft“ gerade keine Phase.
     { key: "anmeldung", label: "Anmeldung", detail: "im 2er-Team", when: "bis Fr 13.11.", from: "2026-11-07", until: "2026-11-13" },
     { key: "gruppen", label: "Gruppenphase", detail: "Spiele in Gruppen", when: "16.–21.11.", from: "2026-11-16", until: "2026-11-21" },
-    { key: "ko", label: "K.O.-Runde", detail: "Viertel-, Halbfinale, Finale", when: "ab 23.11. – ca. 2.12.", from: "2026-11-23", until: "2026-12-02" },
+    { key: "ko", label: "K.O.-Runde", detail: "Viertel-, Halbfinale, Finale", when: "23.11. – ca. 2.12.", from: "2026-11-23", until: "2026-12-02" },
   ],
 } as const;
 
