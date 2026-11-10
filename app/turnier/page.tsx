@@ -56,7 +56,7 @@ export default async function TurnierPage() {
   }
 
   const today = dayKey(new Date());
-  const current = TOURNAMENT.phases.find((p) => today <= p.until)?.key ?? null;
+  const current = TOURNAMENT.phases.find((p) => p.from <= today && today <= p.until)?.key ?? null;
 
   return (
     <>
@@ -68,7 +68,7 @@ export default async function TurnierPage() {
       {/* Ablauf als Zeitstrahl (nur Anzeige): jede Phase eine Kugel auf der Linie. */}
       <ol className="tn-road" aria-label="Ablauf">
         {TOURNAMENT.phases.map((p, i) => {
-          const done = Boolean(current) && p.until < today;
+          const done = p.until < today;
           const now = p.key === current;
           return (
             <li key={p.key} className={`tn-step${now ? " now" : ""}${done ? " done" : ""}`} aria-current={now ? "step" : undefined}>
