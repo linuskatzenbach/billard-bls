@@ -45,6 +45,7 @@ export default async function AdminTurnierPage() {
         <p><b>Gruppenphase:</b> {FORMAT.groups} gegen jeden (3 pro Team) · beste 2 weiter</p>
         <p><b>Viertel- und Halbfinale:</b> {FORMAT.quarter} · <b>Finale:</b> {FORMAT.final}</p>
         <p><b>Gleichstand:</b> {TIEBREAK.map((t, i) => `${i + 1}) ${t}`).join(" · ")}</p>
+        <p><b>Dreiergleichstand</b> (jeder hat einen Sieg gegen die anderen): Relegation unter den drei Teams.</p>
         <p><b>Turnierregeln:</b> Nur für die 8 wird die Tasche angesagt (einmal). Fällt die 8 beim Anstoß, gewinnt der Anstoßende.</p>
       </div>
 

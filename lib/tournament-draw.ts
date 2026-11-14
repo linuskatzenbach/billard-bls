@@ -95,4 +95,4 @@ export const FORMAT = {
   final: "Best of 5",
 } as const;
 
-export const TIEBREAK = ["Siege", "Direkter Vergleich", "Entscheidungsspiel"] as const;
+export const TIEBREAK = ["Siege", "Direkter Vergleich", "Relegation"] as const;
