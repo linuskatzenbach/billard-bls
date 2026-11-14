@@ -7,8 +7,7 @@ import { reportError } from "@/lib/alert";
 import { getDraw, getResults, getTeams, saveResult } from "@/lib/tournament";
 import { pairKey } from "@/lib/tournament-draw";
 
-// Ergebnis eines Gruppenspiels eintragen. Dürfen: die vier Beteiligten und
-// der Admin. Es entsteht ein ganz normales Doppel (Elo, Widerspruch usw.).
+// Ergebnis eines Gruppenspiels eintragen. Dürfen nur die vier Beteiligten. Es entsteht ein ganz normales Doppel (Elo, Widerspruch usw.).
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return jsonError("Bitte zuerst anmelden.", 401);
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
   const tb = teams.find((t) => t.id === b);
   if (!ta || !tb) return jsonError("Team nicht gefunden.");
   const players = [ta.player1, ta.player2, tb.player1, tb.player2];
-  if (!players.includes(session.playerId) && !session.admin) {
+  if (!players.includes(session.playerId)) {
     return jsonError("Eintragen können nur die vier Spieler dieser Partie.", 403);
   }
 
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
   refreshWorld();
 
-  const reward = players.includes(session.playerId) ? computeReward(world, match, session.playerId) : null;
+  const reward = computeReward(world, match, session.playerId);
   return NextResponse.json({
     success: true,
     matchId: match.id,

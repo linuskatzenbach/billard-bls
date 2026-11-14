@@ -48,7 +48,7 @@ export default async function TurnierEintragenPage({ searchParams }: { searchPar
   const tb = team(b);
   if (!ta || !tb) return fail("Team nicht gefunden.");
   const involved = [...ta.players, ...tb.players].some((p) => p.id === session.playerId);
-  if (!involved && !session.admin) return fail("Eintragen können nur die vier Spieler dieser Partie.");
+  if (!involved) return fail("Eintragen können nur die vier Spieler dieser Partie.");
 
   return (
     <>

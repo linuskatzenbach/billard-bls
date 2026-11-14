@@ -151,7 +151,7 @@ export default async function TurnierPage() {
               const ta = teams.find((t) => t.id === a);
               const tb = teams.find((t) => t.id === b);
               const four = [ta?.player1, ta?.player2, tb?.player1, tb?.player2];
-              return four.includes(session.playerId) || session.admin ? `/turnier/eintragen?a=${a}&b=${b}` : null;
+              return four.includes(session.playerId) ? `/turnier/eintragen?a=${a}&b=${b}` : null;
             }}
           />
 
