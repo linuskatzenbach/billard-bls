@@ -125,34 +125,46 @@ export default async function AdminTurnierPage() {
 
       <div className="section-h">
         <h2>Turnierbaum</h2>
-        <span>{draw ? "kursiv: Favoriten-Tipp" : "nach der Auslosung mit Namen"}</span>
+        <span>{draw ? "Namen = Favoriten-Tipp" : "nach der Auslosung mit Namen"}</span>
       </div>
-      <div className="td-bracket">
-        {[0, 1].map((half) => (
-          <div className="td-half" key={half}>
-            <p className="td-half-h">{half === 0 ? "Obere Hälfte" : "Untere Hälfte"}</p>
-            {QUARTERS.slice(half * 2, half * 2 + 2).map(([a, b], i) => (
-              <div className="card td-match" key={i}>
-                <span className="td-match-h">Viertelfinale {half * 2 + i + 1} · {FORMAT.quarter}</span>
-                {[a, b].map((s) => (
-                  <span className="td-side" key={slotText(s)}>
-                    <b>{slotText(s)}</b>
-                    {projected(s) && <em>{projected(s)}</em>}
-                  </span>
-                ))}
+      <div className="tb-heads">
+        <span>Viertelfinale<small>{FORMAT.quarter}</small></span>
+        <span>Halbfinale<small>{FORMAT.semi}</small></span>
+        <span>Finale<small>{FORMAT.final}</small></span>
+      </div>
+      <div className="tb">
+        <div className="tb-col">
+          {[0, 1].map((half) => (
+            <div className="tb-pair" key={half}>
+              {QUARTERS.slice(half * 2, half * 2 + 2).map((pair, i) => (
+                <div className="tb-match" key={i}>
+                  {pair.map((s) => (
+                    <span className="tb-side" key={slotText(s)}>
+                      <b>{s.group}{s.place}</b>
+                      <span className="tb-name">{projected(s) ?? slotText(s)}</span>
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="tb-col">
+          <div className="tb-pair">
+            {[0, 1].map((half) => (
+              <div className="tb-match" key={half}>
+                <span className="tb-side"><span className="tb-name">Sieger VF {half * 2 + 1}</span></span>
+                <span className="tb-side"><span className="tb-name">Sieger VF {half * 2 + 2}</span></span>
               </div>
             ))}
-            <div className="card td-match td-semi">
-              <span className="td-match-h">Halbfinale {half + 1} · {FORMAT.semi}</span>
-              <span className="td-side"><b>Sieger VF {half * 2 + 1}</b></span>
-              <span className="td-side"><b>Sieger VF {half * 2 + 2}</b></span>
-            </div>
           </div>
-        ))}
-        <div className="card td-match td-final">
-          <span className="td-match-h">🏆 Finale · {FORMAT.final}</span>
-          <span className="td-side"><b>Sieger HF 1</b></span>
-          <span className="td-side"><b>Sieger HF 2</b></span>
+        </div>
+        <div className="tb-col">
+          <div className="tb-match tb-final">
+            <span className="tb-cup" aria-hidden="true">🏆</span>
+            <span className="tb-side"><span className="tb-name">Sieger HF 1</span></span>
+            <span className="tb-side"><span className="tb-name">Sieger HF 2</span></span>
+          </div>
         </div>
       </div>
       <p className="hint-left small muted">
