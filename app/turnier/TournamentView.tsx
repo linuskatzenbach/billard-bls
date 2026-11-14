@@ -10,7 +10,7 @@ export function SpecialRules() {
     <div className="tn-special">
       <p className="tn-special-h">Nur im Turnier – anders als sonst!</p>
       <p className="tn-special-text">
-        Nur für die <b>8</b> wird die Tasche angesagt – <b>einmal</b>. Alle anderen Kugeln ohne Ansage.
+        Nur für die <b>8</b> wird die Tasche angesagt – <b>einmal</b>, unmittelbar bevor das Team erneut dran ist.
       </p>
     </div>
   );
@@ -36,6 +36,7 @@ export function GroupCards({
   showElo = true,
   results,
   enterHref,
+  mailHref,
 }: {
   groups: number[][];
   label: (teamId: number) => React.ReactNode;
@@ -46,6 +47,8 @@ export function GroupCards({
   results?: GroupResult[];
   // Link zum Eintragen, wenn der Betrachter diese Paarung eintragen darf.
   enterHref?: (a: number, b: number) => string | null;
+  // mailto-Link an die Gegner (nur eigene, noch offene Paarungen).
+  mailHref?: (a: number, b: number) => string | null;
 }) {
   return (
     <div className="td-groups">
@@ -92,6 +95,7 @@ export function GroupCards({
                     const y = ids[q - 1];
                     const res = resultOf(x, y);
                     const href = !res && enterHref ? enterHref(x, y) : null;
+                    const mail = !res && mailHref ? mailHref(x, y) : null;
                     const side = (id: number) => (
                       <span className={res ? (res.winner === id ? "won" : "lost") : undefined}>{label(id)}</span>
                     );
@@ -101,6 +105,13 @@ export function GroupCards({
                           {side(x)} <i>vs.</i> {side(y)}
                         </span>
                         {res && <span className="td-done" aria-label="gespielt">✓</span>}
+                        {mail && (
+                          <a href={mail} className="td-msg" aria-label="Nachricht an die Gegner">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+                            </svg>
+                          </a>
+                        )}
                         {href && (
                           <Link href={href} className="td-plus" aria-label="Ergebnis eintragen">
                             +

@@ -7,6 +7,7 @@ import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
 import { TOURNAMENT, getDraw, getOpenRequests, getResults, getTeams, registrationOpen } from "@/lib/tournament";
 import { Bracket, GroupCards, Rules, SpecialRules } from "./TournamentView";
+import { GROUPS } from "@/lib/tournament-draw";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
 
@@ -138,6 +139,27 @@ export default async function TurnierPage() {
               const [a, b] = r.key.split("-").map(Number);
               return { a, b, winner: r.winnerTeam };
             })}
+            mailHref={(a, b) => {
+              if (!session) return null;
+              const ta = teams.find((t) => t.id === a);
+              const tb = teams.find((t) => t.id === b);
+              if (!ta || !tb) return null;
+              const me = session.playerId;
+              const mineT = [ta.player1, ta.player2].includes(me) ? ta : [tb.player1, tb.player2].includes(me) ? tb : null;
+              if (!mineT) return null;
+              const other = mineT === ta ? tb : ta;
+              const partner = mineT.player1 === me ? mineT.player2 : mineT.player1;
+              const mailOf = (id: string) => world.players.find((p) => p.id === id)?.email ?? null;
+              const to = [mailOf(other.player1), mailOf(other.player2)].filter(Boolean).join(",");
+              if (!to) return null;
+              const cc = mailOf(partner);
+              const name = (id: string) => toPick(id).name;
+              const g = GROUPS[drawn.groups.findIndex((x) => x.includes(a))] ?? "";
+              const subject = `Billard BLS Turnier – Gruppe ${g}: ${name(mineT.player1)} & ${name(mineT.player2)} vs. ${name(other.player1)} & ${name(other.player2)}`;
+              const body = `Hi ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen in der Gruppenphase gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
+              const q = [cc ? `cc=${encodeURIComponent(cc)}` : "", `subject=${encodeURIComponent(subject)}`, `body=${encodeURIComponent(body)}`].filter(Boolean).join("&");
+              return `mailto:${to}?${q}`;
+            }}
             enterHref={(a, b) => {
               if (!session) return null;
               const ta = teams.find((t) => t.id === a);

@@ -3399,3 +3399,10 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .tn-special ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; line-height: 1.5; }
 .tn-special li + li { margin-top: 0.2rem; }
 .tn-special-text { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+.td-msg {
+  flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  display: grid; place-items: center; text-decoration: none;
+  border: 1px solid var(--line); background: rgba(241, 233, 216, 0.06);
+}
+.td-msg svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: var(--cream); stroke-width: 1.8; stroke-linejoin: round; }
+.td-msg:active { transform: scale(0.94); }
