@@ -24,12 +24,6 @@ export default async function AdminTurnierPage() {
   const seeds: SavedSeed[] =
     draw?.seeds ?? seedTeams(teams, (id) => eloAt(world.matches, id, TOURNAMENT.deadline));
   const seedOf = new Map(seeds.map((s) => [s.teamId, s]));
-  const groupOf = (s: Slot) => draw?.groups[GROUPS.indexOf(s.group)];
-  // Wer käme weiter, wenn in jeder Gruppe Topf 1 vor Topf 2 landet?
-  const projected = (s: Slot) => {
-    const g = groupOf(s);
-    return g ? label(g[s.place - 1]) : null;
-  };
   const slotText = (s: Slot) => `${s.place === 1 ? "Sieger" : "Zweiter"} ${s.group}`;
   const ok = teams.length === TEAM_COUNT;
 
@@ -125,7 +119,7 @@ export default async function AdminTurnierPage() {
 
       <div className="section-h">
         <h2>Turnierbaum</h2>
-        <span>{draw ? "Namen = Favoriten-Tipp" : "nach der Auslosung mit Namen"}</span>
+        <span>Sieger gegen Zweiten</span>
       </div>
       <div className="tb-heads">
         <span>Viertelfinale<small>{FORMAT.quarter}</small></span>
@@ -140,8 +134,7 @@ export default async function AdminTurnierPage() {
                 <div className="tb-match" key={i}>
                   {pair.map((s) => (
                     <span className="tb-side" key={slotText(s)}>
-                      <b>{s.group}{s.place}</b>
-                      <span className="tb-name">{projected(s) ?? slotText(s)}</span>
+                      <span className="tb-name">{slotText(s)}</span>
                     </span>
                   ))}
                 </div>
