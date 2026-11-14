@@ -217,3 +217,39 @@ export async function publishDraw(): Promise<void> {
   const rows = await getSql()`UPDATE tournament_draw SET published = true WHERE tournament = ${T} RETURNING tournament`;
   if (rows.length === 0) throw new TournamentError("Es gibt noch keine Auslosung.");
 }
+
+// ---------------------------------------------------------------------------
+// Ergebnisse. Ein Turnierspiel ist ein ganz normales Doppel (zählt für Elo usw.)
+// plus eine Zeile, die es der Paarung zuordnet.
+
+export type PairResult = { key: string; matchId: number; winnerTeam: number };
+
+// Nur Ergebnisse, deren Spiel noch existiert (nicht per Widerspruch gelöscht).
+export async function getResults(): Promise<PairResult[]> {
+  await ready();
+  const rows = await getSql()`
+    SELECT r.pair_key, r.match_id, r.winner_team FROM tournament_results r
+    WHERE r.tournament = ${T} AND EXISTS (SELECT 1 FROM matches m WHERE m.id = r.match_id)
+  `;
+  return rows.map((r: Row) => ({ key: r.pair_key, matchId: Number(r.match_id), winnerTeam: Number(r.winner_team) }));
+}
+
+// Ergebnis der Paarung festhalten. false = schon (gültig) eingetragen.
+export async function saveResult(key: string, matchId: number, winnerTeam: number): Promise<boolean> {
+  await ready();
+  const sql = getSql();
+  const res = await sql.transaction([
+    sql`
+      DELETE FROM tournament_results r
+      WHERE r.tournament = ${T} AND r.pair_key = ${key}
+        AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.id = r.match_id)
+    `,
+    sql`
+      INSERT INTO tournament_results (tournament, pair_key, match_id, winner_team)
+      VALUES (${T}, ${key}, ${matchId}, ${winnerTeam})
+      ON CONFLICT (tournament, pair_key) DO NOTHING
+      RETURNING pair_key
+    `,
+  ]);
+  return res[1].length > 0;
+}

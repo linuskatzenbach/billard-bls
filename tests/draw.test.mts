@@ -38,4 +38,18 @@ check(half("A", 1) !== half("B", 1) && half("C", 1) !== half("D", 1), "Nr. 1/2 u
 const pairs = d.GROUP_ROUNDS.flat().map(([a, b]) => [a, b].sort().join());
 check(new Set(pairs).size === 6, "Gruppenspielplan: jeder einmal gegen jeden");
 
+
+// Gruppentabelle: Siege, direkter Vergleich, Dreier-Kreis = Relegation.
+{
+  const ids = [1, 2, 3, 4];
+  const R = (a: number, b: number, winner: number) => ({ a, b, winner });
+  const t1 = d.groupStandings(ids, [R(1, 4, 4), R(2, 3, 2), R(1, 3, 1), R(4, 2, 2), R(1, 2, 1), R(3, 4, 3)]);
+  // Siege: 1→2, 2→2, 3→1, 4→1; 1 schlägt 2, 3 schlägt 4
+  check(t1.rows.map((r) => r.teamId).join() === "1,2,3,4" && !t1.relegation, "Tabelle: Gleichstand per direktem Vergleich");
+  const t2 = d.groupStandings(ids, [R(1, 4, 1), R(2, 3, 2), R(1, 3, 3), R(4, 2, 2), R(1, 2, 1), R(3, 4, 3)]);
+  // 1: 2 S (4,2), 2: 2 S (3,4), 3: 2 S (1,4), 4: 0 → Kreis 1>2>3>1
+  check(t2.relegation?.slice().sort().join() === "1,2,3" && t2.rows[3].teamId === 4, "Tabelle: Dreier-Kreis → Relegation");
+  const t3 = d.groupStandings(ids, [R(2, 3, 3)]);
+  check(t3.rows[0].teamId === 3 && t3.rows[1].teamId === 1 && !t3.relegation, "Tabelle während der Gruppenphase");
+}
 process.exit(failed ? 1 : 0);

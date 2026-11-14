@@ -5,7 +5,7 @@ import { getOverview } from "@/lib/server";
 import { picksFor, type Pick } from "@/lib/picks";
 import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
-import { TOURNAMENT, getDraw, getOpenRequests, getTeams, registrationOpen } from "@/lib/tournament";
+import { TOURNAMENT, getDraw, getOpenRequests, getResults, getTeams, registrationOpen } from "@/lib/tournament";
 import { Bracket, GroupCards, Rules } from "./TournamentView";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
@@ -15,11 +15,12 @@ export default async function TurnierPage() {
   await connection();
   const session = await getSession();
   const open = registrationOpen();
-  const [{ world, ov }, teams, requests, draw] = await Promise.all([
+  const [{ world, ov }, teams, requests, draw, pairResults] = await Promise.all([
     getOverview(),
     getTeams(),
     session ? getOpenRequests(session.playerId) : Promise.resolve(null),
     getDraw(),
+    getResults(),
   ]);
   const drawn = draw?.published ? draw : null;
 
@@ -129,11 +130,29 @@ export default async function TurnierPage() {
             groups={drawn.groups}
             label={(id) => {
               const t = teams.find((x) => x.id === id);
-              return t ? `${toPick(t.player1).name} & ${toPick(t.player2).name}` : "–";
+              if (!t) return "–";
+              const a = toPick(t.player1);
+              const b = toPick(t.player2);
+              return (
+                <>
+                  <Link href={`/spieler/${a.id}`}>{a.name}</Link> & <Link href={`/spieler/${b.id}`}>{b.name}</Link>
+                </>
+              );
             }}
-            eloOf={(id) => drawn.seeds.find((x) => x.teamId === id)?.elo ?? 0}
+            eloOf={() => 0}
             mine={myTeam?.id ?? null}
             showElo={false}
+            results={pairResults.map((r) => {
+              const [a, b] = r.key.split("-").map(Number);
+              return { a, b, winner: r.winnerTeam };
+            })}
+            enterHref={(a, b) => {
+              if (!session) return null;
+              const ta = teams.find((t) => t.id === a);
+              const tb = teams.find((t) => t.id === b);
+              const four = [ta?.player1, ta?.player2, tb?.player1, tb?.player2];
+              return four.includes(session.playerId) || session.admin ? `/turnier/eintragen?a=${a}&b=${b}` : null;
+            }}
           />
 
           <div className="section-h">

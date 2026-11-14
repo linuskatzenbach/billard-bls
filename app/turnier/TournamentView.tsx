@@ -1,5 +1,6 @@
 import type React from "react";
-import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, TIEBREAK, type Slot } from "@/lib/tournament-draw";
+import Link from "next/link";
+import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, TIEBREAK, groupStandings, pairKey, type GroupResult, type Slot } from "@/lib/tournament-draw";
 
 // Gemeinsame Bausteine für Turnier-Tab und Admin-Vorschau.
 
@@ -22,49 +23,88 @@ export function GroupCards({
   eloOf,
   mine,
   showElo = true,
+  results,
+  enterHref,
 }: {
   groups: number[][];
   label: (teamId: number) => React.ReactNode;
   eloOf: (teamId: number) => number;
   mine?: number | null;
   showElo?: boolean;
+  // Mit Ergebnissen: Tabelle nach Siegen statt Topf-Reihenfolge.
+  results?: GroupResult[];
+  // Link zum Eintragen, wenn der Betrachter diese Paarung eintragen darf.
+  enterHref?: (a: number, b: number) => string | null;
 }) {
   return (
-        <div className="td-groups">
-          {GROUPS.map((g, gi) => {
-            const ids = groups[gi];
-            const avg = ids.reduce((sum, id) => sum + eloOf(id), 0) / ids.length;
-            return (
-              <div className="card td-group" key={g}>
-                <p className="td-group-h">
-                  Gruppe {g}
-                  {showElo && <span className="td-group-avg">Ø {Math.round(avg)}</span>}
-                </p>
-                <ol className="td-list">
-                  {ids.map((id, pos) => (
-                    <li key={id} className={id === mine ? "mine" : undefined}>
-                      <span className="td-seed">{pos + 1}</span>
-                      <span className="td-name">{label(id)}</span>
-                      {showElo && <span className="td-elo">{Math.round(eloOf(id))}</span>}
-                    </li>
-                  ))}
-                </ol>
-                <div className="td-rounds">
-                  {GROUP_ROUNDS.map((round, ri) => (
-                    <div key={ri} className="td-round">
-                      <span className="td-round-h">Runde {ri + 1}</span>
-                      {round.map(([a, b]) => (
-                        <span key={`${a}-${b}`} className={`td-pair${ids[a - 1] === mine || ids[b - 1] === mine ? " mine" : ""}`}>
-                          {label(ids[a - 1])} <i>vs.</i> {label(ids[b - 1])}
+    <div className="td-groups">
+      {GROUPS.map((g, gi) => {
+        const ids = groups[gi];
+        const avg = ids.reduce((sum, id) => sum + eloOf(id), 0) / ids.length;
+        const table = results ? groupStandings(ids, results) : null;
+        const complete = table ? table.rows.every((r) => r.played === ids.length - 1) : false;
+        const resultOf = (x: number, y: number) => results?.find((r) => pairKey(r.a, r.b) === pairKey(x, y));
+        return (
+          <div className="card td-group" key={g}>
+            <p className="td-group-h">
+              Gruppe {g}
+              {showElo && <span className="td-group-avg">Ø {Math.round(avg)}</span>}
+              {table && <span className="td-group-avg">S:N</span>}
+            </p>
+            <ol className="td-list">
+              {(table ? table.rows.map((r) => r.teamId) : ids).map((id, pos) => {
+                const row = table?.rows.find((r) => r.teamId === id);
+                const cls = [id === mine ? "mine" : "", complete && pos < 2 ? "through" : ""].filter(Boolean).join(" ");
+                return (
+                  <li key={id} className={cls || undefined}>
+                    <span className="td-seed">{pos + 1}</span>
+                    <span className="td-name">{label(id)}</span>
+                    {showElo && <span className="td-elo">{Math.round(eloOf(id))}</span>}
+                    {row && (
+                      <span className="td-wl">
+                        {row.wins}:{row.losses}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+            {table?.relegation && (
+              <p className="td-relegation">Dreiergleichstand im Kreis – Relegation nötig.</p>
+            )}
+            <div className="td-rounds">
+              {GROUP_ROUNDS.map((round, ri) => (
+                <div key={ri} className="td-round">
+                  <span className="td-round-h">Runde {ri + 1}</span>
+                  {round.map(([p, q]) => {
+                    const x = ids[p - 1];
+                    const y = ids[q - 1];
+                    const res = resultOf(x, y);
+                    const href = !res && enterHref ? enterHref(x, y) : null;
+                    const side = (id: number) => (
+                      <span className={res ? (res.winner === id ? "won" : "lost") : undefined}>{label(id)}</span>
+                    );
+                    return (
+                      <span key={`${p}-${q}`} className={`td-pair${x === mine || y === mine ? " mine" : ""}`}>
+                        <span className="td-pair-teams">
+                          {side(x)} <i>vs.</i> {side(y)}
                         </span>
-                      ))}
-                    </div>
-                  ))}
+                        {res && <span className="td-done" aria-label="gespielt">✓</span>}
+                        {href && (
+                          <Link href={href} className="td-plus" aria-label="Ergebnis eintragen">
+                            +
+                          </Link>
+                        )}
+                      </span>
+                    );
+                  })}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

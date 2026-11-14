@@ -96,3 +96,37 @@ export const FORMAT = {
 } as const;
 
 export const TIEBREAK = ["Siege", "Direkter Vergleich"] as const;
+
+// ---------------------------------------------------------------------------
+// Tabelle einer Gruppe. Reihenfolge: Siege, dann direkter Vergleich unter den
+// Punktgleichen. Bei einem Dreiergleichstand im Kreis (jeder hat unter den
+// dreien genau einen Sieg) und fertig gespielter Gruppe: Relegation nötig.
+
+export type GroupResult = { a: number; b: number; winner: number };
+export type StandingRow = { teamId: number; played: number; wins: number; losses: number };
+
+export const pairKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+
+export function groupStandings(ids: number[], results: GroupResult[]): { rows: StandingRow[]; relegation: number[] | null } {
+  const inGroup = results.filter((r) => ids.includes(r.a) && ids.includes(r.b));
+  const rows = ids.map((teamId) => {
+    const mine = inGroup.filter((r) => r.a === teamId || r.b === teamId);
+    const wins = mine.filter((r) => r.winner === teamId).length;
+    return { teamId, played: mine.length, wins, losses: mine.length - wins };
+  });
+  const seedPos = (id: number) => ids.indexOf(id);
+  const miniWins = (id: number, tied: number[]) =>
+    inGroup.filter((r) => r.winner === id && tied.includes(r.a) && tied.includes(r.b)).length;
+  const complete = inGroup.length === (ids.length * (ids.length - 1)) / 2;
+  let relegation: number[] | null = null;
+
+  const sorted: StandingRow[] = [];
+  const byWins = [...new Set(rows.map((r) => r.wins))].sort((x, y) => y - x);
+  for (const w of byWins) {
+    const tied = rows.filter((r) => r.wins === w).map((r) => r.teamId);
+    if (complete && tied.length === 3 && tied.every((id) => miniWins(id, tied) === 1)) relegation = tied;
+    tied.sort((x, y) => miniWins(y, tied) - miniWins(x, tied) || seedPos(x) - seedPos(y));
+    for (const id of tied) sorted.push(rows.find((r) => r.teamId === id)!);
+  }
+  return { rows: sorted, relegation };
+}

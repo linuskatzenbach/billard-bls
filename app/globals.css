@@ -3373,3 +3373,19 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .tb-cup { position: absolute; top: -0.75rem; left: 50%; transform: translateX(-50%); font-size: 1rem; }
 .td-list li.mine { background: rgba(201, 162, 39, 0.1); border-radius: 6px; }
 .td-pair.mine { color: var(--brass-bright); }
+.td-name a, .td-pair a:not(.td-plus) { color: inherit; text-decoration: none; }
+.td-wl { font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 600; opacity: 0.85; }
+.td-list li.through .td-seed { color: var(--brass-bright); opacity: 1; font-weight: 700; }
+.td-relegation { margin: 0.35rem 0 0; font-size: 0.78rem; color: var(--brass-bright); }
+.td-pair { display: flex; align-items: center; gap: 0.5rem; min-height: 1.9rem; }
+.td-pair-teams { flex: 1; min-width: 0; }
+.td-pair .won { font-weight: 700; }
+.td-pair .lost { opacity: 0.55; }
+.td-done { flex: none; color: #9ed6a3; font-weight: 700; width: 1.7rem; text-align: center; }
+.td-plus {
+  flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  display: grid; place-items: center; font-size: 1.15rem; font-weight: 600; line-height: 1;
+  color: var(--cream); text-decoration: none;
+  background: var(--felt-light); border: 1px solid rgba(201, 162, 39, 0.55);
+}
+.td-plus:active { transform: scale(0.94); }

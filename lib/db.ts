@@ -197,6 +197,18 @@ async function ensureSchema(): Promise<void> {
       published BOOLEAN NOT NULL DEFAULT false
     );
   `;
+  // Ergebnisse der Turnierspiele: welches normale Spiel zu welcher Paarung
+  // gehört. Wird das Spiel per Widerspruch gelöscht, zählt die Zeile nicht mehr.
+  await sql`
+    CREATE TABLE IF NOT EXISTS tournament_results (
+      tournament TEXT NOT NULL,
+      pair_key TEXT NOT NULL,
+      match_id INTEGER NOT NULL,
+      winner_team INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (tournament, pair_key)
+    );
+  `;
 
   // Testspiel Julian gegen Linus vom 20.10.2026 entfernen (bereits erledigt).
   await deleteMatchOnce("2026-10-20-testspiel-julian-linus", ["julian", "linus"], "2026-10-20T19:40:00Z");
@@ -336,7 +348,7 @@ async function fixTobiJannik(): Promise<void> {
 // Stand der Datenbank-Einrichtung. Bei jeder Änderung an Tabellen oder
 // einer neuen einmaligen Korrektur oben diesen Namen erhöhen – dann läuft die
 // volle Einrichtung genau einmal neu.
-const SCHEMA_VERSION = "schema-2026-11-14-auslosung-live";
+const SCHEMA_VERSION = "schema-2026-11-14-turnier-ergebnisse";
 
 // Früher liefen bei jedem Kaltstart eines Servers über 20 Prüf- und
 // Korrekturschritte nacheinander, bevor die erste echte Abfrage kam. Jetzt
