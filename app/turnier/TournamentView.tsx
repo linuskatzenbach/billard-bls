@@ -23,6 +23,7 @@ export function Rules() {
         <p><b>Viertel- und Halbfinale:</b> {FORMAT.quarter} · <b>Finale:</b> {FORMAT.final}</p>
         <p><b>Gleichstand:</b> {TIEBREAK.map((t, i) => `${i + 1}) ${t}`).join(" · ")}</p>
         <p><b>Anstoß:</b> Wer anstößt, wird ausgelost.</p>
+        <p><b>Im Team:</b> Die beiden Partner stoßen immer abwechselnd.</p>
         <p><b>Dreiergleichstand im Kreis</b> (jeder hat einen Sieg gegen die anderen): Relegation unter den drei Teams.</p>
       </div>
 
