@@ -4,19 +4,14 @@ import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, TIEBREAK, groupStandings, pairK
 
 // Gemeinsame Bausteine für Turnier-Tab und Admin-Vorschau.
 
-// Turnier-Sonderregeln – anders als sonst üblich, deshalb deutlich hervorgehoben.
+// Turnier-Sonderregel – anders als sonst üblich, deshalb deutlich hervorgehoben.
 export function SpecialRules() {
   return (
     <div className="tn-special">
       <p className="tn-special-h">Nur im Turnier – anders als sonst!</p>
-      <ul>
-        <li>
-          Nur für die <b>8</b> wird die Tasche angesagt – <b>einmal</b>. Alle anderen Kugeln ohne Ansage.
-        </li>
-        <li>
-          Fällt die <b>8 beim Anstoß</b>, hat der Anstoßende <b>gewonnen</b>.
-        </li>
-      </ul>
+      <p className="tn-special-text">
+        Nur für die <b>8</b> wird die Tasche angesagt – <b>einmal</b>. Alle anderen Kugeln ohne Ansage.
+      </p>
     </div>
   );
 }
@@ -27,6 +22,7 @@ export function Rules() {
         <p><b>Gruppenphase:</b> {FORMAT.groups} gegen jeden (3 pro Team) · beste 2 weiter</p>
         <p><b>Viertel- und Halbfinale:</b> {FORMAT.quarter} · <b>Finale:</b> {FORMAT.final}</p>
         <p><b>Gleichstand:</b> {TIEBREAK.map((t, i) => `${i + 1}) ${t}`).join(" · ")}</p>
+        <p><b>8 beim Anstoß:</b> Der Anstoßende hat gewonnen (wie immer).</p>
         <p><b>Dreiergleichstand im Kreis</b> (jeder hat einen Sieg gegen die anderen): Relegation unter den drei Teams.</p>
       </div>
 

@@ -3398,3 +3398,4 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .tn-special-h::before { content: "🎱 "; }
 .tn-special ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; line-height: 1.5; }
 .tn-special li + li { margin-top: 0.2rem; }
+.tn-special-text { margin: 0; font-size: 0.9rem; line-height: 1.5; }
