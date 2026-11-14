@@ -60,6 +60,10 @@ export default async function AdminPage() {
           Neu angemeldet: {signups.map((p) => p.name).join(", ")}
         </p>
       )}
+      <Link href="/profil/admin/turnier" className="nav-link">
+        Turnier-Vorschau: Auslosung &amp; Turnierbaum →
+      </Link>
+
       <div className="section-h">
         <h2>Widersprüche</h2>
         <span>gelöschte Spiele</span>

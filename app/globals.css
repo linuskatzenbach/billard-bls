@@ -3313,3 +3313,31 @@ button.opp.tn-off:hover { background: inherit; }
 button.opp.tn-asked { border-color: var(--brass); }
 .tn-note { font-size: 0.68rem; line-height: 1.2; opacity: 0.8; text-align: center; }
 button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
+
+/* Admin: Turnier-Vorschau (Setzliste, Gruppen, Turnierbaum) */
+.td-rules { padding: 0.7rem 0.9rem; font-size: 0.85rem; line-height: 1.5; margin-bottom: 1rem; }
+.td-rules p { margin: 0.15rem 0; }
+.td-pots, .td-groups { display: grid; gap: 0.6rem; margin-bottom: 1rem; }
+.td-pot, .td-group { padding: 0.6rem 0.8rem; }
+.td-pot-h, .td-group-h { margin: 0 0 0.35rem; font-weight: 700; font-family: "Fraunces", Georgia, serif; }
+.td-pot-h span { font-weight: 400; font-size: 0.75rem; opacity: 0.6; font-family: "Inter", sans-serif; }
+.td-list { list-style: none; margin: 0; padding: 0; }
+.td-list li { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.22rem 0; font-size: 0.9rem; border-top: 1px solid var(--line); }
+.td-list li:first-child { border-top: 0; }
+.td-seed { width: 1.4rem; text-align: right; opacity: 0.55; font-size: 0.8rem; flex: none; font-variant-numeric: tabular-nums; }
+.td-name { flex: 1; min-width: 0; }
+.td-elo { opacity: 0.6; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.td-rounds { margin-top: 0.5rem; display: grid; gap: 0.35rem; }
+.td-round { display: flex; flex-direction: column; font-size: 0.8rem; }
+.td-round-h { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.5; }
+.td-pair i { opacity: 0.5; font-style: normal; padding: 0 0.15rem; }
+.td-bracket { display: grid; gap: 0.9rem; margin-bottom: 0.8rem; }
+.td-half { display: grid; gap: 0.45rem; padding-left: 0.7rem; border-left: 2px solid var(--line); }
+.td-half-h { margin: 0; font-size: 0.75rem; opacity: 0.6; }
+.td-match { padding: 0.5rem 0.8rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.td-match-h { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.55; }
+.td-side { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem; }
+.td-side em { opacity: 0.6; font-size: 0.8rem; text-align: right; }
+.td-semi { margin-left: 0.8rem; }
+.td-final { border-color: rgba(201, 162, 39, 0.55); background: rgba(201, 162, 39, 0.08); }
+.td-groups { margin-top: 0.8rem; }

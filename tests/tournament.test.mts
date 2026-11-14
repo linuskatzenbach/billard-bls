@@ -66,4 +66,12 @@ check(new Set(members).size === members.length, "niemand ist in zwei Teams");
 await rejects(t.sendRequest("julian", players[0] ?? "x", after), "nach Anmeldeschluss keine Anfragen mehr");
 check((await t.countIncomingRequests("julian")) === 0 || t.registrationOpen(), "kein roter Punkt nach Anmeldeschluss");
 
+// Auslosung speichern, neu losen, nach Veröffentlichung gesperrt.
+await t.saveDraw([[1, 2, 3, 4]], [{ teamId: 1, elo: 1600, seed: 1, pot: 1 }]);
+await t.saveDraw([[4, 3, 2, 1]], [{ teamId: 4, elo: 1700, seed: 1, pot: 1 }]);
+const dr = await t.getDraw();
+check(dr?.groups[0].join() === "4,3,2,1" && dr.seeds[0].elo === 1700 && !dr.published, "Auslosung gespeichert und neu gelost");
+await getSql()`UPDATE tournament_draw SET published = true`;
+await rejects(t.saveDraw([[1]], []), "veröffentlichte Auslosung bleibt fest");
+
 process.exit(failed === 0 ? 0 : 1);

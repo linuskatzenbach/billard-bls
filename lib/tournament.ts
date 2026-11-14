@@ -180,3 +180,33 @@ export async function acceptRequest(requestId: number, toId: string, now = new D
     throw err;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Auslosung. Gespeichert werden die Gruppen (Team-IDs in Topf-Reihenfolge) und
+// die Setzliste zum Zeitpunkt der Auslosung. Solange nicht veröffentlicht,
+// sieht sie nur der Admin und kann neu losen.
+
+export type SavedSeed = { teamId: number; elo: number; seed: number; pot: number };
+export type DrawRow = { groups: number[][]; seeds: SavedSeed[]; drawnAt: string; published: boolean };
+
+export async function getDraw(): Promise<DrawRow | null> {
+  await ready();
+  const rows = await getSql()`SELECT groups, seeds, drawn_at, published FROM tournament_draw WHERE tournament = ${T}`;
+  const r = rows[0];
+  if (!r) return null;
+  const parse = (v: unknown) => (typeof v === "string" ? JSON.parse(v) : v);
+  return { groups: parse(r.groups), seeds: parse(r.seeds), drawnAt: iso(r.drawn_at), published: Boolean(r.published) };
+}
+
+export async function saveDraw(groups: number[][], seeds: SavedSeed[]): Promise<void> {
+  await ready();
+  const sql = getSql();
+  const rows = await sql`
+    INSERT INTO tournament_draw (tournament, groups, seeds)
+    VALUES (${T}, ${JSON.stringify(groups)}::jsonb, ${JSON.stringify(seeds)}::jsonb)
+    ON CONFLICT (tournament) DO UPDATE SET groups = EXCLUDED.groups, seeds = EXCLUDED.seeds, drawn_at = now()
+    WHERE tournament_draw.published = false
+    RETURNING tournament
+  `;
+  if (rows.length === 0) throw new TournamentError("Die Auslosung ist schon veröffentlicht und kann nicht mehr geändert werden.");
+}
