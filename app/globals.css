@@ -3341,3 +3341,5 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .td-semi { margin-left: 0.8rem; }
 .td-final { border-color: rgba(201, 162, 39, 0.55); background: rgba(201, 162, 39, 0.08); }
 .td-groups { margin-top: 0.8rem; }
+.td-group-h { display: flex; justify-content: space-between; align-items: baseline; }
+.td-group-avg { font-family: "Inter", sans-serif; font-weight: 600; font-size: 0.8rem; opacity: 0.7; font-variant-numeric: tabular-nums; }

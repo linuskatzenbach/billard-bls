@@ -89,9 +89,13 @@ export default async function AdminTurnierPage() {
         <div className="td-groups">
           {GROUPS.map((g, gi) => {
             const ids = draw.groups[gi];
+            const avg = ids.reduce((sum, id) => sum + (seedOf.get(id)?.elo ?? 0), 0) / ids.length;
             return (
               <div className="card td-group" key={g}>
-                <p className="td-group-h">Gruppe {g}</p>
+                <p className="td-group-h">
+                  Gruppe {g}
+                  <span className="td-group-avg">Ø {Math.round(avg)}</span>
+                </p>
                 <ol className="td-list">
                   {ids.map((id, pos) => (
                     <li key={id}>
