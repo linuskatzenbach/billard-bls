@@ -210,3 +210,10 @@ export async function saveDraw(groups: number[][], seeds: SavedSeed[]): Promise<
   `;
   if (rows.length === 0) throw new TournamentError("Die Auslosung ist schon veröffentlicht und kann nicht mehr geändert werden.");
 }
+
+// Auslosung veröffentlichen: ab dann im Turnier-Tab sichtbar und fest.
+export async function publishDraw(): Promise<void> {
+  await ready();
+  const rows = await getSql()`UPDATE tournament_draw SET published = true WHERE tournament = ${T} RETURNING tournament`;
+  if (rows.length === 0) throw new TournamentError("Es gibt noch keine Auslosung.");
+}

@@ -3371,3 +3371,5 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .tb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-final { border-color: rgba(201, 162, 39, 0.6); background: rgba(201, 162, 39, 0.1); padding-top: 0.5rem; }
 .tb-cup { position: absolute; top: -0.75rem; left: 50%; transform: translateX(-50%); font-size: 1rem; }
+.td-list li.mine { background: rgba(201, 162, 39, 0.1); border-radius: 6px; }
+.td-pair.mine { color: var(--brass-bright); }

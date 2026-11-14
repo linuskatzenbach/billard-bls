@@ -5,7 +5,8 @@ import { getOverview } from "@/lib/server";
 import { picksFor, type Pick } from "@/lib/picks";
 import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
-import { TOURNAMENT, getOpenRequests, getTeams, registrationOpen } from "@/lib/tournament";
+import { TOURNAMENT, getDraw, getOpenRequests, getTeams, registrationOpen } from "@/lib/tournament";
+import { Bracket, GroupCards, Rules } from "./TournamentView";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
 
@@ -14,11 +15,13 @@ export default async function TurnierPage() {
   await connection();
   const session = await getSession();
   const open = registrationOpen();
-  const [{ world, ov }, teams, requests] = await Promise.all([
+  const [{ world, ov }, teams, requests, draw] = await Promise.all([
     getOverview(),
     getTeams(),
     session ? getOpenRequests(session.playerId) : Promise.resolve(null),
+    getDraw(),
   ]);
+  const drawn = draw?.published ? draw : null;
 
   const toPick = (id: string): Pick => {
     const s = ov.byId[id];
@@ -116,6 +119,37 @@ export default async function TurnierPage() {
         <p className="empty small">Du bist bei diesem Turnier nicht dabei – zuschauen und anfeuern geht trotzdem.</p>
       )}
 
+      {drawn && (
+        <>
+          <div className="section-h">
+            <h2>Gruppen</h2>
+            <span>beste 2 kommen weiter</span>
+          </div>
+          <GroupCards
+            groups={drawn.groups}
+            label={(id) => {
+              const t = teams.find((x) => x.id === id);
+              return t ? `${toPick(t.player1).name} & ${toPick(t.player2).name}` : "–";
+            }}
+            eloOf={(id) => drawn.seeds.find((x) => x.teamId === id)?.elo ?? 0}
+            mine={myTeam?.id ?? null}
+          />
+
+          <div className="section-h">
+            <h2>Turnierbaum</h2>
+            <span>Sieger gegen Zweiten</span>
+          </div>
+          <Bracket />
+
+          <div className="section-h">
+            <h2>Regeln</h2>
+          </div>
+          <Rules />
+        </>
+      )}
+
+      {!drawn && (
+      <>
       <div className="section-h">
         <h2>{open ? "Angemeldete Teams" : "Die Teams"}</h2>
         <span>{teams.length === 1 ? "1 Team" : `${teams.length} Teams`}</span>
@@ -150,8 +184,11 @@ export default async function TurnierPage() {
         </ul>
       )}
 
+      </>
+      )}
+
       <p className="tn-foot small muted">
-        Die Turnierspiele zählen ganz normal für Elo, Wochenzocker und Abzeichen. Gruppen und Spielplan kommen nach Anmeldeschluss.
+        Die Turnierspiele zählen ganz normal für Elo, Wochenzocker und Abzeichen. {drawn ? "Elo bei den Gruppen: Schnitt zum Anmeldeschluss." : "Gruppen und Spielplan kommen nach Anmeldeschluss."}
       </p>
     </>
   );

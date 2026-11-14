@@ -336,7 +336,7 @@ async function fixTobiJannik(): Promise<void> {
 // Stand der Datenbank-Einrichtung. Bei jeder Änderung an Tabellen oder
 // einer neuen einmaligen Korrektur oben diesen Namen erhöhen – dann läuft die
 // volle Einrichtung genau einmal neu.
-const SCHEMA_VERSION = "schema-2026-11-14-auslosung";
+const SCHEMA_VERSION = "schema-2026-11-14-auslosung-live";
 
 // Früher liefen bei jedem Kaltstart eines Servers über 20 Prüf- und
 // Korrekturschritte nacheinander, bevor die erste echte Abfrage kam. Jetzt
@@ -357,6 +357,8 @@ async function setup(): Promise<void> {
   await renameTobi();
   await fixTobiJannik();
   await masterToMlb();
+  // 14.11.2026: Linus' Auslosung des 2v2-Turniers veröffentlichen (Turnier-Tab).
+  await sql`UPDATE tournament_draw SET published = true WHERE tournament = '2v2-herbst-2026'`;
   await sql`INSERT INTO migrations (name) VALUES (${SCHEMA_VERSION}) ON CONFLICT (name) DO NOTHING`;
 }
 
