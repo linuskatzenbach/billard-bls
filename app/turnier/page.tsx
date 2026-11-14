@@ -156,7 +156,7 @@ export default async function TurnierPage() {
               const name = (id: string) => toPick(id).name;
               const g = GROUPS[drawn.groups.findIndex((x) => x.includes(a))] ?? "";
               const subject = `Billard BLS Turnier – Gruppe ${g}: ${name(mineT.player1)} & ${name(mineT.player2)} vs. ${name(other.player1)} & ${name(other.player2)}`;
-              const body = `Hi ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen in der Gruppenphase gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
+              const body = `Moin ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen in der Gruppenphase gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
               const q = [cc ? `cc=${encodeURIComponent(cc)}` : "", `subject=${encodeURIComponent(subject)}`, `body=${encodeURIComponent(body)}`].filter(Boolean).join("&");
               return `mailto:${to}?${q}`;
             }}
