@@ -3389,3 +3389,12 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
   background: var(--felt-light); border: 1px solid rgba(201, 162, 39, 0.55);
 }
 .td-plus:active { transform: scale(0.94); }
+.tn-special {
+  margin: 0.4rem 0 1.1rem; padding: 0.75rem 0.95rem;
+  border: 1.5px solid var(--brass-bright); border-radius: 10px;
+  background: rgba(224, 188, 74, 0.12);
+}
+.tn-special-h { margin: 0 0 0.35rem; font-weight: 700; color: var(--brass-bright); font-size: 0.95rem; }
+.tn-special-h::before { content: "🎱 "; }
+.tn-special ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; line-height: 1.5; }
+.tn-special li + li { margin-top: 0.2rem; }

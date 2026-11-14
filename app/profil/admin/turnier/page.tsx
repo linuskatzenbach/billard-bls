@@ -7,7 +7,7 @@ import { TOURNAMENT, getDraw, getTeams, type SavedSeed } from "@/lib/tournament"
 import { TEAM_COUNT, eloAt, seedTeams } from "@/lib/tournament-draw";
 import DrawButton from "./DrawButton";
 import PublishButton from "./PublishButton";
-import { Bracket, GroupCards, Rules } from "@/app/turnier/TournamentView";
+import { Bracket, GroupCards, Rules, SpecialRules } from "@/app/turnier/TournamentView";
 
 // Interne Vorschau: Setzliste, Auslosung, Gruppen-Spielplan und Turnierbaum.
 // Nur für den Admin – im Turnier-Tab erscheint davon noch nichts.
@@ -36,6 +36,7 @@ export default async function AdminTurnierPage() {
       <h1>Turnier-Vorschau</h1>
       <p className="subtitle">Setzliste und Auslosung – erst nach dem Veröffentlichen im Turnier-Tab sichtbar.</p>
 
+      <SpecialRules />
       <Rules />
 
       <div className="section-h">

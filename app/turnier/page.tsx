@@ -6,7 +6,7 @@ import { picksFor, type Pick } from "@/lib/picks";
 import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
 import { TOURNAMENT, getDraw, getOpenRequests, getResults, getTeams, registrationOpen } from "@/lib/tournament";
-import { Bracket, GroupCards, Rules } from "./TournamentView";
+import { Bracket, GroupCards, Rules, SpecialRules } from "./TournamentView";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
 
@@ -97,16 +97,6 @@ export default async function TurnierPage() {
         </div>
       )}
 
-      {session && myTeam && (
-        <div className="card tn-mine">
-          <p className="tn-mine-title">Du bist dabei! 🎱</p>
-          <p>
-            Dein Partner: <b>{toPick(myTeam.player1 === session.playerId ? myTeam.player2 : myTeam.player1).name}</b>
-          </p>
-          <p className="small muted">Euer Team steht fest und kann nicht mehr geändert werden.</p>
-        </div>
-      )}
-
       {session && !myTeam && open && requests && (
         <TeamActions
           incoming={requests.incoming.map((r) => ({ id: r.id, from: toPick(r.from) }))}
@@ -122,9 +112,11 @@ export default async function TurnierPage() {
 
       {drawn && (
         <>
+          <SpecialRules />
+
           <div className="section-h">
             <h2>Gruppen</h2>
-            <span>beste 2 kommen weiter</span>
+            <span>Best of 1 · beste 2 kommen weiter</span>
           </div>
           <GroupCards
             groups={drawn.groups}
