@@ -21,11 +21,13 @@ export function GroupCards({
   label,
   eloOf,
   mine,
+  showElo = true,
 }: {
   groups: number[][];
   label: (teamId: number) => React.ReactNode;
   eloOf: (teamId: number) => number;
   mine?: number | null;
+  showElo?: boolean;
 }) {
   return (
         <div className="td-groups">
@@ -36,14 +38,14 @@ export function GroupCards({
               <div className="card td-group" key={g}>
                 <p className="td-group-h">
                   Gruppe {g}
-                  <span className="td-group-avg">Ø {Math.round(avg)}</span>
+                  {showElo && <span className="td-group-avg">Ø {Math.round(avg)}</span>}
                 </p>
                 <ol className="td-list">
                   {ids.map((id, pos) => (
                     <li key={id} className={id === mine ? "mine" : undefined}>
                       <span className="td-seed">{pos + 1}</span>
                       <span className="td-name">{label(id)}</span>
-                      <span className="td-elo">{Math.round(eloOf(id))}</span>
+                      {showElo && <span className="td-elo">{Math.round(eloOf(id))}</span>}
                     </li>
                   ))}
                 </ol>

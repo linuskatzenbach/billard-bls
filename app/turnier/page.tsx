@@ -133,6 +133,7 @@ export default async function TurnierPage() {
             }}
             eloOf={(id) => drawn.seeds.find((x) => x.teamId === id)?.elo ?? 0}
             mine={myTeam?.id ?? null}
+            showElo={false}
           />
 
           <div className="section-h">
@@ -188,7 +189,7 @@ export default async function TurnierPage() {
       )}
 
       <p className="tn-foot small muted">
-        Die Turnierspiele zählen ganz normal für Elo, Wochenzocker und Abzeichen. {drawn ? "Elo bei den Gruppen: Schnitt zum Anmeldeschluss." : "Gruppen und Spielplan kommen nach Anmeldeschluss."}
+        Die Turnierspiele zählen ganz normal für Elo, Wochenzocker und Abzeichen. {drawn ? "" : "Gruppen und Spielplan kommen nach Anmeldeschluss."}
       </p>
     </>
   );
