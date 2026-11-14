@@ -132,9 +132,13 @@ export default async function TurnierPage() {
                 </>
               );
             }}
-            eloOf={() => 0}
+            eloOf={(id) => {
+              // Aktueller Elo-Schnitt des Teams (nicht der Stand zum Anmeldeschluss).
+              const t = teams.find((x) => x.id === id);
+              return t ? (toPick(t.player1).elo + toPick(t.player2).elo) / 2 : 0;
+            }}
             mine={myTeam?.id ?? null}
-            showElo={false}
+            showGroupAvg={false}
             results={pairResults.map((r) => {
               const [a, b] = r.key.split("-").map(Number);
               return { a, b, winner: r.winnerTeam };

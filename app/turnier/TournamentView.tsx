@@ -36,6 +36,7 @@ export function GroupCards({
   eloOf,
   mine,
   showElo = true,
+  showGroupAvg = showElo,
   results,
   enterHref,
   mailHref,
@@ -45,6 +46,8 @@ export function GroupCards({
   eloOf: (teamId: number) => number;
   mine?: number | null;
   showElo?: boolean;
+  // Ø der ganzen Gruppe im Kopf (nur Admin-Vorschau).
+  showGroupAvg?: boolean;
   // Mit Ergebnissen: Tabelle nach Siegen statt Topf-Reihenfolge.
   results?: GroupResult[];
   // Link zum Eintragen, wenn der Betrachter diese Paarung eintragen darf.
@@ -64,7 +67,7 @@ export function GroupCards({
           <div className="card td-group" key={g}>
             <p className="td-group-h">
               Gruppe {g}
-              {showElo && <span className="td-group-avg">Ø {Math.round(avg)}</span>}
+              {showGroupAvg && <span className="td-group-avg">Ø {Math.round(avg)}</span>}
               {table && <span className="td-group-avg">S:N</span>}
             </p>
             <ol className="td-list">
@@ -75,7 +78,7 @@ export function GroupCards({
                   <li key={id} className={cls || undefined}>
                     <span className="td-seed">{pos + 1}</span>
                     <span className="td-name">{label(id)}</span>
-                    {showElo && <span className="td-elo">{Math.round(eloOf(id))}</span>}
+                    {showElo && <span className="td-elo" title="Elo-Schnitt des Teams">Ø {Math.round(eloOf(id))}</span>}
                     {row && (
                       <span className="td-wl">
                         {row.wins}:{row.losses}
