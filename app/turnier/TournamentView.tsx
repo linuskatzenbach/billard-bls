@@ -77,8 +77,10 @@ export function GroupCards({
                 return (
                   <li key={id} className={cls || undefined}>
                     <span className="td-seed">{pos + 1}</span>
-                    <span className="td-name">{label(id)}</span>
-                    {showElo && <span className="td-elo" title="Elo-Schnitt des Teams">Ø {Math.round(eloOf(id))}</span>}
+                    <span className="td-name">
+                      {label(id)}
+                      {showElo && <span className="td-elo" title="Elo-Schnitt des Teams">Ø {Math.round(eloOf(id))}</span>}
+                    </span>
                     {row && (
                       <span className="td-wl">
                         {row.wins}:{row.losses}

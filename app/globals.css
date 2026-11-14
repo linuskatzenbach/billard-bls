@@ -3326,7 +3326,7 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .td-list li:first-child { border-top: 0; }
 .td-seed { width: 1.4rem; text-align: right; opacity: 0.55; font-size: 0.8rem; flex: none; font-variant-numeric: tabular-nums; }
 .td-name { flex: 1; min-width: 0; }
-.td-elo { opacity: 0.6; font-size: 0.8rem; font-variant-numeric: tabular-nums; flex: none; white-space: nowrap; }
+.td-elo { opacity: 0.6; font-size: 0.8rem; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: 0.45rem; }
 .td-rounds { margin-top: 0.5rem; display: grid; gap: 0.35rem; }
 .td-round { display: flex; flex-direction: column; font-size: 0.8rem; }
 .td-round-h { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.5; }
