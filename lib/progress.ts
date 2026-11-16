@@ -14,6 +14,8 @@ export const MAX_LEVEL = 18;
 export const UPSET_GAP = 150; // Upset-Bonus ab so viel Elo Unterschied
 
 export const XP = { game: 10, win: 5, upset: 15 } as const;
+// Turnierspiele geben dreifache Spiel-XP (Spiel, Sieg und Upset-Bonus).
+export const TOURNAMENT_XP_FACTOR = 3;
 
 // XP, die man insgesamt braucht, um ein Level zu erreichen (Index = Level).
 // Grobe Richtwerte für sehr aktive Spieler (~15 Spiele pro Woche plus die
@@ -129,15 +131,15 @@ export type Overview = {
 };
 
 // Doppel geben gleich viel XP wie ein Einzel; der Upset-Bonus zählt im
-// Doppel nach dem Elo-Schnitt der Teams.
-export function gameXp(m: MatchRow, playerId: string): number {
+// Doppel nach dem Elo-Schnitt der Teams. Turnierspiele zählen dreifach.
+export function gameXp(m: MatchRow, playerId: string, tournament = false): number {
   const won = seatOf(m, playerId)?.won ?? false;
   let xp = XP.game;
   if (won) {
     xp += XP.win;
     if (underdogGap(m) >= UPSET_GAP) xp += XP.upset;
   }
-  return xp;
+  return tournament ? xp * TOURNAMENT_XP_FACTOR : xp;
 }
 
 export function computeOverview(world: World, now = new Date()): Overview {
@@ -185,6 +187,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
   const weeks: Record<string, Set<string>> = {};
   const eloBefore7: Record<string, number> = {};
 
+  const tIds = tournamentMatchIds(world);
   for (const m of world.matches) {
     const wk = weekKey(m.created_at);
     const t = new Date(m.created_at).getTime();
@@ -196,7 +199,7 @@ export function computeOverview(world: World, now = new Date()): Overview {
       if (dbl) s.doubles++;
       s.elo = after;
       s.peakElo = Math.max(s.peakElo, after);
-      const xp = gameXp(m, id);
+      const xp = gameXp(m, id, tIds.has(m.id));
       s.xp += xp;
       if (won) {
         s.wins++;
@@ -333,7 +336,7 @@ export function gamesOf(world: World, playerId: string): PlayerGame[] {
       eloAfter: seat.after,
       createdAt: m.created_at,
       enteredBy: m.entered_by,
-      xp: gameXp(m, playerId),
+      xp: gameXp(m, playerId, tIds.has(m.id)),
       upset: seat.won && underdogGap(m) >= UPSET_GAP,
     });
   }

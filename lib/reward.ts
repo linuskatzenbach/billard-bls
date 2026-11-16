@@ -1,5 +1,5 @@
 import type { MatchRow, World } from "./db";
-import { computeOverview, gameXp, UPSET_GAP, XP } from "./progress";
+import { computeOverview, gameXp, tournamentMatchIds, TOURNAMENT_XP_FACTOR, UPSET_GAP, XP } from "./progress";
 import { badgeLabel, QUEST_BONUS, type Metal } from "./achievements";
 import { seatOf, underdogGap } from "./match";
 
@@ -34,6 +34,10 @@ export function computeReward(world: World, match: MatchRow, playerId: string, a
   const lines: Reward["lines"] = [{ label: "Spiel gespielt", xp: XP.game }];
   if (won) lines.push({ label: "Sieg", xp: XP.win });
   if (won && gap >= UPSET_GAP) lines.push({ label: `Upset-Bonus (${oppName} +${gap})`, xp: XP.upset });
+  if (tournamentMatchIds(afterWorld ?? world).has(match.id)) {
+    const base = gameXp(match, playerId);
+    lines.push({ label: `Turnierspiel (×${TOURNAMENT_XP_FACTOR})`, xp: base * (TOURNAMENT_XP_FACTOR - 1) });
+  }
 
   // neu geschaffte Wochenaufgaben
   const doneBefore = new Set(before.ach[playerId]?.quests.filter((q) => q.done).map((q) => q.key));
@@ -53,7 +57,6 @@ export function computeReward(world: World, match: MatchRow, playerId: string, a
       ? before.ranked.filter((o) => o.id !== playerId && (b.rank === null || o.rank! < b.rank) && (after.byId[o.id].rank ?? 99) > a.rank!).map((o) => o.name)
       : [];
 
-  void gameXp;
   return {
     won,
     opponent: oppName,

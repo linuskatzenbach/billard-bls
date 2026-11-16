@@ -354,5 +354,15 @@ test("Turnier-Abzeichen: Spiele, Siege, Viertel-/Halbfinale/Finale", () => {
   assert.ok(b.has("turnierluft:1") && b.has("turnierloewe:1") && !b.has("turnierloewe:2"));
 });
 
+test("Turnierspiele geben dreifache Spiel-XP", () => {
+  const { world, play } = makeWorld({ a: "2022", b: "2022", c: "2022", d: "2022" });
+  const m1 = play(["a", "b"], ["c", "d"], "2026-11-15T18:00:00Z");
+  const before = computeOverview(world).byId;
+  world.tournaments = [{ id: "t", teams: [], groups: null, results: [{ key: "1-2", matchId: m1.id, winnerTeam: 1 }] }];
+  const after = computeOverview(world).byId;
+  assert.equal(after.a.gameXp, before.a.gameXp * 3); // Sieg: (10 + 5) × 3
+  assert.equal(after.c.gameXp, before.c.gameXp * 3); // Niederlage: 10 × 3
+});
+
 console.log(failed === 0 ? `OK – ${passed} Logik-Tests bestanden` : `FEHLER – ${failed} von ${passed + failed} Logik-Tests fehlgeschlagen`);
 process.exit(failed === 0 ? 0 : 1);
