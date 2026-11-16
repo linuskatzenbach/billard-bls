@@ -43,9 +43,18 @@ export type MatchRow = {
 // Für bestehenden Code, der nur die Elo-Felder braucht.
 export type MatchRecord = MatchRow;
 
+// Turnierdaten, soweit sie für Abzeichen gebraucht werden (alle Turniere).
+export type TournamentFacts = {
+  id: string;
+  teams: { id: number; player1: string; player2: string }[];
+  groups: number[][] | null; // nur, wenn die Auslosung veröffentlicht ist
+  results: { key: string; matchId: number; winnerTeam: number }[]; // nur bestehende Spiele
+};
+
 export type World = {
   players: PlayerRow[];
   matches: MatchRow[]; // chronologisch, älteste zuerst
+  tournaments?: TournamentFacts[];
 };
 
 const iso = (v: unknown): string =>
@@ -395,7 +404,7 @@ export function ready(): Promise<void> {
 async function loadWorld(): Promise<World> {
   await ready();
   const sql = getSql();
-  const [players, matches] = await Promise.all([
+  const [players, matches, tTeams, tDraws, tResults] = await Promise.all([
     sql`
       SELECT id, name, email, cohort, hidden, founder, is_admin, created_at
       FROM players ORDER BY created_at ASC, id ASC
@@ -407,7 +416,24 @@ async function loadWorld(): Promise<World> {
              winner2_elo_after, loser2_elo_after
       FROM matches ORDER BY created_at ASC, id ASC
     `,
+    sql`SELECT tournament, id, player1_id, player2_id FROM tournament_teams ORDER BY id ASC`,
+    sql`SELECT tournament, groups FROM tournament_draw WHERE published = true`,
+    sql`
+      SELECT r.tournament, r.pair_key, r.match_id, r.winner_team FROM tournament_results r
+      WHERE EXISTS (SELECT 1 FROM matches m WHERE m.id = r.match_id)
+      ORDER BY r.match_id ASC
+    `,
   ]);
+  const tById = new Map<string, TournamentFacts>();
+  const T = (id: string) => {
+    let t = tById.get(id);
+    if (!t) tById.set(id, (t = { id, teams: [], groups: null, results: [] }));
+    return t;
+  };
+  for (const r of tTeams) T(r.tournament).teams.push({ id: Number(r.id), player1: r.player1_id, player2: r.player2_id });
+  for (const r of tDraws) T(r.tournament).groups = typeof r.groups === "string" ? JSON.parse(r.groups) : r.groups;
+  for (const r of tResults)
+    T(r.tournament).results.push({ key: r.pair_key, matchId: Number(r.match_id), winnerTeam: Number(r.winner_team) });
   return {
     players: players.map((p) => ({
       id: p.id,
@@ -420,6 +446,7 @@ async function loadWorld(): Promise<World> {
       created_at: iso(p.created_at),
     })),
     matches: matches.map(mapMatch),
+    tournaments: [...tById.values()],
   };
 }
 

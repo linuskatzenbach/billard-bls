@@ -300,5 +300,59 @@ test("Wochenaufgaben: gegnerbezogene Aufgaben tragen immer den Zusatz „im Einz
   assert.ok(seen > 0, "keine gegnerbezogene Aufgabe gezogen – Test aussagelos");
 });
 
+// ---- Turnier-Abzeichen -----------------------------------------------------
+
+test("Turnier-Abzeichen: Spiele, Siege, Viertel-/Halbfinale/Finale", () => {
+  const ids = "abcdefgh".split("");
+  const { world, play } = makeWorld(Object.fromEntries(ids.map((p) => [p, "2022"])));
+  // Teams: 1 = a+b, 2 = c+d, 3 = e+f, 4 = g+h; eine Gruppe, Reihenfolge = Topf
+  const team: Record<number, string[]> = { 1: ["a", "b"], 2: ["c", "d"], 3: ["e", "f"], 4: ["g", "h"] };
+  const results: { key: string; matchId: number; winnerTeam: number }[] = [];
+  let day = 14;
+  const res = (key: string, w: number, l: number) => {
+    const m = play(team[w], team[l], `2026-11-${day++}T18:00:00Z`);
+    results.push({ key, matchId: m.id, winnerTeam: w });
+  };
+  // Ein normales Doppel außerhalb des Turniers zählt nicht.
+  play(["a", "b"], ["c", "d"], "2026-11-13T18:00:00Z");
+  world.tournaments = [
+    { id: "t", teams: Object.entries(team).map(([id, [p1, p2]]) => ({ id: Number(id), player1: p1, player2: p2 })), groups: [[1, 2, 3, 4]], results },
+  ];
+  res("1-4", 1, 4);
+  res("2-3", 2, 3);
+  res("1-3", 1, 3);
+  const mid = badgesOf(world, "a");
+  assert.ok(mid.has("turnierluft:-1") === false);
+  assert.ok(!mid.has("turnierluft:0"), "erst 2 Turnierspiele");
+  assert.ok(mid.has("turnierloewe:0"), "1 Turniersieg = Bronze");
+  assert.ok(!mid.has("pokaljagd:0"), "Gruppe noch nicht fertig");
+  res("2-4", 2, 4);
+  res("1-2", 1, 2);
+  res("3-4", 3, 4);
+  let b = badgesOf(world, "a");
+  assert.ok(b.has("turnierluft:0") && b.has("pokaljagd:0"), "Gruppe fertig, Erster → Viertelfinale");
+  assert.ok(badgesOf(world, "d").has("pokaljagd:0"), "Zweiter → Viertelfinale");
+  assert.ok(!badgesOf(world, "e").has("pokaljagd:0"), "Dritter scheidet aus");
+  // Viertelfinale Best of 3: Team 1 gewinnt 2:1 → Halbfinale erreicht
+  res("vf1:1", 1, 2);
+  res("vf1:2", 2, 1);
+  assert.ok(!badgesOf(world, "a").has("pokaljagd:1"));
+  res("vf1:3", 1, 2);
+  b = badgesOf(world, "a");
+  assert.ok(b.has("pokaljagd:1") && !b.has("pokaljagd:2"));
+  assert.ok(!badgesOf(world, "c").has("pokaljagd:1"));
+  // Halbfinale 2:0 → Finale
+  res("hf1:1", 1, 3);
+  res("hf1:2", 1, 3);
+  b = badgesOf(world, "a");
+  assert.ok(b.has("pokaljagd:2"), "Finale erreicht");
+  assert.ok(badgesOf(world, "e").has("pokaljagd:1"), "wer im Halbfinale spielt, hat es erreicht");
+  const p = computeAchievements(world, new Date("2026-12-31T12:00:00Z")).a.progress;
+  assert.equal(p.turnierluft.value, 8);
+  assert.equal(p.turnierloewe.value, 7);
+  assert.equal(p.pokaljagd.value, 3);
+  assert.ok(b.has("turnierluft:1") && b.has("turnierloewe:1") && !b.has("turnierloewe:2"));
+});
+
 console.log(failed === 0 ? `OK – ${passed} Logik-Tests bestanden` : `FEHLER – ${failed} von ${passed + failed} Logik-Tests fehlgeschlagen`);
 process.exit(failed === 0 ? 0 : 1);

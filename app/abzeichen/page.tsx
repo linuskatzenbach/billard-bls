@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getOverview } from "@/lib/server";
-import { BADGES, TIER_METAL, TIER_NAME, badgeLabel } from "@/lib/achievements";
+import { BADGES, TIER_METAL, TIER_NAME, badgeLabel, tierText, valueText as describeValue } from "@/lib/achievements";
 import BadgeCard, { type BadgeView } from "./BadgeCard";
 
 const NEW_MS = 3 * 86_400_000;
@@ -44,7 +44,7 @@ export default async function AbzeichenPage({
   let bestRatio = -1;
   for (const def of BADGES) {
     const p = a.progress[def.id];
-    if (!def.tiers || !p || p.next === null || p.nextTier === null) continue;
+    if (!def.tiers || def.tierDesc || !p || p.next === null || p.nextTier === null) continue;
     const prevN = p.nextTier > 0 ? def.tiers[p.nextTier - 1] : def.id === "aufsteiger" ? 1500 : 0;
     const ratio = (p.value - prevN) / (p.next - prevN);
     if (ratio > bestRatio) {
@@ -79,7 +79,7 @@ export default async function AbzeichenPage({
       const nextN = p?.next ?? null;
       const prevN = p && p.nextTier !== null && p.nextTier > 0 ? def.tiers[p.nextTier - 1] : def.id === "aufsteiger" ? 1500 : 0;
       const value = p?.value ?? 0;
-      const valueText = def.desc.replace("{n}", fmt(value));
+      const valueText = describeValue(def, value);
       // Spitzenreiter dieser Kategorie
       let best = -Infinity;
       let leaders: string[] = [];
@@ -97,8 +97,13 @@ export default async function AbzeichenPage({
         locked: !e,
         isNew: !!e && now - new Date(e.at).getTime() < NEW_MS,
         name: e ? label.name : def.name,
-        line: nextN !== null ? `${fmt(value)} / ${fmt(nextN)} ${def.unit}` : valueText,
-        bar: nextN !== null ? Math.max(0, Math.min(100, Math.round(((value - prevN) / (nextN - prevN)) * 100))) : undefined,
+        line:
+          nextN !== null && def.tierDesc && p?.nextTier != null
+            ? `Nächstes Ziel: ${tierText(def, p.nextTier)}`
+            : nextN !== null
+              ? `${fmt(value)} / ${fmt(nextN)} ${def.unit}`
+              : valueText,
+        bar: nextN !== null && !def.tierDesc ? Math.max(0, Math.min(100, Math.round(((value - prevN) / (nextN - prevN)) * 100))) : undefined,
         detail: {
           title: def.name,
           desc: "Drei Stufen: Bronze, Silber, Gold",
@@ -106,11 +111,11 @@ export default async function AbzeichenPage({
           tiers: def.tiers.map((n, t) => ({
             label: `${TIER_NAME[t]} · ${["I", "II", "III"][t]}`,
             metal: TIER_METAL[t],
-            need: def.desc.replace("{n}", fmt(n)),
+            need: tierText(def, t),
             done: earned.has(`${def.id}:${t}`),
             pct: pct(`${def.id}:${t}`),
           })),
-          leader: best > 0 ? `${leaders.slice(0, 3).join(", ")} · ${def.desc.replace("{n}", fmt(best))}` : undefined,
+          leader: best > 0 ? `${leaders.slice(0, 3).join(", ")} · ${describeValue(def, best)}` : undefined,
         },
       };
     }

@@ -130,3 +130,16 @@ export function groupStandings(ids: number[], results: GroupResult[]): { rows: S
   }
   return { rows: sorted, relegation };
 }
+
+// ---------------------------------------------------------------------------
+// K.O.-Runde: Ergebnis-Schlüssel je Einzelspiel einer Serie, z. B. "vf1:1"
+// (Viertelfinale 1, Spiel 1), "hf2:3", "f:4". Gruppenspiele haben "12-17".
+// Nötige Siege für das Weiterkommen je Serie (Best of 3 / Best of 5).
+export const KO_ROUNDS = ["vf", "hf", "f"] as const;
+export type KoRound = (typeof KO_ROUNDS)[number];
+export const KO_WINS: Record<KoRound, number> = { vf: 2, hf: 2, f: 3 };
+export const koKey = (round: KoRound, series: number | null, game: number) => `${round}${series ?? ""}:${game}`;
+export function parseKoKey(key: string): { round: KoRound; series: string } | null {
+  const m = /^(vf|hf|f)(\d*):\d+$/.exec(key);
+  return m ? { round: m[1] as KoRound, series: `${m[1]}${m[2]}` } : null;
+}

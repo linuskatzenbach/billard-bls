@@ -2,6 +2,7 @@ import type { MatchRow, World } from "./db";
 import { START_ELO } from "./elo";
 import { DAY, addWeeks, berlinHour, dayKey, weekEndIso, weekKey, weekLastDay, weekdayName } from "./time";
 import { isDoubles, seats, sidesBefore } from "./match";
+import { KO_WINS, groupStandings, pairKey, parseKoKey } from "./tournament-draw";
 
 // Abzeichen und Wochenaufgaben. Alles wird aus den gespeicherten Spielen
 // berechnet (auch rückwirkend) – es gibt dafür keine eigene Tabelle.
@@ -34,6 +35,8 @@ export type BadgeDef = {
   xp?: number; // für einstufige
   tiers?: number[]; // Schwellen Bronze/Silber/Gold
   unit?: string; // für die Fortschrittsanzeige, z. B. "Spiele"
+  tierDesc?: string[]; // eigener Text je Stufe statt desc mit {n}
+  noneDesc?: string; // Stand ohne erreichte Stufe (nur mit tierDesc)
 };
 
 export const TIER_XP = [50, 150, 400];
@@ -51,6 +54,18 @@ export const BADGES: BadgeDef[] = [
   { id: "teamplayer", name: "Teamplayer", icon: "👥", desc: "{n} Doppel gespielt", tiers: [10, 30, 75], unit: "Doppel" },
   { id: "eingespielt", name: "Eingespielt", icon: "🔗", desc: "{n} Doppel-Siege mit demselben Partner", tiers: [3, 10, 25], unit: "Siege" },
   { id: "partnerboerse", name: "Partnerbörse", icon: "🔀", desc: "Doppel mit {n} verschiedenen Partnern", tiers: [3, 6, 12], unit: "Partner" },
+  { id: "turnierluft", name: "Turnierluft", icon: "🎟️", desc: "{n} Turnierspiele", tiers: [3, 6, 12], unit: "Turnierspiele" },
+  { id: "turnierloewe", name: "Turnierlöwe", icon: "🦁", desc: "{n} Turnierspiele gewonnen", tiers: [1, 4, 8], unit: "Siege" },
+  {
+    id: "pokaljagd",
+    name: "Pokaljagd",
+    icon: "🎖️",
+    desc: "{n}",
+    tiers: [1, 2, 3],
+    unit: "",
+    tierDesc: ["Viertelfinale erreicht", "Halbfinale erreicht", "Finale erreicht"],
+    noneDesc: "Noch keine K.O.-Runde erreicht",
+  },
 
   { id: "erster-sieg", name: "Erster Sieg", icon: "✨", desc: "Der allererste Sieg", metal: "bronze", xp: 25 },
   { id: "revanche", name: "Revanche", icon: "🔁", desc: "Jemanden direkt nach einer Niederlage gegen ihn geschlagen", metal: "bronze", xp: 75 },
@@ -72,7 +87,20 @@ export const BADGES: BadgeDef[] = [
   { id: "brueckenbauer", name: "Brückenbauer", icon: "🌉", desc: "Mit einem Partner aus einem anderen Jahrgang gegen zwei aus dem eigenen Jahrgang gewonnen", secret: true, metal: "secret", xp: 100 },
 ];
 
-export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 47
+export const BADGE_TOTAL = BADGES.reduce((n, b) => n + (b.tiers ? b.tiers.length : 1), 0); // 56
+
+// Text einer Stufe (t = 0, 1, 2) bzw. eines Werts eines gestuften Abzeichens.
+export function tierText(def: BadgeDef, t: number): string {
+  if (def.tierDesc) return def.tierDesc[t];
+  return def.desc.replace("{n}", def.tiers![t].toLocaleString("de-DE"));
+}
+export function valueText(def: BadgeDef, value: number): string {
+  if (def.tierDesc) {
+    const t = def.tiers!.filter((n) => value >= n).length - 1;
+    return t < 0 ? def.noneDesc ?? "" : def.tierDesc[t];
+  }
+  return def.desc.replace("{n}", value.toLocaleString("de-DE"));
+}
 
 export type EarnedBadge = {
   key: string; // "stammgast:1" bzw. "underdog"
@@ -88,7 +116,7 @@ export function badgeLabel(e: { id: string; tier: number | null }): { name: stri
     return {
       name: `${def.name} ${["I", "II", "III"][e.tier]}`,
       icon: def.icon,
-      desc: def.desc.replace("{n}", def.tiers[e.tier].toLocaleString("de-DE")),
+      desc: tierText(def, e.tier),
       metal: TIER_METAL[e.tier],
     };
   }
@@ -683,6 +711,71 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     }
   }
 
+  // Turniere: Spiele, Siege und erreichte K.O.-Runde (1 VF, 2 HF, 3 Finale)
+  const tGames: Record<string, number> = {};
+  const tWins: Record<string, number> = {};
+  const tRound: Record<string, number> = {};
+  const matchById = new Map(world.matches.map((m) => [m.id, m]));
+  for (const tour of world.tournaments ?? []) {
+    const results = tour.results
+      .map((r) => ({ ...r, m: matchById.get(r.matchId) }))
+      .filter((r): r is typeof r & { m: MatchRow } => !!r.m)
+      .sort((a, b) => a.m.created_at.localeCompare(b.m.created_at) || a.m.id - b.m.id);
+    const teamOf = new Map<string, number>();
+    const players = new Map<number, string[]>();
+    for (const t of tour.teams) {
+      teamOf.set(t.player1, t.id);
+      teamOf.set(t.player2, t.id);
+      players.set(t.id, [t.player1, t.player2]);
+    }
+    for (const r of results) {
+      for (const seat of seats(r.m)) {
+        tGames[seat.id] = (tGames[seat.id] ?? 0) + 1;
+        if (seat.won) tWins[seat.id] = (tWins[seat.id] ?? 0) + 1;
+        giveTiers(seat.id, "turnierluft", tGames[seat.id], r.m.created_at);
+        giveTiers(seat.id, "turnierloewe", tWins[seat.id] ?? 0, r.m.created_at);
+      }
+    }
+    const reach = (teamId: number, round: number, at: string) => {
+      for (const id of players.get(teamId) ?? []) {
+        tRound[id] = Math.max(tRound[id] ?? 0, round);
+        for (let k = 1; k <= round; k++) give(id, "pokaljagd", k - 1, at);
+      }
+    };
+    // Viertelfinale: Gruppe fertig gespielt und unter den besten zwei
+    // (nicht bei offener Relegation).
+    for (const g of tour.groups ?? []) {
+      const inGroup = results.filter((r) => {
+        const [a, b] = r.key.split("-").map(Number);
+        return g.includes(a) && g.includes(b) && r.key === pairKey(a, b);
+      });
+      const gr = inGroup.map((r) => {
+        const [a, b] = r.key.split("-").map(Number);
+        return { a, b, winner: r.winnerTeam };
+      });
+      const { rows, relegation } = groupStandings(g, gr);
+      if (inGroup.length < (g.length * (g.length - 1)) / 2) continue;
+      const at = inGroup[inGroup.length - 1].m.created_at;
+      for (const row of rows.slice(0, 2)) if (!relegation?.includes(row.teamId)) reach(row.teamId, 1, at);
+    }
+    // K.O.-Runde: wer in einer Runde spielt, hat sie erreicht; wer eine Serie
+    // gewinnt, hat die nächste erreicht.
+    const seriesWins = new Map<string, Map<number, number>>();
+    for (const r of results) {
+      const ko = parseKoKey(r.key);
+      if (!ko) continue;
+      const level = ko.round === "vf" ? 1 : ko.round === "hf" ? 2 : 3;
+      const loserTeam = teamOf.get(r.m.loser_id);
+      reach(r.winnerTeam, level, r.m.created_at);
+      if (loserTeam !== undefined) reach(loserTeam, level, r.m.created_at);
+      const sw = seriesWins.get(ko.series) ?? new Map<number, number>();
+      seriesWins.set(ko.series, sw);
+      const w = (sw.get(r.winnerTeam) ?? 0) + 1;
+      sw.set(r.winnerTeam, w);
+      if (w === KO_WINS[ko.round] && level < 3) reach(r.winnerTeam, level + 1, r.m.created_at);
+    }
+  }
+
   // Dauerbrenner: längste Serie aktiver Wochen
   for (const id of visible) {
     const sorted = [...S(id).weeks].sort();
@@ -734,6 +827,9 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
       teamplayer: s.dGames,
       eingespielt: Math.max(0, ...s.winsWith.values()),
       partnerboerse: s.partners.size,
+      turnierluft: tGames[id] ?? 0,
+      turnierloewe: tWins[id] ?? 0,
+      pokaljagd: tRound[id] ?? 0,
     };
     const progress: PlayerAchievements["progress"] = {};
     for (const def of BADGES) {

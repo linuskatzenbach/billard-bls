@@ -4,7 +4,7 @@ import { disputeMatch, getWorld, recordMatch } from "@/lib/db";
 import { computeReward } from "@/lib/reward";
 import { jsonError, readJson, refreshWorld } from "@/lib/server";
 import { reportError } from "@/lib/alert";
-import { getDraw, getResults, getTeams, saveResult } from "@/lib/tournament";
+import { TOURNAMENT, getDraw, getResults, getTeams, saveResult } from "@/lib/tournament";
 import { pairKey } from "@/lib/tournament-draw";
 
 // Ergebnis eines Gruppenspiels eintragen. Dürfen nur die vier Beteiligten. Es entsteht ein ganz normales Doppel (Elo, Widerspruch usw.).
@@ -52,7 +52,19 @@ export async function POST(req: NextRequest) {
   }
   refreshWorld();
 
-  const reward = computeReward(world, match, session.playerId);
+  // Für den Belohnungsbildschirm: Stand nach dem Spiel inkl. neuem Turnierergebnis
+  // (Turnier-Abzeichen).
+  const tournaments = world.tournaments ?? [];
+  const afterWorld = {
+    ...world,
+    matches: [...world.matches, match],
+    tournaments: tournaments.some((t) => t.id === TOURNAMENT.id)
+      ? tournaments.map((t) =>
+          t.id === TOURNAMENT.id ? { ...t, results: [...t.results, { key, matchId: match.id, winnerTeam: winner }] } : t,
+        )
+      : [...tournaments, { id: TOURNAMENT.id, teams, groups: draw.groups, results: [{ key, matchId: match.id, winnerTeam: winner }] }],
+  };
+  const reward = computeReward(world, match, session.playerId, afterWorld);
   return NextResponse.json({
     success: true,
     matchId: match.id,

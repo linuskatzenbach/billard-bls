@@ -20,9 +20,10 @@ export type Reward = {
   leader: boolean;
 };
 
-export function computeReward(world: World, match: MatchRow, playerId: string): Reward {
+// afterWorld: optional der Stand nach dem Spiel (z. B. mit dem neuen Turnierergebnis).
+export function computeReward(world: World, match: MatchRow, playerId: string, afterWorld?: World): Reward {
   const before = computeOverview(world);
-  const after = computeOverview({ players: world.players, matches: [...world.matches, match] });
+  const after = computeOverview(afterWorld ?? { ...world, matches: [...world.matches, match] });
   const b = before.byId[playerId];
   const a = after.byId[playerId];
   const seat = seatOf(match, playerId)!;
