@@ -3102,6 +3102,17 @@ button.dbl-save { margin-top: 0.6rem; border-radius: 10px; padding: 0.95rem; }
 .player-name.team span, .player-name.team a { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vs.duo { display: flex; flex-direction: column; align-items: center; gap: 3px; opacity: 1; }
 .vs.duo .chip-2v2 { margin-right: 0; text-transform: none; }
+.chip-cup { padding: 1px 4px; }
+.chip-cup svg {
+  display: block;
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .vs.duo .vs-t { opacity: 0.4; }
 .avg { font-size: 0.7rem; opacity: 0.5; margin-right: -0.15rem; }
 

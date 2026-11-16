@@ -300,6 +300,7 @@ export type PlayerGame = {
   opponentIds: string[];
   partnerId: string | null; // nur im Doppel
   doubles: boolean;
+  tournament: boolean; // Turnierspiel
   won: boolean;
   eloBefore: number;
   eloAfter: number;
@@ -309,8 +310,14 @@ export type PlayerGame = {
   upset: boolean;
 };
 
+// IDs aller Spiele, die zu einem Turnier gehören.
+export function tournamentMatchIds(world: World): Set<number> {
+  return new Set((world.tournaments ?? []).flatMap((t) => t.results.map((r) => r.matchId)));
+}
+
 export function gamesOf(world: World, playerId: string): PlayerGame[] {
   const out: PlayerGame[] = [];
+  const tIds = tournamentMatchIds(world);
   for (const m of world.matches) {
     const seat = seatOf(m, playerId);
     if (!seat) continue;
@@ -320,6 +327,7 @@ export function gamesOf(world: World, playerId: string): PlayerGame[] {
       opponentIds: seat.opps,
       partnerId: seat.partner,
       doubles: isDoubles(m),
+      tournament: tIds.has(m.id),
       won: seat.won,
       eloBefore: seat.before,
       eloAfter: seat.after,

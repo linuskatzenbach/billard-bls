@@ -1,3 +1,4 @@
+import TourneyChip from "./TourneyChip";
 import Link from "next/link";
 import type { World } from "@/lib/db";
 import { MIN_GAMES_RANKED, gamesOf, wreathName, type Overview, type PlayerSummary } from "@/lib/progress";
@@ -478,7 +479,7 @@ export default function ProfileView({
                 <div className="game" key={g.id}>
                   <span className={`res ${g.won ? "s" : "n"}`}>{g.won ? "S" : "N"}</span>
                   <span className="game-main">
-                    {g.doubles && <span className="chip-2v2">2v2</span>}
+                    {g.tournament ? <TourneyChip /> : g.doubles && <span className="chip-2v2">2v2</span>}
                     vs. <Link href={`/spieler/${g.opponentId}`}>{nameOf(g.opponentId)}</Link>
                     {g.doubles && (
                       <>

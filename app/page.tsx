@@ -9,7 +9,8 @@ import {
   type RankRow,
   type StatEntry,
 } from "@/lib/stats";
-import { MIN_GAMES_RANKED, type PlayerSummary } from "@/lib/progress";
+import { MIN_GAMES_RANKED, tournamentMatchIds, type PlayerSummary } from "@/lib/progress";
+import TourneyChip from "./TourneyChip";
 import { getOverview } from "@/lib/server";
 import { getSession } from "@/lib/auth";
 import { addWeeks, weekKey, weekLastDay, weekdayShort } from "@/lib/time";
@@ -165,6 +166,7 @@ export default async function HomePage({
 
   const allMatches = world.matches;
   const matches = allMatches.slice(-10).reverse();
+  const tIds = tournamentMatchIds(world);
   const stats = computeStats(
     allMatches,
     ov.visible.map((s) => s.id),
@@ -276,7 +278,7 @@ export default async function HomePage({
                       <Link href={`/spieler/${m.winner2_id}`}>{nameOf(m.winner2_id!)}</Link>
                     </span>
                     <span className="vs duo">
-                      <span className="chip-2v2">2v2</span>
+                      {tIds.has(m.id) ? <TourneyChip /> : <span className="chip-2v2">2v2</span>}
                       <span className="vs-t">vs</span>
                     </span>
                     <span className="player-name loser team">
