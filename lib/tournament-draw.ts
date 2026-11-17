@@ -95,11 +95,12 @@ export const FORMAT = {
   final: "Best of 5",
 } as const;
 
-export const TIEBREAK = ["Siege", "Direkter Vergleich"] as const;
+export const TIEBREAK = ["Punkte (Siege − Niederlagen)", "Direkter Vergleich"] as const;
 
 // ---------------------------------------------------------------------------
-// Tabelle einer Gruppe. Reihenfolge: Siege, dann direkter Vergleich unter den
-// Punktgleichen. Bei einem Dreiergleichstand im Kreis (jeder hat unter den
+// Tabelle einer Gruppe. Reihenfolge: Punkte (Siege minus Niederlagen), dann
+// direkter Vergleich unter den Punktgleichen. So steht ein Team mit 0:0 vor
+// einem mit 0:1, solange noch nicht alle gleich viele Spiele haben. Bei einem Dreiergleichstand im Kreis (jeder hat unter den
 // dreien genau einen Sieg) und fertig gespielter Gruppe: Relegation nötig.
 
 export type GroupResult = { a: number; b: number; winner: number };
@@ -121,9 +122,10 @@ export function groupStandings(ids: number[], results: GroupResult[]): { rows: S
   let relegation: number[] | null = null;
 
   const sorted: StandingRow[] = [];
-  const byWins = [...new Set(rows.map((r) => r.wins))].sort((x, y) => y - x);
-  for (const w of byWins) {
-    const tied = rows.filter((r) => r.wins === w).map((r) => r.teamId);
+  const points = (r: StandingRow) => r.wins - r.losses;
+  const byPoints = [...new Set(rows.map(points))].sort((x, y) => y - x);
+  for (const p of byPoints) {
+    const tied = rows.filter((r) => points(r) === p).map((r) => r.teamId);
     if (complete && tied.length === 3 && tied.every((id) => miniWins(id, tied) === 1)) relegation = tied;
     tied.sort((x, y) => miniWins(y, tied) - miniWins(x, tied) || seedPos(x) - seedPos(y));
     for (const id of tied) sorted.push(rows.find((r) => r.teamId === id)!);
