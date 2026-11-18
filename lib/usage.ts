@@ -64,9 +64,12 @@ export function computeUsage(world: World, now = new Date(), from = UNI_OPENING)
   const allVisible = world.players.filter((p) => !p.hidden);
   const today = dayKey(now);
   const matches = world.matches.filter((m) => dayKey(m.created_at) >= from);
-  // Spieler, die schon vor der Öffnung da waren, zählen am ersten Tag als Bestand.
-  const before = allVisible.filter((p) => dayKey(p.created_at) < from).length;
-  const visible = allVisible.filter((p) => dayKey(p.created_at) >= from);
+  // Gründungsmitglieder (und alle, die schon vor der Öffnung da waren) zählen
+  // am ersten Tag als Bestand. Ihr created_at taugt nicht als Beitrittsdatum,
+  // weil die Spielertabelle erst nach der Öffnung angelegt wurde.
+  const isNew = (p: (typeof allVisible)[number]) => !p.founder && dayKey(p.created_at) >= from;
+  const before = allVisible.filter((p) => !isNew(p)).length;
+  const visible = allVisible.filter(isNew);
   const firstDay = from <= today ? from : null;
 
   // Pro Tag sammeln
