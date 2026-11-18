@@ -5,6 +5,10 @@ import { DAY, dayKey } from "./time";
 // Alles wird aus den gespeicherten Spielern und Spielen berechnet –
 // Testspiele werden nie gespeichert und zählen daher nicht mit.
 
+// Tag der Uni-Öffnung (deutsche Zeit). Die Nutzungszahlen zählen erst ab hier;
+// Spiele aus der Testphase mit den Gründungsmitgliedern bleiben außen vor.
+export const UNI_OPENING = "2026-10-24";
+
 export type UsageDay = {
   day: string; // YYYY-MM-DD (deutsche Zeit)
   games: number;
@@ -23,7 +27,8 @@ export type UsageWeek = {
 export type Usage = {
   firstDay: string | null;
   daysRunning: number;
-  players: number; // sichtbare Spieler
+  players: number; // sichtbare Spieler (heute, inkl. Gründungsmitglieder)
+  newPlayers: number; // seit der Uni-Öffnung dazugekommen
   withAccount: number; // davon mit hinterlegter Uni-Mail
   activeEver: number; // mind. ein Spiel gespielt
   games: number;
@@ -55,16 +60,14 @@ const mondayOf = (k: string) => {
 const participants = (m: World["matches"][number]) =>
   [m.winner_id, m.loser_id, m.winner2_id, m.loser2_id].filter((x): x is string => Boolean(x));
 
-export function computeUsage(world: World, now = new Date()): Usage {
-  const visible = world.players.filter((p) => !p.hidden);
-  const matches = world.matches;
+export function computeUsage(world: World, now = new Date(), from = UNI_OPENING): Usage {
+  const allVisible = world.players.filter((p) => !p.hidden);
   const today = dayKey(now);
-
-  const dayKeys = [
-    ...matches.map((m) => dayKey(m.created_at)),
-    ...visible.map((p) => dayKey(p.created_at)),
-  ].sort();
-  const firstDay = dayKeys[0] ?? null;
+  const matches = world.matches.filter((m) => dayKey(m.created_at) >= from);
+  // Spieler, die schon vor der Öffnung da waren, zählen am ersten Tag als Bestand.
+  const before = allVisible.filter((p) => dayKey(p.created_at) < from).length;
+  const visible = allVisible.filter((p) => dayKey(p.created_at) >= from);
+  const firstDay = from <= today ? from : null;
 
   // Pro Tag sammeln
   const gamesByDay = new Map<string, number>();
@@ -96,7 +99,7 @@ export function computeUsage(world: World, now = new Date()): Usage {
 
   const days: UsageDay[] = [];
   if (firstDay) {
-    let totalPlayers = 0;
+    let totalPlayers = before;
     let totalGames = 0;
     for (let ms = keyToMs(firstDay); ms <= keyToMs(today); ms += DAY) {
       const day = msToKey(ms);
@@ -140,9 +143,10 @@ export function computeUsage(world: World, now = new Date()): Usage {
   return {
     firstDay,
     daysRunning: days.length,
-    players: visible.length,
-    withAccount: visible.filter((p) => p.email).length,
-    activeEver: visible.filter((p) => everActive.has(p.id)).length,
+    players: allVisible.length,
+    newPlayers: visible.length,
+    withAccount: allVisible.filter((p) => p.email).length,
+    activeEver: allVisible.filter((p) => everActive.has(p.id)).length,
     games: matches.length,
     doubles: matches.filter((m) => m.winner2_id).length,
     games7: last7.games,
@@ -153,7 +157,7 @@ export function computeUsage(world: World, now = new Date()): Usage {
     avgPerActiveDay: playDays ? matches.length / playDays : 0,
     playDays,
     bestDay,
-    cohorts: new Set(visible.map((p) => p.cohort).filter(Boolean)).size,
+    cohorts: new Set(allVisible.map((p) => p.cohort).filter(Boolean)).size,
     tournamentTeams,
     days,
     weeks,

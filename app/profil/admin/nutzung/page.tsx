@@ -42,7 +42,7 @@ export default async function UsagePage() {
 
   const tiles: [string, string][] = [
     [de.format(u.players), "Spieler"],
-    [de.format(u.games), "Spiele"],
+    [de.format(u.games), "Spiele seit Öffnung"],
     [de.format(u.active30), "aktiv (30 Tage)"],
     [de.format(u.games30), "Spiele (30 Tage)"],
     [de.format(u.active7), "aktiv (7 Tage)"],
@@ -56,7 +56,7 @@ export default async function UsagePage() {
       </Link>
       <h1>Nutzung</h1>
       <p className="subtitle">
-        {u.firstDay ? `seit ${dateDe(u.firstDay)} · ${u.daysRunning} Tage online` : "noch keine Daten"}
+        {u.firstDay ? `seit der Uni-Öffnung am ${dateDe(u.firstDay)} · ${u.daysRunning} Tage` : "noch keine Daten"}
       </p>
 
       <div className="usage-tiles">
@@ -70,11 +70,15 @@ export default async function UsagePage() {
 
       <div className="card usage-facts">
         <div>
+          <span>Neu dazugekommen seit Öffnung</span>
+          <b>{u.newPlayers}</b>
+        </div>
+        <div>
           <span>Mit eigenem Konto (Uni-Mail)</span>
           <b>{u.withAccount}</b>
         </div>
         <div>
-          <span>Haben schon gespielt</span>
+          <span>Haben seit Öffnung gespielt</span>
           <b>{u.activeEver}</b>
         </div>
         <div>
@@ -117,13 +121,13 @@ export default async function UsagePage() {
         <h2>Spiele pro Woche</h2>
         <span>Mo–So</span>
       </div>
-      <Bars items={u.weeks.map((w) => ({ label: shortDe(w.start), value: w.games }))} unit="Spiele" />
+      <Bars items={u.weeks.map((w) => ({ label: shortDe(u.firstDay && w.start < u.firstDay ? u.firstDay : w.start), value: w.games }))} unit="Spiele" />
 
       <div className="section-h">
         <h2>Aktive Spieler pro Woche</h2>
         <span>mind. 1 Spiel</span>
       </div>
-      <Bars items={u.weeks.map((w) => ({ label: shortDe(w.start), value: w.activePlayers }))} unit="Spieler" />
+      <Bars items={u.weeks.map((w) => ({ label: shortDe(u.firstDay && w.start < u.firstDay ? u.firstDay : w.start), value: w.activePlayers }))} unit="Spieler" />
 
       <div className="section-h">
         <h2>Letzte 14 Tage</h2>
@@ -135,7 +139,8 @@ export default async function UsagePage() {
         Alle Tageswerte als Tabelle (CSV) herunterladen →
       </a>
       <p className="hint-left">
-        Gezählt werden echte, gespeicherte Spiele (Testspiele nicht, widersprochene Spiele auch nicht). Seitenaufrufe
+        Gezählt werden echte, gespeicherte Spiele ab der Uni-Öffnung (Spiele aus der Zeit davor, Testspiele und
+        widersprochene Spiele nicht). Seitenaufrufe
         misst ab jetzt Vercel unter „Analytics“.
       </p>
     </>
