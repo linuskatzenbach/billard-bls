@@ -60,6 +60,9 @@ export default async function AdminPage() {
           Neu angemeldet: {signups.map((p) => p.name).join(", ")}
         </p>
       )}
+      <Link href="/profil/admin/nutzung" className="nav-link">
+        Nutzung: Spiele &amp; aktive Spieler →
+      </Link>
       <Link href="/profil/admin/turnier" className="nav-link">
         Turnier-Vorschau: Auslosung &amp; Turnierbaum →
       </Link>

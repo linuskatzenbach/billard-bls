@@ -3,6 +3,7 @@ import "./globals.css";
 import BreakSplash from "./BreakSplash";
 import TabBar from "./TabBar";
 import RewardOverlay from "./RewardOverlay";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Billard-Rangliste",
@@ -44,6 +45,7 @@ export default function RootLayout({
         <div className="container">{children}</div>
         <TabBar />
         <RewardOverlay />
+        <Analytics />
       </body>
     </html>
   );

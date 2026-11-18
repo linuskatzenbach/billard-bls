@@ -28,14 +28,16 @@ export default function DatenschutzPage() {
 
       <h2>Wofür?</h2>
       <p>
-        Nur für den Betrieb der Rangliste: Anmeldung, Anzeige der Spiele und Ranglisten. Keine Werbung, kein Tracking,
-        keine Weitergabe an Dritte zu anderen Zwecken.
+        Nur für den Betrieb der Rangliste: Anmeldung, Anzeige der Spiele und Ranglisten. Keine Werbung, keine
+        Werbe-Tracker, keine Weitergabe an Dritte zu anderen Zwecken.
       </p>
 
       <h2>Technik</h2>
       <p>
         Die Seite läuft bei Vercel (Hosting), die Daten liegen in einer Datenbank bei Neon. Anmelde-Mails werden über
-        Gmail verschickt. Es wird nur ein Anmelde-Cookie gesetzt, das für die Funktion nötig ist.
+        Gmail verschickt. Es wird nur ein Anmelde-Cookie gesetzt, das für die Funktion nötig ist. Um zu sehen, wie oft die Seite
+        genutzt wird, zählen wir Seitenaufrufe anonym mit Vercel Web Analytics – ohne Cookies und ohne dass einzelne
+        Besucher wiedererkannt werden.
       </p>
 
       <h2>Löschen</h2>

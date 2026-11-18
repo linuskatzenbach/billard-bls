@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
+    "@vercel/analytics": "^2.0.1",
     "next": "16.3.6",
     "nodemailer": "^10.2.1",
     "react": "^19.1.0",
@@ -21,7 +22,7 @@
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.5.3",
-    "tsx": "^4.20.0"
+    "tsx": "^4.20.0",
+    "typescript": "^5.5.3"
   }
 }

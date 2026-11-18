@@ -3417,3 +3417,19 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 }
 .td-msg svg { width: 0.95rem; height: 0.95rem; fill: none; stroke: var(--cream); stroke-width: 1.8; stroke-linejoin: round; }
 .td-msg:active { transform: scale(0.94); }
+
+/* Admin: Nutzung */
+.usage-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 14px 0 10px; }
+.usage-tile { display: flex; flex-direction: column; align-items: center; padding: 12px 6px; gap: 2px; }
+.usage-tile b { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.usage-tile span { font-size: 0.75rem; opacity: 0.65; }
+.usage-facts { display: flex; flex-direction: column; padding: 4px 12px; margin-bottom: 6px; }
+.usage-facts > div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; font-size: 0.88rem; }
+.usage-facts > div + div { border-top: 1px solid var(--line); }
+.usage-facts span { opacity: 0.7; }
+.usage-bars { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; }
+.usage-bar-row { display: grid; grid-template-columns: 3.2rem 1fr auto; align-items: center; gap: 8px; font-size: 0.8rem; }
+.usage-bar-label { opacity: 0.65; font-variant-numeric: tabular-nums; }
+.usage-bar-track { height: 10px; border-radius: 5px; background: rgba(241, 233, 216, 0.06); overflow: hidden; }
+.usage-bar { display: block; height: 100%; border-radius: 5px; background: #c9a54a; min-width: 2px; }
+.usage-bar-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
