@@ -17,7 +17,7 @@ const initial = (p: Pick) => p.name.charAt(0).toUpperCase();
 export type FormTeam = { id: number; players: [Pick, Pick] };
 
 // Turnierspiel eintragen: die Paarung steht fest, nur das Siegerteam antippen.
-export default function TournamentResultForm({ a, b }: { a: FormTeam; b: FormTeam }) {
+export default function TournamentResultForm({ a, b, rel = null }: { a: FormTeam; b: FormTeam; rel?: number | null }) {
   const router = useRouter();
   const [winner, setWinner] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -34,7 +34,7 @@ export default function TournamentResultForm({ a, b }: { a: FormTeam; b: FormTea
         res = await fetch("/api/turnier/ergebnis", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ a: a.id, b: b.id, winner }),
+          body: JSON.stringify({ a: a.id, b: b.id, winner, ...(rel !== null ? { rel } : {}) }),
         });
       } catch {
         throw new Error("Verbindung fehlgeschlagen. Bitte erneut versuchen.");

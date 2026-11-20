@@ -52,4 +52,25 @@ check(new Set(pairs).size === 6, "Gruppenspielplan: jeder einmal gegen jeden");
   const t3 = d.groupStandings(ids, [R(2, 3, 3)]);
   check(t3.rows[0].teamId === 3 && t3.rows[1].teamId === 1 && !t3.relegation, "Tabelle während der Gruppenphase");
 }
+// Relegation: nochmal jeder gegen jeden; Kreis → nächste Runde.
+{
+  const ids = [1, 2, 3, 4];
+  const R = (a: number, b: number, winner: number) => ({ a, b, winner });
+  const circle = [R(1, 4, 1), R(2, 3, 2), R(1, 3, 3), R(4, 2, 2), R(1, 2, 1), R(3, 4, 3)];
+  const L = (round: number, a: number, b: number, winner: number) => ({ round, a, b, winner });
+  const open1 = d.groupStandings(ids, circle, [L(1, 1, 2, 2)]);
+  check(open1.relegation !== null && open1.rel?.round === 1 && !open1.rel.done, "Relegation offen, solange Runde 1 nicht fertig");
+  const done = d.groupStandings(ids, circle, [L(1, 1, 2, 2), L(1, 2, 3, 2), L(1, 1, 3, 3)]);
+  check(!done.relegation && done.rel?.done === true && done.rows.map((r) => r.teamId).join() === "2,3,1,4", "Relegation entschieden: Reihenfolge nach Relegationssiegen");
+  const again = d.groupStandings(ids, circle, [L(1, 1, 2, 1), L(1, 2, 3, 2), L(1, 1, 3, 3)]);
+  check(again.relegation !== null && again.rel?.round === 2, "Relegation wieder im Kreis → Runde 2");
+  const r2 = d.groupStandings(ids, circle, [L(1, 1, 2, 1), L(1, 2, 3, 2), L(1, 1, 3, 3), L(2, 1, 2, 1), L(2, 2, 3, 3), L(2, 1, 3, 1)]);
+  check(!r2.relegation && r2.rows.map((r) => r.teamId).join() === "1,3,2,4", "Relegation Runde 2 entscheidet");
+  // Unten im Kreis (Team 4 ungeschlagen): Platz 2 kommt aus der Relegation.
+  const low = [R(1, 4, 4), R(2, 3, 2), R(1, 3, 3), R(4, 2, 4), R(1, 2, 1), R(3, 4, 4)];
+  const lowDone = d.groupStandings(ids, low, [L(1, 1, 2, 1), L(1, 2, 3, 3), L(1, 1, 3, 1)]);
+  check(lowDone.rows[0].teamId === 4 && lowDone.rows[1].teamId === 1 && !lowDone.relegation, "Kreis um Platz 2–4: Relegationssieger wird Zweiter");
+  const sp = d.splitResults([{ key: "1-2", winnerTeam: 1 }, { key: "rel1:1-2", winnerTeam: 2 }, { key: "vf1:1", winnerTeam: 3 }]);
+  check(sp.group.length === 1 && sp.rel.length === 1 && sp.rel[0].round === 1 && d.relKey(1, 2, 1) === "rel1:1-2", "Schlüssel: Gruppe, Relegation, K.O. getrennt");
+}
 process.exit(failed ? 1 : 0);

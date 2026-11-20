@@ -2,7 +2,7 @@ import type { MatchRow, World } from "./db";
 import { START_ELO } from "./elo";
 import { DAY, addWeeks, berlinHour, dayKey, weekEndIso, weekKey, weekLastDay, weekdayName } from "./time";
 import { isDoubles, seats, sidesBefore } from "./match";
-import { KO_WINS, groupStandings, pairKey, parseKoKey } from "./tournament-draw";
+import { KO_WINS, groupStandings, pairKey, parseKoKey, parseRelKey, splitResults } from "./tournament-draw";
 
 // Abzeichen und Wochenaufgaben. Alles wird aus den gespeicherten Spielen
 // berechnet (auch rückwirkend) – es gibt dafür keine eigene Tabelle.
@@ -744,19 +744,24 @@ export function computeAchievements(world: World, now = new Date()): Record<stri
     };
     // Viertelfinale: Gruppe fertig gespielt und unter den besten zwei
     // (nicht bei offener Relegation).
+    const split = splitResults(results);
     for (const g of tour.groups ?? []) {
       const inGroup = results.filter((r) => {
         const [a, b] = r.key.split("-").map(Number);
         return g.includes(a) && g.includes(b) && r.key === pairKey(a, b);
       });
-      const gr = inGroup.map((r) => {
-        const [a, b] = r.key.split("-").map(Number);
-        return { a, b, winner: r.winnerTeam };
-      });
-      const { rows, relegation } = groupStandings(g, gr);
-      if (inGroup.length < (g.length * (g.length - 1)) / 2) continue;
-      const at = inGroup[inGroup.length - 1].m.created_at;
-      for (const row of rows.slice(0, 2)) if (!relegation?.includes(row.teamId)) reach(row.teamId, 1, at);
+      const { rows, relegation, rel } = groupStandings(g, split.group, split.rel);
+      if (inGroup.length < (g.length * (g.length - 1)) / 2 || relegation) continue;
+      // Zeitpunkt: letztes Gruppenspiel bzw. letztes Relegationsspiel.
+      const relGames = rel
+        ? results.filter((r) => {
+            const k = parseRelKey(r.key);
+            return k && rel.teams.includes(k.a) && rel.teams.includes(k.b);
+          })
+        : [];
+      const last = [...inGroup, ...relGames].sort((x, y) => x.m.created_at.localeCompare(y.m.created_at));
+      const at = last[last.length - 1].m.created_at;
+      for (const row of rows.slice(0, 2)) reach(row.teamId, 1, at);
     }
     // K.O.-Runde: wer in einer Runde spielt, hat sie erreicht; wer eine Serie
     // gewinnt, hat die nächste erreicht.

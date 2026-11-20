@@ -1,6 +1,6 @@
 import type React from "react";
 import Link from "next/link";
-import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, TIEBREAK, groupStandings, pairKey, type GroupResult, type Slot } from "@/lib/tournament-draw";
+import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, RELEGATION, TIEBREAK, groupStandings, pairKey, type GroupResult, type RelResult, type Slot } from "@/lib/tournament-draw";
 
 // Gemeinsame Bausteine für Turnier-Tab und Admin-Vorschau.
 
@@ -24,7 +24,10 @@ export function Rules() {
         <p><b>Gleichstand:</b> {TIEBREAK.map((t, i) => `${i + 1}) ${t}`).join(" · ")}</p>
         <p><b>Anstoß:</b> Wer anstößt, wird ausgelost.</p>
         <p><b>Im Team:</b> Die beiden Partner stoßen immer abwechselnd.</p>
-        <p><b>Dreiergleichstand im Kreis</b> (jeder hat einen Sieg gegen die anderen): Relegation unter den drei Teams.</p>
+        <p>
+          <b>Dreiergleichstand im Kreis</b> (jeder hat einen Sieg gegen die anderen): Relegation – die drei Teams spielen
+          noch einmal jeder gegen jeden (je ein Spiel). Gibt es wieder einen Kreis, wird die Runde wiederholt.
+        </p>
       </div>
 
   );
@@ -38,6 +41,7 @@ export function GroupCards({
   showElo = true,
   showGroupAvg = showElo,
   results,
+  relResults = [],
   enterHref,
   mailHref,
 }: {
@@ -50,19 +54,52 @@ export function GroupCards({
   showGroupAvg?: boolean;
   // Mit Ergebnissen: Tabelle nach Siegen statt Topf-Reihenfolge.
   results?: GroupResult[];
-  // Link zum Eintragen, wenn der Betrachter diese Paarung eintragen darf.
-  enterHref?: (a: number, b: number) => string | null;
+  relResults?: RelResult[];
+  // Link zum Eintragen, wenn der Betrachter diese Paarung eintragen darf
+  // (rel = Runde der Relegation).
+  enterHref?: (a: number, b: number, rel?: number) => string | null;
   // mailto-Link an die Gegner (nur eigene, noch offene Paarungen).
-  mailHref?: (a: number, b: number) => string | null;
+  mailHref?: (a: number, b: number, rel?: number) => string | null;
 }) {
   return (
     <div className="td-groups">
       {GROUPS.map((g, gi) => {
         const ids = groups[gi];
         const avg = ids.reduce((sum, id) => sum + eloOf(id), 0) / ids.length;
-        const table = results ? groupStandings(ids, results) : null;
-        const complete = table ? table.rows.every((r) => r.played === ids.length - 1) : false;
+        const table = results ? groupStandings(ids, results, relResults) : null;
+        const complete = table ? table.rows.every((r) => r.played === ids.length - 1) && !table.relegation : false;
         const resultOf = (x: number, y: number) => results?.find((r) => pairKey(r.a, r.b) === pairKey(x, y));
+        const rel = table?.rel ?? null;
+        const relOf = (round: number, x: number, y: number) =>
+          relResults.find((r) => r.round === round && pairKey(r.a, r.b) === pairKey(x, y));
+        // Eine Paarung (Gruppen- oder Relegationsspiel) mit ✓, Nachricht und „+“.
+        const pair = (x: number, y: number, res: GroupResult | undefined, relRound?: number) => {
+          const href = !res && enterHref ? enterHref(x, y, relRound) : null;
+          const mail = !res && mailHref ? mailHref(x, y, relRound) : null;
+          const side = (id: number) => (
+            <span className={res ? (res.winner === id ? "won" : "lost") : undefined}>{label(id)}</span>
+          );
+          return (
+            <span key={`${relRound ?? 0}-${x}-${y}`} className={`td-pair${x === mine || y === mine ? " mine" : ""}`}>
+              <span className="td-pair-teams">
+                {side(x)} <i>vs.</i> {side(y)}
+              </span>
+              {res && <span className="td-done" aria-label="gespielt">✓</span>}
+              {mail && (
+                <a href={mail} className="td-msg" aria-label="Nachricht an die Gegner">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+                  </svg>
+                </a>
+              )}
+              {href && (
+                <Link href={href} className="td-plus" aria-label="Ergebnis eintragen">
+                  +
+                </Link>
+              )}
+            </span>
+          );
+        };
         return (
           <div className="card td-group" key={g}>
             <p className="td-group-h">
@@ -90,43 +127,34 @@ export function GroupCards({
                 );
               })}
             </ol>
-            {table?.relegation && (
-              <p className="td-relegation">Dreiergleichstand im Kreis – Relegation nötig.</p>
+            {rel && (
+              <div className="td-rel">
+                <p className="td-rel-h">
+                  <span>Relegation</span>
+                  <span className="td-rel-when">{rel.done ? "entschieden" : `bis ${RELEGATION.deadlineLabel}`}</span>
+                </p>
+                {!rel.done && (
+                  <p className="td-rel-text">
+                    Dreiergleichstand im Kreis – die drei spielen noch einmal jeder gegen jeden.
+                    {rel.round > 1 && " Runde 1 ging wieder im Kreis aus, deshalb geht es von vorn los."}
+                  </p>
+                )}
+                {Array.from({ length: rel.round }, (_, i) => i + 1).map((round) => (
+                  <div key={round} className="td-round">
+                    {rel.round > 1 && <span className="td-round-h">Relegation {round}</span>}
+                    {rel.pairs.map(([x, y]) => {
+                      const res = relOf(round, x, y);
+                      return pair(x, y, res, round === rel.round && !rel.done ? round : undefined);
+                    })}
+                  </div>
+                ))}
+              </div>
             )}
             <div className="td-rounds">
               {GROUP_ROUNDS.map((round, ri) => (
                 <div key={ri} className="td-round">
                   <span className="td-round-h">Runde {ri + 1}</span>
-                  {round.map(([p, q]) => {
-                    const x = ids[p - 1];
-                    const y = ids[q - 1];
-                    const res = resultOf(x, y);
-                    const href = !res && enterHref ? enterHref(x, y) : null;
-                    const mail = !res && mailHref ? mailHref(x, y) : null;
-                    const side = (id: number) => (
-                      <span className={res ? (res.winner === id ? "won" : "lost") : undefined}>{label(id)}</span>
-                    );
-                    return (
-                      <span key={`${p}-${q}`} className={`td-pair${x === mine || y === mine ? " mine" : ""}`}>
-                        <span className="td-pair-teams">
-                          {side(x)} <i>vs.</i> {side(y)}
-                        </span>
-                        {res && <span className="td-done" aria-label="gespielt">✓</span>}
-                        {mail && (
-                          <a href={mail} className="td-msg" aria-label="Nachricht an die Gegner">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
-                            </svg>
-                          </a>
-                        )}
-                        {href && (
-                          <Link href={href} className="td-plus" aria-label="Ergebnis eintragen">
-                            +
-                          </Link>
-                        )}
-                      </span>
-                    );
-                  })}
+                  {round.map(([p, q]) => pair(ids[p - 1], ids[q - 1], resultOf(ids[p - 1], ids[q - 1])))}
                 </div>
               ))}
             </div>

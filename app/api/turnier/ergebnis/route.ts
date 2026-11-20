@@ -5,13 +5,14 @@ import { computeReward } from "@/lib/reward";
 import { jsonError, readJson, refreshWorld } from "@/lib/server";
 import { reportError } from "@/lib/alert";
 import { TOURNAMENT, getDraw, getResults, getTeams, saveResult } from "@/lib/tournament";
-import { pairKey } from "@/lib/tournament-draw";
+import { groupStandings, pairKey, relKey, splitResults } from "@/lib/tournament-draw";
 
-// Ergebnis eines Gruppenspiels eintragen. Dürfen nur die vier Beteiligten. Es entsteht ein ganz normales Doppel (Elo, Widerspruch usw.).
+// Ergebnis eines Gruppen- oder Relegationsspiels eintragen (rel = Runde der
+// Relegation). Dürfen nur die vier Beteiligten. Es entsteht ein ganz normales Doppel (Elo, Widerspruch usw.).
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return jsonError("Bitte zuerst anmelden.", 401);
-  const body = await readJson<{ a: number; b: number; winner: number }>(req);
+  const body = await readJson<{ a: number; b: number; winner: number; rel?: number }>(req);
   const a = Number(body.a);
   const b = Number(body.b);
   const winner = Number(body.winner);
@@ -20,7 +21,17 @@ export async function POST(req: NextRequest) {
   const [draw, teams, results] = await Promise.all([getDraw(), getTeams(), getResults()]);
   if (!draw?.published) return jsonError("Die Gruppen stehen noch nicht fest.");
   if (!draw.groups.some((g) => g.includes(a) && g.includes(b)) || a === b) return jsonError("Diese Paarung gibt es nicht.");
-  const key = pairKey(a, b);
+  const relRound = body.rel ? Number(body.rel) : null;
+  let key = pairKey(a, b);
+  if (relRound !== null) {
+    const g = draw.groups.find((x) => x.includes(a))!;
+    const { group, rel } = splitResults(results);
+    const info = groupStandings(g, group, rel).rel;
+    if (!info || info.done || info.round !== relRound || !info.teams.includes(a) || !info.teams.includes(b)) {
+      return jsonError("Diese Relegationspartie steht gerade nicht an.");
+    }
+    key = relKey(relRound, a, b);
+  }
   if (results.some((r) => r.key === key)) return jsonError("Dieses Spiel ist schon eingetragen.");
   const ta = teams.find((t) => t.id === a);
   const tb = teams.find((t) => t.id === b);

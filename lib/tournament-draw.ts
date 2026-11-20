@@ -100,15 +100,51 @@ export const TIEBREAK = ["Punkte (Siege − Niederlagen)", "Direkter Vergleich"]
 // ---------------------------------------------------------------------------
 // Tabelle einer Gruppe. Reihenfolge: Punkte (Siege minus Niederlagen), dann
 // direkter Vergleich unter den Punktgleichen. So steht ein Team mit 0:0 vor
-// einem mit 0:1, solange noch nicht alle gleich viele Spiele haben. Bei einem Dreiergleichstand im Kreis (jeder hat unter den
-// dreien genau einen Sieg) und fertig gespielter Gruppe: Relegation nötig.
+// einem mit 0:1, solange noch nicht alle gleich viele Spiele haben.
+//
+// Relegation: Bei einem Dreiergleichstand im Kreis (jeder hat unter den
+// dreien genau einen Sieg) und fertig gespielter Gruppe spielen die drei noch
+// einmal jeder gegen jeden (Runde 1, je ein Spiel). Entsteht wieder ein Kreis,
+// folgt Runde 2 usw. Die Reihenfolge der drei ergibt sich aus den Siegen der
+// entscheidenden Runde. Relegationsspiele sind normale Turnierspiele.
 
 export type GroupResult = { a: number; b: number; winner: number };
+export type RelResult = GroupResult & { round: number };
 export type StandingRow = { teamId: number; played: number; wins: number; losses: number };
+// teams: die drei Teams (Tabellen-Reihenfolge vor der Relegation), round: die
+// laufende bzw. entscheidende Runde, done: entschieden.
+export type RelegationInfo = { teams: number[]; round: number; done: boolean; pairs: [number, number][] };
 
 export const pairKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
+export const RELEGATION = { deadlineLabel: "Mo 23.11.", deadline: "2026-11-23" } as const;
+// Ergebnis-Schlüssel eines Relegationsspiels, z. B. "rel1:12-17" (Runde 1).
+export const relKey = (round: number, a: number, b: number) => `rel${round}:${pairKey(a, b)}`;
+export function parseRelKey(key: string): { round: number; a: number; b: number } | null {
+  const m = /^rel(\d+):(\d+)-(\d+)$/.exec(key);
+  return m ? { round: Number(m[1]), a: Number(m[2]), b: Number(m[3]) } : null;
+}
 
-export function groupStandings(ids: number[], results: GroupResult[]): { rows: StandingRow[]; relegation: number[] | null } {
+// Gespeicherte Ergebnisse aufteilen in Gruppenspiele und Relegationsspiele.
+export function splitResults(results: { key: string; winnerTeam: number }[]): { group: GroupResult[]; rel: RelResult[] } {
+  const group: GroupResult[] = [];
+  const rel: RelResult[] = [];
+  for (const r of results) {
+    const rk = parseRelKey(r.key);
+    if (rk) {
+      rel.push({ ...rk, winner: r.winnerTeam });
+      continue;
+    }
+    const [a, b] = r.key.split("-").map(Number);
+    if (Number.isInteger(a) && Number.isInteger(b) && r.key === pairKey(a, b)) group.push({ a, b, winner: r.winnerTeam });
+  }
+  return { group, rel };
+}
+
+export function groupStandings(
+  ids: number[],
+  results: GroupResult[],
+  relResults: RelResult[] = [],
+): { rows: StandingRow[]; relegation: number[] | null; rel: RelegationInfo | null } {
   const inGroup = results.filter((r) => ids.includes(r.a) && ids.includes(r.b));
   const rows = ids.map((teamId) => {
     const mine = inGroup.filter((r) => r.a === teamId || r.b === teamId);
@@ -119,18 +155,42 @@ export function groupStandings(ids: number[], results: GroupResult[]): { rows: S
   const miniWins = (id: number, tied: number[]) =>
     inGroup.filter((r) => r.winner === id && tied.includes(r.a) && tied.includes(r.b)).length;
   const complete = inGroup.length === (ids.length * (ids.length - 1)) / 2;
-  let relegation: number[] | null = null;
+  let rel: RelegationInfo | null = null;
 
   const sorted: StandingRow[] = [];
   const points = (r: StandingRow) => r.wins - r.losses;
   const byPoints = [...new Set(rows.map(points))].sort((x, y) => y - x);
   for (const p of byPoints) {
     const tied = rows.filter((r) => points(r) === p).map((r) => r.teamId);
-    if (complete && tied.length === 3 && tied.every((id) => miniWins(id, tied) === 1)) relegation = tied;
     tied.sort((x, y) => miniWins(y, tied) - miniWins(x, tied) || seedPos(x) - seedPos(y));
+    if (complete && tied.length === 3 && tied.every((id) => miniWins(id, tied) === 1)) {
+      rel = relegationOf(tied, relResults);
+      if (rel.done) {
+        const w = (id: number) =>
+          relResults.filter((r) => r.round === rel!.round && r.winner === id && tied.includes(r.a) && tied.includes(r.b)).length;
+        tied.sort((x, y) => w(y) - w(x));
+      }
+    }
     for (const id of tied) sorted.push(rows.find((r) => r.teamId === id)!);
   }
-  return { rows: sorted, relegation };
+  return { rows: sorted, relegation: rel && !rel.done ? rel.teams : null, rel };
+}
+
+// Stand der Relegation unter drei Teams: erste Runde, die noch offen ist oder
+// keinen Kreis ergibt.
+function relegationOf(teams: number[], relResults: RelResult[]): RelegationInfo {
+  const pairs: [number, number][] = [
+    [teams[0], teams[1]],
+    [teams[1], teams[2]],
+    [teams[0], teams[2]],
+  ];
+  for (let round = 1; ; round++) {
+    const games = relResults.filter((r) => r.round === round && teams.includes(r.a) && teams.includes(r.b));
+    const played = pairs.filter(([x, y]) => games.some((g) => pairKey(g.a, g.b) === pairKey(x, y)));
+    if (played.length < 3) return { teams, round, done: false, pairs };
+    const circle = teams.every((id) => games.filter((g) => g.winner === id).length === 1);
+    if (!circle) return { teams, round, done: true, pairs };
+  }
 }
 
 // ---------------------------------------------------------------------------

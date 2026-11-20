@@ -7,7 +7,7 @@ import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
 import { TOURNAMENT, getDraw, getOpenRequests, getResults, getTeams, registrationOpen } from "@/lib/tournament";
 import { Bracket, GroupCards, Rules, SpecialRules } from "./TournamentView";
-import { GROUPS } from "@/lib/tournament-draw";
+import { GROUPS, RELEGATION, splitResults } from "@/lib/tournament-draw";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
 
@@ -24,6 +24,7 @@ export default async function TurnierPage() {
     getResults(),
   ]);
   const drawn = draw?.published ? draw : null;
+  const split = splitResults(pairResults);
 
   const toPick = (id: string): Pick => {
     const s = ov.byId[id];
@@ -139,11 +140,9 @@ export default async function TurnierPage() {
             }}
             mine={myTeam?.id ?? null}
             showGroupAvg={false}
-            results={pairResults.map((r) => {
-              const [a, b] = r.key.split("-").map(Number);
-              return { a, b, winner: r.winnerTeam };
-            })}
-            mailHref={(a, b) => {
+            results={split.group}
+            relResults={split.rel}
+            mailHref={(a, b, rel) => {
               if (!session) return null;
               const ta = teams.find((t) => t.id === a);
               const tb = teams.find((t) => t.id === b);
@@ -159,17 +158,19 @@ export default async function TurnierPage() {
               const cc = mailOf(partner);
               const name = (id: string) => toPick(id).name;
               const g = GROUPS[drawn.groups.findIndex((x) => x.includes(a))] ?? "";
-              const subject = `Billard BLS Turnier – Gruppe ${g}: ${name(mineT.player1)} & ${name(mineT.player2)} vs. ${name(other.player1)} & ${name(other.player2)}`;
-              const body = `Moin ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen in der Gruppenphase gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
+              const stage = rel ? `Relegation Gruppe ${g}` : `Gruppe ${g}`;
+              const subject = `Billard BLS Turnier – ${stage}: ${name(mineT.player1)} & ${name(mineT.player2)} vs. ${name(other.player1)} & ${name(other.player2)}`;
+              const when = rel ? `in der Relegation (bis ${RELEGATION.deadlineLabel})` : "in der Gruppenphase";
+              const body = `Moin ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen ${when} gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
               const q = [cc ? `cc=${encodeURIComponent(cc)}` : "", `subject=${encodeURIComponent(subject)}`, `body=${encodeURIComponent(body)}`].filter(Boolean).join("&");
               return `mailto:${to}?${q}`;
             }}
-            enterHref={(a, b) => {
+            enterHref={(a, b, rel) => {
               if (!session) return null;
               const ta = teams.find((t) => t.id === a);
               const tb = teams.find((t) => t.id === b);
               const four = [ta?.player1, ta?.player2, tb?.player1, tb?.player2];
-              return four.includes(session.playerId) ? `/turnier/eintragen?a=${a}&b=${b}` : null;
+              return four.includes(session.playerId) ? `/turnier/eintragen?a=${a}&b=${b}${rel ? `&rel=${rel}` : ""}` : null;
             }}
           />
 
