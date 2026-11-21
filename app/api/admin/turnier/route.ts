@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
 import { getWorld } from "@/lib/db";
-import { jsonError } from "@/lib/server";
+import { jsonError, refreshWorld } from "@/lib/server";
 import { TOURNAMENT, TournamentError, getTeams, saveDraw } from "@/lib/tournament";
 import { drawGroups, eloAt, seedTeams } from "@/lib/tournament-draw";
 
@@ -13,6 +13,7 @@ export async function POST() {
     const seeded = seedTeams(teams, (id) => eloAt(world.matches, id, TOURNAMENT.deadline));
     const groups = drawGroups(seeded);
     await saveDraw(groups, seeded.map(({ teamId, elo, seed, pot }) => ({ teamId, elo, seed, pot })));
+    refreshWorld();
     return NextResponse.json({ success: true });
   } catch (err) {
     if (err instanceof TournamentError || /genau \d+ Teams/.test(String((err as Error)?.message))) {

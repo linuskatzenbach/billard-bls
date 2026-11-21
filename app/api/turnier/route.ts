@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { getPlayerById } from "@/lib/db";
 import { sendMail, teamRequestMail } from "@/lib/mail";
 import { reportError } from "@/lib/alert";
-import { jsonError, readJson, siteOrigin } from "@/lib/server";
+import { jsonError, readJson, refreshWorld, siteOrigin } from "@/lib/server";
 import {
   TOURNAMENT,
   TournamentError,
@@ -59,5 +59,7 @@ export async function POST(req: NextRequest) {
     await reportError("Turnier", err);
     return jsonError("Etwas ist schiefgelaufen. Bitte nochmal versuchen.", 500);
   }
+  // Teams gehören zur zwischengespeicherten Welt – sofort neu laden.
+  refreshWorld();
   return NextResponse.json({ success: true });
 }

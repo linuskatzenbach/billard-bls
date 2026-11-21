@@ -476,9 +476,12 @@ export async function getWorld(): Promise<World> {
   "use cache: remote";
   cacheTag(WORLD_TAG);
   // Nach jeder Änderung wird der Speicher sofort verworfen (refreshWorld).
-  // Zur Sicherheit wird er außerdem spätestens jede Minute im Hintergrund
-  // erneuert, falls einmal eine Änderung an der App vorbei passiert.
-  cacheLife({ stale: 30, revalidate: 60, expire: 3600 });
+  // Zur Sicherheit wird er außerdem einmal am Tag erneuert, falls eine
+  // Änderung an der App vorbei passiert (z. B. direkt in der Datenbank).
+  // Nicht öfter: Jedes Neuschreiben zählt bei Vercel als Cache-Write – und
+  // zwar pro angefangene 8 KB, die Welt mit allen Spielen ist also viele
+  // Writes groß. Die Minute vorher hat das Gratis-Kontingent aufgefressen.
+  cacheLife({ stale: 30, revalidate: 86400, expire: 7 * 86400 });
   return loadWorld();
 }
 
