@@ -9,6 +9,7 @@ import AdminPlayers from "./AdminPlayers";
 import MailList from "./MailList";
 import { COHORTS } from "@/lib/names";
 import MarkDisputesSeen from "./MarkDisputesSeen";
+import RefreshButton from "./RefreshButton";
 
 export default async function AdminPage() {
   await connection();
@@ -121,6 +122,15 @@ export default async function AdminPage() {
       <a href="/api/admin/backup" className="nav-link" download>
         Sicherung herunterladen →
       </a>
+
+      <div className="section-h">
+        <h2>Zwischenspeicher</h2>
+      </div>
+      <p className="hint-left">
+        Nur nötig nach Änderungen direkt in der Datenbank (z. B. Korrekturen in Neon). Sonst erscheint so eine
+        Änderung erst nach bis zu einem Tag.
+      </p>
+      <RefreshButton />
 
       <Link href="/profil/test" className="cta cta-test">
         <span className="cta-felt">
