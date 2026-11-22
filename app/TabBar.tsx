@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { TOURNAMENT_NOTICE } from "@/lib/tournament-notice";
+import { noticeKey } from "./turnier/Notice";
 
 // Leiste unten: Rangliste · 2v2-Turnier · Spiel eintragen (+) · persönlicher Bereich.
 // Nur Symbole, die aktuelle Seite liegt auf Filz.
@@ -107,7 +109,22 @@ function ActiveBar() {
       router.refresh();
     } else setPending(t);
   };
-  return <Bar tab={pending ?? current} dot={dot} turnierDot={turnierDot} onPick={onPick} />;
+  // Roter Punkt am Turnier-Tab auch für einen ungelesenen Turnier-Hinweis.
+  const [noticeDot, setNoticeDot] = useState(false);
+  useEffect(() => {
+    const upd = () => {
+      try {
+        const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+        setNoticeDot(today <= TOURNAMENT_NOTICE.until && !localStorage.getItem(noticeKey(TOURNAMENT_NOTICE.id)));
+      } catch {
+        setNoticeDot(false);
+      }
+    };
+    upd();
+    window.addEventListener("billard:notice-seen", upd);
+    return () => window.removeEventListener("billard:notice-seen", upd);
+  }, [path]);
+  return <Bar tab={pending ?? current} dot={dot} turnierDot={turnierDot || noticeDot} onPick={onPick} />;
 }
 
 function Bar({

@@ -3408,6 +3408,20 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
   background: var(--felt-light); border: 1px solid rgba(201, 162, 39, 0.55);
 }
 .td-plus:active { transform: scale(0.94); }
+.tn-notice {
+  position: relative;
+  margin: 0.4rem 0 0.8rem; padding: 0.7rem 0.95rem;
+  border: 1.5px solid #e0574a; border-radius: 10px;
+  background: rgba(224, 87, 74, 0.12);
+}
+.tn-notice-h { margin: 0 0 0.3rem; font-weight: 700; color: #f07a6e; font-size: 0.95rem; }
+.tn-notice-h::before { content: "⚠️ "; }
+.tn-notice-text { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+.tn-notice-dot {
+  position: absolute; top: -4px; right: -4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #e0302a; box-shadow: 0 0 0 2px var(--felt-dark, #0b2a1e);
+}
 .tn-special {
   margin: 0.4rem 0 1.1rem; padding: 0.75rem 0.95rem;
   border: 1.5px solid var(--brass-bright); border-radius: 10px;

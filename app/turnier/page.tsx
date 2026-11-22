@@ -10,6 +10,8 @@ import { Bracket, GroupCards, Rules, SpecialRules } from "./TournamentView";
 import { GROUPS, RELEGATION, splitResults } from "@/lib/tournament-draw";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
+import Notice from "./Notice";
+import { TOURNAMENT_NOTICE } from "@/lib/tournament-notice";
 
 // 2v2-Turnier: Ablauf, eigene Team-Anfragen und alle angemeldeten Teams.
 export default async function TurnierPage() {
@@ -114,6 +116,7 @@ export default async function TurnierPage() {
 
       {drawn && (
         <>
+          {today <= TOURNAMENT_NOTICE.until && <Notice id={TOURNAMENT_NOTICE.id} text={TOURNAMENT_NOTICE.text} />}
           <SpecialRules />
 
           <div className="section-h">
