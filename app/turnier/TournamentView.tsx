@@ -22,7 +22,10 @@ export function Rules() {
         <p><b>Gruppenphase:</b> {FORMAT.groups} gegen jeden (3 pro Team) · beste 2 weiter</p>
         <p><b>Viertel- und Halbfinale:</b> {FORMAT.quarter} · <b>Finale:</b> {FORMAT.final}</p>
         <p><b>Gleichstand:</b> {TIEBREAK.map((t, i) => `${i + 1}) ${t}`).join(" · ")}</p>
-        <p><b>Anstoß:</b> Wer anstößt, wird ausgelost.</p>
+        <p>
+          <b>Anstoß:</b> Wer anstößt, wird ausgelost. In der K.O.-Runde soll dies durch Ausstoßen (Lag) entschieden
+          werden. Wer das Lag gewinnt, darf entscheiden, wer anstößt. Danach wird immer abwechselnd angestoßen.
+        </p>
         <p><b>Im Team:</b> Die beiden Partner stoßen immer abwechselnd.</p>
         <p>
           <b>Dreiergleichstand im Kreis</b> (jeder hat einen Sieg gegen die anderen): Relegation – die drei Teams spielen
