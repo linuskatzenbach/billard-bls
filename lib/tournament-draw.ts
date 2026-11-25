@@ -116,7 +116,7 @@ export type StandingRow = { teamId: number; played: number; wins: number; losses
 export type RelegationInfo = { teams: number[]; round: number; done: boolean; pairs: [number, number][] };
 
 export const pairKey = (a: number, b: number) => (a < b ? `${a}-${b}` : `${b}-${a}`);
-export const RELEGATION = { deadlineLabel: "Mi 25.11.", deadline: "2026-11-25" } as const;
+export const RELEGATION = { deadlineLabel: "Do 26.11.", deadline: "2026-11-26" } as const;
 // Ergebnis-Schlüssel eines Relegationsspiels, z. B. "rel1:12-17" (Runde 1).
 export const relKey = (round: number, a: number, b: number) => `rel${round}:${pairKey(a, b)}`;
 export function parseRelKey(key: string): { round: number; a: number; b: number } | null {
