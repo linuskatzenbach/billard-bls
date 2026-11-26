@@ -178,8 +178,13 @@ export function Bracket({
   mine = null,
   enterHref,
   mailHref,
+  termin,
+  terminHref,
 }: {
   series?: KoSeries[];
+  // Termin der Serie als Text („Fr 27.11., 18:30“) und Link zum Eintragen.
+  termin?: (s: KoSeries) => string | null;
+  terminHref?: (s: KoSeries) => string | null;
   label?: (teamId: number) => React.ReactNode;
   mine?: number | null;
   enterHref?: (s: KoSeries) => string | null;
@@ -198,6 +203,8 @@ export function Bracket({
     const isMine = mine !== null && s.teams.includes(mine);
     const href = enterHref && s.nextGame !== null ? enterHref(s) : null;
     const mail = mailHref && s.nextGame !== null ? mailHref(s) : null;
+    const when = termin && s.winner === null ? termin(s) : null;
+    const cal = terminHref && s.nextGame !== null ? terminHref(s) : null;
     return (
       <div className={`tb-match${extra}${isMine ? " mine" : ""}`} key={s.id}>
         {s.round === "f" && <span className="tb-cup" aria-hidden="true">🏆</span>}
@@ -211,8 +218,17 @@ export function Bracket({
             </span>
           );
         })}
-        {(href || mail) && (
+        {when && <span className="tb-when">{when}</span>}
+        {(href || mail || cal) && (
           <span className="tb-actions">
+            {cal && (
+              <Link href={cal} className="td-msg" aria-label={when ? "Termin ändern" : "Termin eintragen"}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="5.5" width="16" height="14" rx="1.5" />
+                  <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+                </svg>
+              </Link>
+            )}
             {mail && (
               <a href={mail} className="td-msg" aria-label="Nachricht an die Gegner">
                 <svg viewBox="0 0 24 24" aria-hidden="true">

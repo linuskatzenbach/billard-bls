@@ -218,6 +218,20 @@ async function ensureSchema(): Promise<void> {
       PRIMARY KEY (tournament, pair_key)
     );
   `;
+  // Termine der K.O.-Serien (vf1 … f): Tag und Uhrzeit als deutsche Ortszeit,
+  // wie eingegeben ("2026-11-27", "18:30"), dazu optional ein Ort.
+  await sql`
+    CREATE TABLE IF NOT EXISTS tournament_schedule (
+      tournament TEXT NOT NULL,
+      series_id TEXT NOT NULL,
+      day TEXT NOT NULL,
+      time TEXT NOT NULL,
+      place TEXT NOT NULL DEFAULT '',
+      updated_by TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (tournament, series_id)
+    );
+  `;
 
   // Testspiel Julian gegen Linus vom 20.10.2026 entfernen (bereits erledigt).
   await deleteMatchOnce("2026-10-20-testspiel-julian-linus", ["julian", "linus"], "2026-10-20T19:40:00Z");
@@ -357,7 +371,7 @@ async function fixTobiJannik(): Promise<void> {
 // Stand der Datenbank-Einrichtung. Bei jeder Änderung an Tabellen oder
 // einer neuen einmaligen Korrektur oben diesen Namen erhöhen – dann läuft die
 // volle Einrichtung genau einmal neu.
-const SCHEMA_VERSION = "schema-2026-11-14-turnier-ergebnisse";
+const SCHEMA_VERSION = "schema-2026-11-26-turnier-termine";
 
 // Früher liefen bei jedem Kaltstart eines Servers über 20 Prüf- und
 // Korrekturschritte nacheinander, bevor die erste echte Abfrage kam. Jetzt

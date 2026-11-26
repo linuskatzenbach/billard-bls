@@ -5,9 +5,9 @@ import { getOverview } from "@/lib/server";
 import { picksFor, type Pick } from "@/lib/picks";
 import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
-import { TOURNAMENT, getDraw, getOpenRequests, getResults, getTeams, registrationOpen } from "@/lib/tournament";
+import { TOURNAMENT, getDraw, getOpenRequests, getResults, getSchedule, getTeams, registrationOpen } from "@/lib/tournament";
 import { Bracket, GroupCards, Rules, SpecialRules } from "./TournamentView";
-import { GROUPS, KO_LABEL, RELEGATION, koBracket, splitResults } from "@/lib/tournament-draw";
+import { GROUPS, KO_LABEL, RELEGATION, koBracket, splitResults, terminText } from "@/lib/tournament-draw";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
 import Notice from "./Notice";
@@ -18,12 +18,13 @@ export default async function TurnierPage() {
   await connection();
   const session = await getSession();
   const open = registrationOpen();
-  const [{ world, ov }, teams, requests, draw, pairResults] = await Promise.all([
+  const [{ world, ov }, teams, requests, draw, pairResults, schedule] = await Promise.all([
     getOverview(),
     getTeams(),
     session ? getOpenRequests(session.playerId) : Promise.resolve(null),
     getDraw(),
     getResults(),
+    getSchedule(),
   ]);
   const drawn = draw?.published ? draw : null;
   const split = splitResults(pairResults);
@@ -89,6 +90,49 @@ export default async function TurnierPage() {
     return teams.some((t) => (t.id === a || t.id === b) && (t.player1 === session.playerId || t.player2 === session.playerId));
   };
   const ko = drawn ? koBracket(drawn.groups, pairResults) : null;
+  const termOf = (id: string) => schedule.find((t) => t.series === id) ?? null;
+  const teamText = (id: number | null) => {
+    const t = teams.find((x) => x.id === id);
+    return t ? `${toPick(t.player1).name} & ${toPick(t.player2).name}` : "–";
+  };
+  const upcoming = (ko ?? [])
+    .filter((x) => x.winner === null && x.teams[0] !== null && x.teams[1] !== null && termOf(x.id))
+    .map((x) => ({ x, t: termOf(x.id)! }))
+    .sort((p, q) => `${p.t.day} ${p.t.time}`.localeCompare(`${q.t.day} ${q.t.time}`));
+  const termine = (
+    <>
+      <div className="section-h">
+        <h2>Termine</h2>
+        <span>zum Zuschauen</span>
+      </div>
+      {upcoming.length === 0 ? (
+        <p className="empty small">Noch keine Termine – die Teams tragen sie über das Kalender-Symbol im Baum ein.</p>
+      ) : (
+        <ul className="tm-list">
+          {upcoming.map(({ x, t }) => {
+            const nr = x.id.replace(/\D/g, "");
+            const isMine = myTeam ? x.teams.includes(myTeam.id) : false;
+            return (
+              <li key={x.id} className={isMine ? "mine" : undefined}>
+                <span className="tm-when">{terminText(t.day, t.time)}</span>
+                <span className="tm-what">
+                  <span className="tm-round">
+                    {KO_LABEL[x.round]}
+                    {nr && ` ${nr}`}
+                    {x.wins[0] + x.wins[1] > 0 && ` · Stand ${x.wins[0]}:${x.wins[1]}`}
+                    {t.place && ` · ${t.place}`}
+                  </span>
+                  <span>
+                    {teamText(x.teams[0])} <i>vs.</i> {teamText(x.teams[1])}
+                  </span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
+  );
   // Steht das Viertelfinale komplett, rückt der Baum nach oben.
   const koReady = !!ko && ko.filter((x) => x.round === "vf").every((x) => x.teams[0] !== null && x.teams[1] !== null);
   const bracket = ko && (
@@ -113,6 +157,11 @@ export default async function TurnierPage() {
           );
         }}
         enterHref={(x) => (involved(x.teams[0], x.teams[1]) ? `/turnier/eintragen?ko=${x.id}` : null)}
+        termin={(x) => {
+          const t = termOf(x.id);
+          return t ? terminText(t.day, t.time) : null;
+        }}
+        terminHref={(x) => (involved(x.teams[0], x.teams[1]) || session?.admin ? `/turnier/termin?ko=${x.id}` : null)}
         mailHref={(x) =>
           x.teams[0] !== null && x.teams[1] !== null
             ? mailTo(x.teams[0], x.teams[1], KO_LABEL[x.round], `im ${KO_LABEL[x.round]} (${x.round === "f" ? "Best of 5" : "Best of 3"})`)
@@ -179,6 +228,7 @@ export default async function TurnierPage() {
           <SpecialRules />
 
           {koReady && bracket}
+          {koReady && termine}
 
           <div className="section-h">
             <h2>Gruppen</h2>

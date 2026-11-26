@@ -254,3 +254,32 @@ export async function saveResult(key: string, matchId: number, winnerTeam: numbe
   ]);
   return res[1].length > 0;
 }
+
+// ---------------------------------------------------------------------------
+// Termine der K.O.-Serien. Eingetragen von den Beteiligten, sichtbar für alle.
+
+export type ScheduleRow = { series: string; day: string; time: string; place: string; updatedBy: string };
+
+export async function getSchedule(): Promise<ScheduleRow[]> {
+  await ready();
+  const rows = await getSql()`
+    SELECT series_id, day, time, place, updated_by FROM tournament_schedule WHERE tournament = ${T}
+  `;
+  return rows.map((r: Row) => ({ series: r.series_id, day: r.day, time: r.time, place: r.place ?? "", updatedBy: r.updated_by }));
+}
+
+export async function saveSchedule(series: string, day: string, time: string, place: string, by: string): Promise<void> {
+  await ready();
+  await getSql()`
+    INSERT INTO tournament_schedule (tournament, series_id, day, time, place, updated_by)
+    VALUES (${T}, ${series}, ${day}, ${time}, ${place}, ${by})
+    ON CONFLICT (tournament, series_id) DO UPDATE
+      SET day = EXCLUDED.day, time = EXCLUDED.time, place = EXCLUDED.place,
+          updated_by = EXCLUDED.updated_by, updated_at = now()
+  `;
+}
+
+export async function clearSchedule(series: string): Promise<void> {
+  await ready();
+  await getSql()`DELETE FROM tournament_schedule WHERE tournament = ${T} AND series_id = ${series}`;
+}

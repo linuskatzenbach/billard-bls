@@ -267,3 +267,13 @@ export function koBracket(
   const f = series("f", "f", [hf[0].winner, hf[1].winner], ["Sieger HF 1", "Sieger HF 2"]);
   return [...vf, ...hf, f];
 }
+
+// Termin lesbar: "Fr 27.11., 18:30". day = "YYYY-MM-DD", time = "HH:MM".
+const WEEKDAYS = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+export function terminText(day: string, time: string): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const wd = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${wd} ${d}.${m}., ${time}`;
+}
+export const validTermin = (day: string, time: string) =>
+  /^20\d\d-\d\d-\d\d$/.test(day) && !Number.isNaN(Date.parse(`${day}T00:00:00Z`)) && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);

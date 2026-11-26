@@ -3467,3 +3467,29 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .tb-match.mine { border-color: rgba(201, 162, 39, 0.55); color: var(--brass-bright); }
 .tb-actions { display: flex; justify-content: flex-end; gap: 0.4rem; padding-top: 0.25rem; border-top: 1px solid var(--line); }
 .tb-actions .td-plus, .tb-actions .td-msg { transform-origin: center; }
+
+/* K.O.-Termine: im Baum, Liste zum Zuschauen, Eintragen-Seite */
+.tb-when { font-size: 0.66rem; color: var(--brass-bright); padding-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-when::before { content: "📅 "; }
+.tb-actions .td-msg, .tb-actions .td-plus { width: 1.55rem; height: 1.55rem; }
+.tb-actions { gap: 0.3rem; }
+.td-msg rect, .td-msg path { fill: none; }
+.tm-list { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.tm-list li {
+  display: flex; gap: 0.75rem; align-items: baseline; padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line); border-radius: 8px; background: rgba(241, 233, 216, 0.04);
+}
+.tm-list li.mine { border-color: rgba(201, 162, 39, 0.55); }
+.tm-when { flex: none; font-weight: 700; color: var(--brass-bright); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.tm-what { display: flex; flex-direction: column; min-width: 0; font-size: 0.85rem; line-height: 1.35; }
+.tm-what i { opacity: 0.5; font-style: normal; }
+.tm-round { font-size: 0.72rem; opacity: 0.7; }
+.tm-pair { margin: 0.6rem 0 0; font-weight: 600; }
+.tm-pair i { opacity: 0.5; font-style: normal; }
+.tm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.tm-form input[type="date"], .tm-form input[type="time"] {
+  background: var(--felt); border: 1px solid var(--line); color: var(--cream);
+  padding: 0.65rem 0.75rem; border-radius: 4px; font-size: 1rem; font-family: inherit;
+  min-width: 0; width: 100%; box-sizing: border-box; -webkit-appearance: none; color-scheme: dark;
+}
+.tm-clear { background: transparent; color: var(--cream); border: 1px solid var(--line); margin-top: 0; }
