@@ -55,7 +55,7 @@ export default async function TerminPage({ searchParams }: { searchParams: Promi
       <p className="tm-pair">
         {teamName(0)} <i>vs.</i> {teamName(1)}
       </p>
-      <TerminForm ko={s.id} day={current?.day ?? ""} time={current?.time ?? ""} place={current?.place ?? ""} />
+      <TerminForm ko={s.id} day={current?.day ?? ""} time={current?.time ?? ""} />
     </>
   );
 }

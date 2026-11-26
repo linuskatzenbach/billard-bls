@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Tag, Uhrzeit und (optional) Ort einer K.O.-Serie. Sehen alle im Turnier-Tab.
-export default function TerminForm({ ko, day: day0, time: time0, place: place0 }: { ko: string; day: string; time: string; place: string }) {
+// Tag und Uhrzeit einer K.O.-Serie (es gibt nur einen Tisch, daher kein Ort). Sehen alle im Turnier-Tab.
+export default function TerminForm({ ko, day: day0, time: time0 }: { ko: string; day: string; time: string }) {
   const router = useRouter();
   const [day, setDay] = useState(day0);
   const [time, setTime] = useState(time0);
-  const [place, setPlace] = useState(place0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,7 +35,7 @@ export default function TerminForm({ ko, day: day0, time: time0, place: place0 }
       className="tm-form"
       onSubmit={(e) => {
         e.preventDefault();
-        send({ day, time, place });
+        send({ day, time });
       }}
     >
       <div className="tm-row">
@@ -49,10 +48,6 @@ export default function TerminForm({ ko, day: day0, time: time0, place: place0 }
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
         </label>
       </div>
-      <label>
-        Ort <span className="field-help">optional</span>
-        <input type="text" value={place} maxLength={60} placeholder="Wo wird gespielt?" onChange={(e) => setPlace(e.target.value)} />
-      </label>
       <p className="field-help">Der Termin steht für alle sichtbar im Turnierbaum – so können andere zum Zuschauen kommen.</p>
       <button type="submit" disabled={busy}>
         {busy ? "Speichern…" : day0 ? "Termin ändern" : "Termin eintragen"}

@@ -120,7 +120,6 @@ export default async function TurnierPage() {
                     {KO_LABEL[x.round]}
                     {nr && ` ${nr}`}
                     {x.wins[0] + x.wins[1] > 0 && ` · Stand ${x.wins[0]}:${x.wins[1]}`}
-                    {t.place && ` · ${t.place}`}
                   </span>
                   <span>
                     {teamText(x.teams[0])} <i>vs.</i> {teamText(x.teams[1])}
