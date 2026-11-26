@@ -205,3 +205,65 @@ export function parseKoKey(key: string): { round: KoRound; series: string } | nu
   const m = /^(vf|hf|f)(\d*):\d+$/.exec(key);
   return m ? { round: m[1] as KoRound, series: `${m[1]}${m[2]}` } : null;
 }
+
+// ---------------------------------------------------------------------------
+// K.O.-Baum aus den Gruppentabellen und den K.O.-Ergebnissen. Ein Platz ist
+// erst besetzt, wenn die Gruppe (inkl. Relegation) fertig ist bzw. die
+// vorherige Serie entschieden ist.
+
+export type KoSeries = {
+  id: string; // "vf1" … "vf4", "hf1", "hf2", "f"
+  round: KoRound;
+  teams: [number | null, number | null];
+  // Platzhalter, solange ein Team noch nicht feststeht („Sieger A“, „Sieger VF 1“).
+  placeholders: [string, string];
+  wins: [number, number];
+  winner: number | null;
+  // Nächste freie Spielnummer (für den Ergebnis-Schlüssel), null wenn entschieden.
+  nextGame: number | null;
+};
+
+export const KO_LABEL: Record<KoRound, string> = { vf: "Viertelfinale", hf: "Halbfinale", f: "Finale" };
+
+export function koBracket(
+  groups: number[][],
+  results: { key: string; winnerTeam: number }[],
+): KoSeries[] {
+  const { group, rel } = splitResults(results);
+  const placeOf = (s: Slot): number | null => {
+    const ids = groups[GROUPS.indexOf(s.group)];
+    if (!ids) return null;
+    const t = groupStandings(ids, group, rel);
+    const complete = t.rows.every((r) => r.played === ids.length - 1) && !t.relegation;
+    return complete ? t.rows[s.place - 1]?.teamId ?? null : null;
+  };
+  const koResults = results.filter((r) => parseKoKey(r.key));
+  const series = (
+    id: string,
+    round: KoRound,
+    teams: [number | null, number | null],
+    placeholders: [string, string],
+  ): KoSeries => {
+    const games = koResults.filter((r) => r.key.startsWith(`${id}:`));
+    const wins: [number, number] = [
+      teams[0] === null ? 0 : games.filter((g) => g.winnerTeam === teams[0]).length,
+      teams[1] === null ? 0 : games.filter((g) => g.winnerTeam === teams[1]).length,
+    ];
+    const need = KO_WINS[round];
+    const winner = wins[0] >= need ? teams[0] : wins[1] >= need ? teams[1] : null;
+    const used = new Set(games.map((g) => Number(g.key.split(":")[1])));
+    let n = 1;
+    while (used.has(n)) n++;
+    const ready = teams[0] !== null && teams[1] !== null;
+    return { id, round, teams, placeholders, wins, winner, nextGame: ready && winner === null ? n : null };
+  };
+  const slotText = (s: Slot) => `${s.place === 1 ? "Sieger" : "Zweiter"} ${s.group}`;
+  const vf = QUARTERS.map(([x, y], i) =>
+    series(`vf${i + 1}`, "vf", [placeOf(x), placeOf(y)], [slotText(x), slotText(y)]),
+  );
+  const hf = [0, 1].map((h) =>
+    series(`hf${h + 1}`, "hf", [vf[h * 2].winner, vf[h * 2 + 1].winner], [`Sieger VF ${h * 2 + 1}`, `Sieger VF ${h * 2 + 2}`]),
+  );
+  const f = series("f", "f", [hf[0].winner, hf[1].winner], ["Sieger HF 1", "Sieger HF 2"]);
+  return [...vf, ...hf, f];
+}

@@ -73,4 +73,22 @@ check(new Set(pairs).size === 6, "Gruppenspielplan: jeder einmal gegen jeden");
   const sp = d.splitResults([{ key: "1-2", winnerTeam: 1 }, { key: "rel1:1-2", winnerTeam: 2 }, { key: "vf1:1", winnerTeam: 3 }]);
   check(sp.group.length === 1 && sp.rel.length === 1 && sp.rel[0].round === 1 && d.relKey(1, 2, 1) === "rel1:1-2", "Schlüssel: Gruppe, Relegation, K.O. getrennt");
 }
+
+{
+  // K.O.-Baum: Gruppe g hat Teams g*10+1 … g*10+4, Position 1 gewinnt alles, 2 schlägt 3 und 4 usw.
+  const groups = [[11, 12, 13, 14], [21, 22, 23, 24], [31, 32, 33, 34], [41, 42, 43, 44]];
+  const res: { key: string; winnerTeam: number }[] = [];
+  for (const g of groups) for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) res.push({ key: d.pairKey(g[i], g[j]), winnerTeam: g[i] });
+  const open = d.koBracket(groups, res.slice(1));
+  check(open[0].teams[0] === null && open[0].nextGame === null, "K.O.: unfertige Gruppe A → Platz noch leer");
+  const ko = d.koBracket(groups, res);
+  check(ko.map((s) => s.teams.join("/")).slice(0, 4).join() === "11/32,41/22,21/42,31/12", "K.O.: Viertelfinale A1–C2, D1–B2, B1–D2, C1–A2");
+  check(ko[0].nextGame === 1 && ko[4].teams[0] === null, "K.O.: VF offen, HF noch leer");
+  const ko2 = d.koBracket(groups, [...res, { key: "vf1:1", winnerTeam: 32 }, { key: "vf1:2", winnerTeam: 11 }]);
+  check(ko2[0].wins.join() === "1,1" && ko2[0].nextGame === 3 && ko2[0].winner === null, "K.O.: 1:1 → Spiel 3");
+  const ko3 = d.koBracket(groups, [...res, { key: "vf1:1", winnerTeam: 32 }, { key: "vf1:3", winnerTeam: 32 }, { key: "vf2:1", winnerTeam: 41 }, { key: "vf2:2", winnerTeam: 41 }]);
+  check(ko3[0].winner === 32 && ko3[0].nextGame === null && ko3[4].teams.join("/") === "32/41" && ko3[4].nextGame === 1, "K.O.: 2 Siege → weiter, Halbfinale besetzt");
+  const fin = d.koBracket(groups, [...res, ...["vf1", "vf2", "vf3", "vf4", "hf1", "hf2"].flatMap((id) => [1, 2].map((n) => ({ key: `${id}:${n}`, winnerTeam: -1 })))]);
+  check(fin[6].teams[0] === null, "K.O.: Siege fremder Teams zählen nicht");
+}
 process.exit(failed ? 1 : 0);

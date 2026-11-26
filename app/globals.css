@@ -3455,3 +3455,15 @@ button.opp.tn-asked .tn-note { color: var(--brass-bright); opacity: 1; }
 .usage-bar-track { height: 10px; border-radius: 5px; background: rgba(241, 233, 216, 0.06); overflow: hidden; }
 .usage-bar { display: block; height: 100%; border-radius: 5px; background: #c9a54a; min-width: 2px; }
 .usage-bar-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* K.O.-Runde: Teams im Baum, Serienstand, Eintragen */
+.tb-side .tb-name { display: flex; flex-direction: column; }
+.tb-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-name a { color: inherit; text-decoration: none; }
+.tb-side b.tb-score { margin-left: auto; align-self: center; font-size: 0.8rem; opacity: 0.9; padding-left: 0.2rem; }
+.tb-side.won { font-weight: 700; }
+.tb-side.won b.tb-score { color: var(--brass-bright); opacity: 1; }
+.tb-side.lost { opacity: 0.5; }
+.tb-match.mine { border-color: rgba(201, 162, 39, 0.55); color: var(--brass-bright); }
+.tb-actions { display: flex; justify-content: flex-end; gap: 0.4rem; padding-top: 0.25rem; border-top: 1px solid var(--line); }
+.tb-actions .td-plus, .tb-actions .td-msg { transform-origin: center; }

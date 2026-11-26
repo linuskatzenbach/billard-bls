@@ -5,14 +5,14 @@ import { computeReward } from "@/lib/reward";
 import { jsonError, readJson, refreshWorld } from "@/lib/server";
 import { reportError } from "@/lib/alert";
 import { TOURNAMENT, getDraw, getResults, getTeams, saveResult } from "@/lib/tournament";
-import { groupStandings, pairKey, relKey, splitResults } from "@/lib/tournament-draw";
+import { groupStandings, koBracket, pairKey, relKey, splitResults } from "@/lib/tournament-draw";
 
 // Ergebnis eines Gruppen- oder Relegationsspiels eintragen (rel = Runde der
 // Relegation). Dürfen nur die vier Beteiligten. Es entsteht ein ganz normales Doppel (Elo, Widerspruch usw.).
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return jsonError("Bitte zuerst anmelden.", 401);
-  const body = await readJson<{ a: number; b: number; winner: number; rel?: number }>(req);
+  const body = await readJson<{ a: number; b: number; winner: number; rel?: number; ko?: string }>(req);
   const a = Number(body.a);
   const b = Number(body.b);
   const winner = Number(body.winner);
@@ -20,10 +20,21 @@ export async function POST(req: NextRequest) {
 
   const [draw, teams, results] = await Promise.all([getDraw(), getTeams(), getResults()]);
   if (!draw?.published) return jsonError("Die Gruppen stehen noch nicht fest.");
-  if (!draw.groups.some((g) => g.includes(a) && g.includes(b)) || a === b) return jsonError("Diese Paarung gibt es nicht.");
   const relRound = body.rel ? Number(body.rel) : null;
   let key = pairKey(a, b);
-  if (relRound !== null) {
+  if (body.ko) {
+    // K.O.-Spiel: Paarung muss zur Serie passen, Serie darf noch nicht entschieden sein.
+    // body.ko = "vf1:2" (Serie + erwartete Spielnummer). Weicht die Nummer ab,
+    // hat inzwischen jemand anderes dieses Spiel eingetragen.
+    const [sid, gameRaw] = String(body.ko).split(":");
+    const s = koBracket(draw.groups, results).find((x) => x.id === sid);
+    if (!s || s.nextGame === null) return jsonError(s?.winner ? "Diese Serie ist schon entschieden." : "Diese Partie steht noch nicht fest.");
+    if (pairKey(a, b) !== pairKey(Number(s.teams[0]), Number(s.teams[1]))) return jsonError("Diese Paarung gibt es nicht.");
+    if (Number(gameRaw) !== s.nextGame) return jsonError("Dieses Spiel wurde gerade schon eingetragen – bitte die Seite neu laden.");
+    key = `${s.id}:${s.nextGame}`;
+  } else if (!draw.groups.some((g) => g.includes(a) && g.includes(b)) || a === b) {
+    return jsonError("Diese Paarung gibt es nicht.");
+  } else if (relRound !== null) {
     const g = draw.groups.find((x) => x.includes(a))!;
     const { group, rel } = splitResults(results);
     const info = groupStandings(g, group, rel).rel;

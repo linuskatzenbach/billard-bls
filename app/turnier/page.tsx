@@ -7,7 +7,7 @@ import { dayKey } from "@/lib/time";
 import { seats } from "@/lib/match";
 import { TOURNAMENT, getDraw, getOpenRequests, getResults, getTeams, registrationOpen } from "@/lib/tournament";
 import { Bracket, GroupCards, Rules, SpecialRules } from "./TournamentView";
-import { GROUPS, RELEGATION, splitResults } from "@/lib/tournament-draw";
+import { GROUPS, KO_LABEL, RELEGATION, koBracket, splitResults } from "@/lib/tournament-draw";
 import Wreath from "../Wreath";
 import TeamActions, { type Candidate } from "./TeamActions";
 import Notice from "./Notice";
@@ -62,6 +62,65 @@ export default async function TurnierPage() {
     const off = (c: Candidate) => (c.status === "team" || c.status === "noaccount" ? 1 : 0);
     candidates.sort((a, b) => off(a) - off(b) || (vs.get(b.id) ?? 0) - (vs.get(a.id) ?? 0));
   }
+
+  // mailto an die Gegner (Partner in CC) – nur für eigene Paarungen.
+  const mailTo = (a: number, b: number, stage: string, when: string): string | null => {
+    if (!session || !drawn) return null;
+    const ta = teams.find((t) => t.id === a);
+    const tb = teams.find((t) => t.id === b);
+    if (!ta || !tb) return null;
+    const me = session.playerId;
+    const mineT = [ta.player1, ta.player2].includes(me) ? ta : [tb.player1, tb.player2].includes(me) ? tb : null;
+    if (!mineT) return null;
+    const other = mineT === ta ? tb : ta;
+    const partner = mineT.player1 === me ? mineT.player2 : mineT.player1;
+    const mailOf = (id: string) => world.players.find((p) => p.id === id)?.email ?? null;
+    const to = [mailOf(other.player1), mailOf(other.player2)].filter(Boolean).join(",");
+    if (!to) return null;
+    const cc = mailOf(partner);
+    const name = (id: string) => toPick(id).name;
+    const subject = `Billard BLS Turnier – ${stage}: ${name(mineT.player1)} & ${name(mineT.player2)} vs. ${name(other.player1)} & ${name(other.player2)}`;
+    const body = `Moin ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen ${when} gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
+    const q = [cc ? `cc=${encodeURIComponent(cc)}` : "", `subject=${encodeURIComponent(subject)}`, `body=${encodeURIComponent(body)}`].filter(Boolean).join("&");
+    return `mailto:${to}?${q}`;
+  };
+  const involved = (a: number | null, b: number | null) => {
+    if (!session || a === null || b === null) return false;
+    return teams.some((t) => (t.id === a || t.id === b) && (t.player1 === session.playerId || t.player2 === session.playerId));
+  };
+  const ko = drawn ? koBracket(drawn.groups, pairResults) : null;
+  // Steht das Viertelfinale komplett, rückt der Baum nach oben.
+  const koReady = !!ko && ko.filter((x) => x.round === "vf").every((x) => x.teams[0] !== null && x.teams[1] !== null);
+  const bracket = ko && (
+    <>
+      <div className="section-h">
+        <h2>{koReady ? "K.O.-Runde" : "Turnierbaum"}</h2>
+        <span>Sieger gegen Zweiten</span>
+      </div>
+      <Bracket
+        series={ko}
+        mine={myTeam?.id ?? null}
+        label={(id) => {
+          const t = teams.find((x) => x.id === id);
+          if (!t) return "–";
+          const a = toPick(t.player1);
+          const b = toPick(t.player2);
+          return (
+            <>
+              <span><Link href={`/spieler/${a.id}`}>{a.name}</Link> &</span>
+              <span><Link href={`/spieler/${b.id}`}>{b.name}</Link></span>
+            </>
+          );
+        }}
+        enterHref={(x) => (involved(x.teams[0], x.teams[1]) ? `/turnier/eintragen?ko=${x.id}` : null)}
+        mailHref={(x) =>
+          x.teams[0] !== null && x.teams[1] !== null
+            ? mailTo(x.teams[0], x.teams[1], KO_LABEL[x.round], `im ${KO_LABEL[x.round]} (${x.round === "f" ? "Best of 5" : "Best of 3"})`)
+            : null
+        }
+      />
+    </>
+  );
 
   const today = dayKey(new Date());
   const current = TOURNAMENT.phases.find((p) => p.from <= today && today <= p.until)?.key ?? null;
@@ -119,6 +178,8 @@ export default async function TurnierPage() {
           {today <= TOURNAMENT_NOTICE.until && <Notice id={TOURNAMENT_NOTICE.id} text={TOURNAMENT_NOTICE.text} />}
           <SpecialRules />
 
+          {koReady && bracket}
+
           <div className="section-h">
             <h2>Gruppen</h2>
             <span>Best of 1 · beste 2 kommen weiter</span>
@@ -146,27 +207,10 @@ export default async function TurnierPage() {
             results={split.group}
             relResults={split.rel}
             mailHref={(a, b, rel) => {
-              if (!session) return null;
-              const ta = teams.find((t) => t.id === a);
-              const tb = teams.find((t) => t.id === b);
-              if (!ta || !tb) return null;
-              const me = session.playerId;
-              const mineT = [ta.player1, ta.player2].includes(me) ? ta : [tb.player1, tb.player2].includes(me) ? tb : null;
-              if (!mineT) return null;
-              const other = mineT === ta ? tb : ta;
-              const partner = mineT.player1 === me ? mineT.player2 : mineT.player1;
-              const mailOf = (id: string) => world.players.find((p) => p.id === id)?.email ?? null;
-              const to = [mailOf(other.player1), mailOf(other.player2)].filter(Boolean).join(",");
-              if (!to) return null;
-              const cc = mailOf(partner);
-              const name = (id: string) => toPick(id).name;
               const g = GROUPS[drawn.groups.findIndex((x) => x.includes(a))] ?? "";
-              const stage = rel ? `Relegation Gruppe ${g}` : `Gruppe ${g}`;
-              const subject = `Billard BLS Turnier – ${stage}: ${name(mineT.player1)} & ${name(mineT.player2)} vs. ${name(other.player1)} & ${name(other.player2)}`;
-              const when = rel ? `in der Relegation (bis ${RELEGATION.deadlineLabel})` : "in der Gruppenphase";
-              const body = `Moin ${name(other.player1)} und ${name(other.player2)},\n\nwir spielen ${when} gegeneinander. Wann passt es euch?\n\nVorschlag: \n\nViele Grüße\n${name(me)}`;
-              const q = [cc ? `cc=${encodeURIComponent(cc)}` : "", `subject=${encodeURIComponent(subject)}`, `body=${encodeURIComponent(body)}`].filter(Boolean).join("&");
-              return `mailto:${to}?${q}`;
+              return rel
+                ? mailTo(a, b, `Relegation Gruppe ${g}`, `in der Relegation (bis ${RELEGATION.deadlineLabel})`)
+                : mailTo(a, b, `Gruppe ${g}`, "in der Gruppenphase");
             }}
             enterHref={(a, b, rel) => {
               if (!session) return null;
@@ -177,11 +221,7 @@ export default async function TurnierPage() {
             }}
           />
 
-          <div className="section-h">
-            <h2>Turnierbaum</h2>
-            <span>Sieger gegen Zweiten</span>
-          </div>
-          <Bracket />
+          {!koReady && bracket}
 
           <div className="section-h">
             <h2>Regeln</h2>

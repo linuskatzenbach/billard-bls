@@ -1,6 +1,6 @@
 import type React from "react";
 import Link from "next/link";
-import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, RELEGATION, TIEBREAK, groupStandings, pairKey, type GroupResult, type RelResult, type Slot } from "@/lib/tournament-draw";
+import { FORMAT, GROUPS, GROUP_ROUNDS, QUARTERS, RELEGATION, TIEBREAK, groupStandings, pairKey, type GroupResult, type KoSeries, type RelResult, type Slot } from "@/lib/tournament-draw";
 
 // Gemeinsame Bausteine für Turnier-Tab und Admin-Vorschau.
 
@@ -170,7 +170,67 @@ export function GroupCards({
 
 const slotText = (s: Slot) => `${s.place === 1 ? "Sieger" : "Zweiter"} ${s.group}`;
 
-export function Bracket() {
+// Turnierbaum. Ohne series nur Platzhalter („Sieger A“); mit series die Teams,
+// der Serienstand und – für die Beteiligten – Nachricht und „+“.
+export function Bracket({
+  series,
+  label,
+  mine = null,
+  enterHref,
+  mailHref,
+}: {
+  series?: KoSeries[];
+  label?: (teamId: number) => React.ReactNode;
+  mine?: number | null;
+  enterHref?: (s: KoSeries) => string | null;
+  mailHref?: (s: KoSeries) => string | null;
+} = {}) {
+  const fallback: KoSeries[] = [
+    ...QUARTERS.map(([x, y], i) => ({ id: `vf${i + 1}`, round: "vf" as const, placeholders: [slotText(x), slotText(y)] as [string, string] })),
+    ...[0, 1].map((h) => ({ id: `hf${h + 1}`, round: "hf" as const, placeholders: [`Sieger VF ${h * 2 + 1}`, `Sieger VF ${h * 2 + 2}`] as [string, string] })),
+    { id: "f", round: "f" as const, placeholders: ["Sieger HF 1", "Sieger HF 2"] as [string, string] },
+  ].map((x) => ({ ...x, teams: [null, null] as [null, null], wins: [0, 0] as [number, number], winner: null, nextGame: null }));
+  const all = series ?? fallback;
+  const byId = (id: string) => all.find((x) => x.id === id)!;
+
+  const match = (s: KoSeries, extra = "") => {
+    const started = s.wins[0] + s.wins[1] > 0;
+    const isMine = mine !== null && s.teams.includes(mine);
+    const href = enterHref && s.nextGame !== null ? enterHref(s) : null;
+    const mail = mailHref && s.nextGame !== null ? mailHref(s) : null;
+    return (
+      <div className={`tb-match${extra}${isMine ? " mine" : ""}`} key={s.id}>
+        {s.round === "f" && <span className="tb-cup" aria-hidden="true">🏆</span>}
+        {[0, 1].map((i) => {
+          const t = s.teams[i];
+          const cls = s.winner === null ? "" : s.winner === t ? " won" : " lost";
+          return (
+            <span className={`tb-side${cls}`} key={i}>
+              <span className="tb-name">{t !== null && label ? label(t) : s.placeholders[i]}</span>
+              {t !== null && (started || s.winner !== null) && <b className="tb-score">{s.wins[i]}</b>}
+            </span>
+          );
+        })}
+        {(href || mail) && (
+          <span className="tb-actions">
+            {mail && (
+              <a href={mail} className="td-msg" aria-label="Nachricht an die Gegner">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+                </svg>
+              </a>
+            )}
+            {href && (
+              <Link href={href} className="td-plus" aria-label={`Spiel ${s.nextGame} eintragen`}>
+                +
+              </Link>
+            )}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="tb-heads">
@@ -182,35 +242,14 @@ export function Bracket() {
         <div className="tb-col">
           {[0, 1].map((half) => (
             <div className="tb-pair" key={half}>
-              {QUARTERS.slice(half * 2, half * 2 + 2).map((pair, i) => (
-                <div className="tb-match" key={i}>
-                  {pair.map((s) => (
-                    <span className="tb-side" key={slotText(s)}>
-                      <span className="tb-name">{slotText(s)}</span>
-                    </span>
-                  ))}
-                </div>
-              ))}
+              {[1, 2].map((i) => match(byId(`vf${half * 2 + i}`)))}
             </div>
           ))}
         </div>
         <div className="tb-col">
-          <div className="tb-pair">
-            {[0, 1].map((half) => (
-              <div className="tb-match" key={half}>
-                <span className="tb-side"><span className="tb-name">Sieger VF {half * 2 + 1}</span></span>
-                <span className="tb-side"><span className="tb-name">Sieger VF {half * 2 + 2}</span></span>
-              </div>
-            ))}
-          </div>
+          <div className="tb-pair">{[1, 2].map((i) => match(byId(`hf${i}`)))}</div>
         </div>
-        <div className="tb-col">
-          <div className="tb-match tb-final">
-            <span className="tb-cup" aria-hidden="true">🏆</span>
-            <span className="tb-side"><span className="tb-name">Sieger HF 1</span></span>
-            <span className="tb-side"><span className="tb-name">Sieger HF 2</span></span>
-          </div>
-        </div>
+        <div className="tb-col">{match(byId("f"), " tb-final")}</div>
       </div>
     </>
   );
