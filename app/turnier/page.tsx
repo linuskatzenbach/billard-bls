@@ -176,9 +176,7 @@ export default async function TurnierPage() {
   return (
     <>
       <h1>{TOURNAMENT.name}</h1>
-      <p className="subtitle">
-        {open ? <>Such dir einen Partner – Anmeldung bis {TOURNAMENT.deadlineLabel}.</> : <>Die Anmeldung ist geschlossen, die Teams stehen fest.</>}
-      </p>
+      {open && <p className="subtitle">Such dir einen Partner – Anmeldung bis {TOURNAMENT.deadlineLabel}.</p>}
 
       {/* Ablauf als Zeitstrahl (nur Anzeige): jede Phase eine Kugel auf der Linie. */}
       <ol className="tn-road" aria-label="Ablauf">
