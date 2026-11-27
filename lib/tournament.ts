@@ -7,7 +7,7 @@ import { weekEndIso } from "./time";
 //   (danach fest, nicht mehr änderbar). Dann zwei Tage Pause
 //   (Paarungen entwerfen), Gruppenphase Sa 14.–Do 26.11. (vorgezogen, wegen der
 //   Relegation bis Donnerstag verlängert), ab Fr 27.11. Viertelfinale,
-//   Halbfinale und Finale (bis ca. 2.12.).
+//   Halbfinale und Finale (bis ca. 4.12., verlängert).
 // Turnierspiele zählen später ganz normal für Elo, Wochenzocker usw.
 export const TOURNAMENT = {
   id: "2v2-herbst-2026",
@@ -20,7 +20,7 @@ export const TOURNAMENT = {
     // liegen Pausentage – dann „läuft“ gerade keine Phase.
     { key: "anmeldung", label: "Anmeldung", detail: "im 2er-Team", when: "bis Fr 13.11.", from: "2026-11-07", until: "2026-11-13" },
     { key: "gruppen", label: "Gruppenphase", detail: "Spiele in Gruppen", when: "14.–26.11.", from: "2026-11-14", until: "2026-11-26" },
-    { key: "ko", label: "K.O.-Runde", detail: "Viertel-, Halbfinale, Finale", when: "27.11. – ca. 2.12.", from: "2026-11-27", until: "2026-12-02" },
+    { key: "ko", label: "K.O.-Runde", detail: "Viertel-, Halbfinale, Finale", when: "27.11. – ca. 4.12.", from: "2026-11-27", until: "2026-12-04" },
   ],
 } as const;
 
