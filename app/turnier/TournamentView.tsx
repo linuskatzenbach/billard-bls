@@ -254,18 +254,23 @@ export function Bracket({
         <span>Halbfinale<small>{FORMAT.semi}</small></span>
         <span>Finale<small>{FORMAT.final}</small></span>
       </div>
+      {/* Raster mit vier gleich hohen Zeilen: VF je eine Zeile, HF je zwei, Finale alle vier.
+          Jede Karte sitzt mittig in ihrer Zelle – so treffen die Linien immer die Kartenmitte,
+          auch wenn Karten unterschiedlich hoch sind (Termin, Knöpfe, lange Namen). */}
       <div className="tb">
-        <div className="tb-col">
-          {[0, 1].map((half) => (
-            <div className="tb-pair" key={half}>
-              {[1, 2].map((i) => match(byId(`vf${half * 2 + i}`)))}
-            </div>
-          ))}
+        {[1, 2, 3, 4].map((i) => (
+          <div key={`vf${i}`} className={`tb-cell ${i % 2 ? "tb-up" : "tb-down"}`} style={{ gridColumn: 1, gridRow: i }}>
+            {match(byId(`vf${i}`))}
+          </div>
+        ))}
+        {[1, 2].map((i) => (
+          <div key={`hf${i}`} className={`tb-cell tb-in ${i === 1 ? "tb-up" : "tb-down"}`} style={{ gridColumn: 2, gridRow: `${i * 2 - 1} / span 2` }}>
+            {match(byId(`hf${i}`))}
+          </div>
+        ))}
+        <div className="tb-cell tb-in" style={{ gridColumn: 3, gridRow: "1 / span 4" }}>
+          {match(byId("f"), " tb-final")}
         </div>
-        <div className="tb-col">
-          <div className="tb-pair">{[1, 2].map((i) => match(byId(`hf${i}`)))}</div>
-        </div>
-        <div className="tb-col">{match(byId("f"), " tb-final")}</div>
       </div>
     </>
   );
